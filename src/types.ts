@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import type { SelectLocale, SelectMessages } from './i18n.js'
 
 export interface Option {
     value: string
@@ -20,4 +21,8 @@ export interface CustomSelectProps {
     multiple?: boolean
     minSelection?: number
     maxSelection?: number
+    locale?: SelectLocale
+    messages?: Partial<SelectMessages>
 }
+
+export type { SelectLocale, SelectMessages } from './i18n.js'

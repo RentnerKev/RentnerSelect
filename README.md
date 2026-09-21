@@ -61,6 +61,35 @@ function MyComponent() {
 }
 ```
 
+## Lokalisierung
+
+Die deutschen Meldungen und ARIA-Texte sind standardmäßig aktiv. Mit
+`locale="en"` werden die vollständigen englischen Standardtexte verwendet.
+Einzelne Texte können über ein typisiertes `Partial<SelectMessages>`-Objekt
+überschrieben werden. Der Katalog und der Resolver sind ebenfalls als
+`selectMessageCatalog` und `resolveSelectMessages` exportiert.
+
+```tsx
+import {
+    CustomSelect,
+    type SelectMessages,
+} from '@rentnerkev/select'
+
+const messages: Partial<SelectMessages> = {
+    searchPlaceholder: 'Find an option',
+    noResults: 'Nothing found',
+    minSelection: (count) => `Choose at least ${count}`,
+}
+
+<CustomSelect
+    value={selectedValue}
+    onValueChange={setSelectedValue}
+    options={options}
+    locale="en"
+    messages={messages}
+/>
+```
+
 ### 2. In Formularen mit required
 
 `required` ist standardmäßig deaktiviert. Wenn du es setzt und beim Submit noch kein Wert ausgewählt wurde, wird der Select rot, das linke Icon wird durch ein Ausrufezeichen ersetzt und der Fehlertext wird im Tooltip angezeigt. Das ist das praktisch, wenn der Placeholder wie "Bereich auswählen" nur ein Hinweis und keine echte Auswahl sein soll.
@@ -122,6 +151,8 @@ Die Komponente nimmt folgende Parameter entgegen:
 | `multiple`       | `boolean`                 | (Optional) Aktiviert die Mehrfachauswahl. Default ist false.             |
 | `minSelection`   | `number`                  | (Optional) Bestimmt die Mindestanzahl an auszuwählenden Optionen.        |
 | `maxSelection`   | `number`                  | (Optional) Bestimmt die maximale Anzahl an auszuwählenden Optionen.      |
+| `locale`         | `'de' \| 'en'`            | (Optional) Sprache der Standardtexte, standardmäßig `'de'`.              |
+| `messages`       | `Partial<SelectMessages>` | (Optional) Überschreibt einzelne Standard- und ARIA-Texte.               |
 
 ### Option
 
