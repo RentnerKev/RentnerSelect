@@ -6,3 +6,4 @@ globalStore = false
 [test]
 root = "src/test"
 pathIgnorePatterns = ["**/*.db.test.ts"]
+preload = ["./src/test/setup.ts"]

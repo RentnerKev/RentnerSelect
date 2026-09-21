@@ -10,9 +10,181 @@ import {
     useRef,
     useState,
 } from 'react'
-import type { InvalidEvent } from 'react'
+import type { InvalidEvent, ReactElement } from 'react'
 import { resolveSelectMessages } from './i18n.js'
-import type { CustomSelectProps } from './types.js'
+import {
+    isSingleValueEmpty,
+    parseLegacyMultipleValue,
+    toggleSelectedValue,
+} from './selectValue.js'
+import type {
+    CustomSelectProps,
+    LegacyMultipleSelectProps,
+    MultipleSelectProps,
+    SingleSelectProps,
+} from './types.js'
+
+type TypedCustomSelectProps<TValue> =
+    | SingleSelectProps<TValue>
+    | MultipleSelectProps<TValue>
+
+type RuntimeCustomSelectProps<TValue> =
+    | TypedCustomSelectProps<TValue>
+    | LegacyMultipleSelectProps
+
+type SelectViewProps<TValue> = Omit<
+    SingleSelectProps<TValue>,
+    'value' | 'onValueChange' | 'multiple' | 'getFormValue'
+> & {
+    selectedValues: ReadonlyArray<TValue>
+    formEntries: ReadonlyArray<{ key: string; value: string }>
+    multiple: boolean
+    onSelectValue: (value: TValue) => void
+}
+
+function defaultGetFormValue(value: unknown) {
+    return String(value)
+}
+
+function TypedCustomSelect<TValue>({
+    value,
+    onValueChange,
+    multiple,
+    getFormValue = defaultGetFormValue,
+    ...viewProps
+}: TypedCustomSelectProps<TValue>) {
+    const isOptionEqualToValue = viewProps.isOptionEqualToValue ?? Object.is
+    const multipleValues: ReadonlyArray<TValue> =
+        multiple && Array.isArray(value) ? value : []
+    const selectedValues: ReadonlyArray<TValue> = multiple
+        ? multipleValues
+        : isSingleValueEmpty(value)
+          ? []
+          : [value]
+    const formEntries = selectedValues.map((selectedValue) => {
+        const optionIndex = viewProps.options.findIndex((option) =>
+            isOptionEqualToValue(option.value, selectedValue),
+        )
+        const formValue = getFormValue(selectedValue)
+
+        return {
+            key:
+                optionIndex >= 0
+                    ? `option-${optionIndex}`
+                    : `${typeof selectedValue}-${formValue}`,
+            value: formValue,
+        }
+    })
+
+    function handleSelectValue(nextValue: TValue) {
+        if (multiple) {
+            const nextValues = toggleSelectedValue(
+                multipleValues,
+                nextValue,
+                isOptionEqualToValue,
+                viewProps.maxSelection,
+            )
+
+            if (nextValues) {
+                onValueChange(nextValues)
+            }
+            return
+        }
+
+        onValueChange(nextValue)
+    }
+
+    return (
+        <SelectView
+            {...viewProps}
+            selectedValues={selectedValues}
+            formEntries={formEntries}
+            multiple={multiple === true}
+            onSelectValue={handleSelectValue}
+        />
+    )
+}
+
+function LegacyCustomSelect({
+    value,
+    onValueChange,
+    multiple,
+    getFormValue = defaultGetFormValue,
+    ...viewProps
+}: LegacyMultipleSelectProps) {
+    const isOptionEqualToValue = viewProps.isOptionEqualToValue ?? Object.is
+    const selectedValues = multiple
+        ? parseLegacyMultipleValue(value)
+        : isSingleValueEmpty(value)
+          ? []
+          : [value]
+
+    function handleSelectValue(nextValue: string) {
+        if (multiple) {
+            const nextValues = toggleSelectedValue(
+                selectedValues,
+                nextValue,
+                isOptionEqualToValue,
+                viewProps.maxSelection,
+            )
+
+            if (nextValues) {
+                onValueChange(nextValues.join(','))
+            }
+            return
+        }
+
+        onValueChange(nextValue)
+    }
+
+    return (
+        <SelectView
+            {...viewProps}
+            selectedValues={selectedValues}
+            formEntries={[
+                {
+                    key: 'legacy-value',
+                    value: multiple ? value : getFormValue(value),
+                },
+            ]}
+            multiple={multiple}
+            onSelectValue={handleSelectValue}
+        />
+    )
+}
+
+function isLegacyMultipleSelect<TValue>(
+    props: RuntimeCustomSelectProps<TValue>,
+): props is LegacyMultipleSelectProps {
+    return (
+        typeof props.multiple === 'boolean' && typeof props.value === 'string'
+    )
+}
+
+export function CustomSelect<TValue = string>(
+    props: SingleSelectProps<TValue>,
+): ReactElement
+export function CustomSelect<TValue = string>(
+    props: MultipleSelectProps<TValue>,
+): ReactElement
+/**
+ * @deprecated Übergib bei `multiple` ein Array. Das kommagetrennte
+ * Stringformat wird in Version 2.0 entfernt.
+ */
+export function CustomSelect(props: LegacyMultipleSelectProps): ReactElement
+export function CustomSelect<TValue = string>(
+    props: CustomSelectProps<TValue>,
+): ReactElement
+export function CustomSelect(props: CustomSelectProps<string>): ReactElement
+export function CustomSelect<TValue = string>(
+    props: RuntimeCustomSelectProps<TValue>,
+) {
+    if (isLegacyMultipleSelect(props)) {
+        return <LegacyCustomSelect {...props} />
+    }
+
+    return <TypedCustomSelect {...props} />
+}
 
 function mergeAriaIds(...values: Array<string | undefined>) {
     const ids = values.flatMap(
@@ -22,12 +194,13 @@ function mergeAriaIds(...values: Array<string | undefined>) {
     return [...new Set(ids)].join(' ') || undefined
 }
 
-export function CustomSelect({
+function SelectView<TValue>({
     id,
     name,
-    value,
-    onValueChange,
     options,
+    selectedValues,
+    formEntries,
+    onSelectValue,
     required = false,
     label,
     description,
@@ -47,8 +220,9 @@ export function CustomSelect({
     maxSelection,
     locale = 'de',
     messages: providedMessages,
+    isOptionEqualToValue: isOptionEqualToValueProp,
     ...ariaProps
-}: CustomSelectProps) {
+}: SelectViewProps<TValue>) {
     const messages = resolveSelectMessages(locale, providedMessages)
     const [open, setOpen] = useState(false)
     const [searchValue, setSearchValue] = useState('')
@@ -63,6 +237,14 @@ export function CustomSelect({
     const labelId = `${triggerId}-label`
     const descriptionId = `${triggerId}-description`
     const errorId = `${triggerId}-error`
+    const optionEntries = useMemo(
+        () =>
+            options.map((option, index) => ({
+                option,
+                radixValue: `option-${index}`,
+            })),
+        [options],
+    )
     const labelledBy = mergeAriaIds(
         ariaLabelledBy,
         label !== undefined && label !== null ? labelId : undefined,
@@ -83,11 +265,6 @@ export function CustomSelect({
         typeof triggerRef === 'object' ? triggerRef : null,
         () => internalTriggerRef.current as HTMLButtonElement,
     )
-
-    const selectedValues = useMemo(() => {
-        if (!value) return []
-        return multiple ? value.split(',') : [value]
-    }, [value, multiple])
 
     const internalError = useMemo(() => {
         if (required && selectedValues.length === 0) {
@@ -137,12 +314,12 @@ export function CustomSelect({
         const normalizedSearch = searchValue.trim().toLowerCase()
 
         if (!normalizedSearch) {
-            return options
+            return optionEntries
         }
 
-        return options.filter((option) => {
+        return optionEntries.filter(({ option }) => {
             const optionLabel = option.label.toLowerCase()
-            const optionValue = option.value.toLowerCase()
+            const optionValue = String(option.value).toLowerCase()
             const subOption = option.subOption?.toLowerCase() || ''
 
             return (
@@ -151,35 +328,38 @@ export function CustomSelect({
                 subOption.includes(normalizedSearch)
             )
         })
-    }, [options, searchValue])
+    }, [optionEntries, searchValue])
 
-    const selectedOptions = useMemo(() => {
-        return options.filter((option) => selectedValues.includes(option.value))
-    }, [options, selectedValues])
+    const isOptionEqualToValue = isOptionEqualToValueProp ?? Object.is
+    const selectedEntries = useMemo(() => {
+        return optionEntries.filter(({ option }) =>
+            selectedValues.some((value) =>
+                isOptionEqualToValue(option.value, value),
+            ),
+        )
+    }, [isOptionEqualToValue, optionEntries, selectedValues])
+    const selectedRadixValue = multiple
+        ? ''
+        : (selectedEntries[0]?.radixValue ?? '')
 
-    function handleValueChange(nextValue: string) {
+    function handleValueChange(nextRadixValue: string) {
         if (disabled || readOnly) {
             return
         }
 
-        if (multiple) {
-            let nextArray = selectedValues.includes(nextValue)
-                ? selectedValues.filter((v) => v !== nextValue)
-                : [...selectedValues, nextValue]
+        const entry = optionEntries.find(
+            ({ radixValue }) => radixValue === nextRadixValue,
+        )
 
-            if (
-                maxSelection !== undefined &&
-                nextArray.length > maxSelection &&
-                !selectedValues.includes(nextValue)
-            ) {
-                return
-            }
-
-            onValueChange(nextArray.join(','))
-        } else {
-            setSearchValue('')
-            onValueChange(nextValue)
+        if (!entry) {
+            return
         }
+
+        if (!multiple) {
+            setSearchValue('')
+        }
+
+        onSelectValue(entry.option.value)
     }
 
     function handleInvalid(event: InvalidEvent<HTMLInputElement>) {
@@ -253,7 +433,7 @@ export function CustomSelect({
                     setSearchValue('')
                 }
             }}
-            value={multiple ? '' : value}
+            value={selectedRadixValue}
             onValueChange={handleValueChange}
         >
             <div className="group relative">
@@ -269,11 +449,14 @@ export function CustomSelect({
                 <input
                     ref={validationInputRef}
                     name={name}
-                    value={value}
+                    value={formEntries[0]?.value ?? ''}
                     onChange={() => undefined}
                     onInvalid={handleInvalid}
                     required={
-                        required && !disabled && externalError === undefined
+                        required &&
+                        selectedValues.length === 0 &&
+                        !disabled &&
+                        externalError === undefined
                     }
                     disabled={disabled}
                     readOnly={readOnly}
@@ -281,6 +464,19 @@ export function CustomSelect({
                     aria-hidden="true"
                     className="pointer-events-none absolute left-0 top-1/2 h-px w-px -translate-y-1/2 opacity-0"
                 />
+                {multiple &&
+                    formEntries
+                        .slice(1)
+                        .map((formEntry) => (
+                            <input
+                                key={formEntry.key}
+                                type="hidden"
+                                name={name}
+                                value={formEntry.value}
+                                disabled={disabled}
+                                readOnly={readOnly}
+                            />
+                        ))}
                 {hasLeftIcon && (
                     <div className="absolute left-2.5 top-1/2 -translate-y-1/2 z-10 text-gray-500">
                         {hasError ? (
@@ -352,17 +548,20 @@ export function CustomSelect({
                     } ${className || ''}`}
                 >
                     <span className="min-w-0 flex-1 text-left">
-                        {selectedOptions.length > 0 ? (
+                        {selectedEntries.length > 0 ? (
                             <span className="flex min-w-0 flex-col gap-0.5">
                                 <span className="truncate leading-4">
-                                    {selectedOptions
-                                        .map((o) => o.label)
+                                    {selectedEntries
+                                        .map(({ option }) => option.label)
                                         .join(', ')}
                                 </span>
-                                {selectedOptions.length === 1 &&
-                                    selectedOptions[0].subOption && (
+                                {selectedEntries.length === 1 &&
+                                    selectedEntries[0].option.subOption && (
                                         <span className="truncate text-[10px] font-semibold leading-3 tracking-normal text-gray-500 normal-case">
-                                            {selectedOptions[0].subOption}
+                                            {
+                                                selectedEntries[0].option
+                                                    .subOption
+                                            }
                                         </span>
                                     )}
                             </span>
@@ -447,53 +646,59 @@ export function CustomSelect({
                     <div className="rentnerselect-scrollbar max-h-[min(var(--radix-select-content-available-height),16rem)] overflow-y-scroll scrollbar-gutter-stable">
                         <SelectPrimitive.Viewport className="p-1">
                             {filteredOptions.length > 0 ? (
-                                filteredOptions.map((option) => (
-                                    <SelectPrimitive.Item
-                                        key={option.value}
-                                        value={option.value}
-                                        onPointerDown={() => {
-                                            if (multiple) {
-                                                shouldKeepOpen.current = true
-                                            }
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (
-                                                multiple &&
-                                                (e.key === 'Enter' ||
-                                                    e.key === ' ')
-                                            ) {
-                                                shouldKeepOpen.current = true
-                                            }
-                                        }}
-                                        className="relative flex w-full cursor-pointer select-none items-center rounded-md py-2 pl-8 pr-2 text-[11px] font-bold uppercase tracking-wider text-gray-300 outline-none focus:bg-primary/20 focus:text-primary transition-colors data-disabled:opacity-50"
-                                    >
-                                        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-                                            {multiple ? (
-                                                selectedValues.includes(
-                                                    option.value,
-                                                ) && (
-                                                    <Check className="h-4 w-4" />
-                                                )
-                                            ) : (
-                                                <SelectPrimitive.ItemIndicator>
-                                                    <Check className="h-4 w-4" />
-                                                </SelectPrimitive.ItemIndicator>
-                                            )}
-                                        </span>
-                                        <SelectPrimitive.ItemText>
-                                            <span className="flex min-w-0 flex-col gap-0.5">
-                                                <span className="truncate leading-4">
-                                                    {option.label}
-                                                </span>
-                                                {option.subOption && (
-                                                    <span className="truncate text-[10px] font-semibold leading-3 tracking-normal text-gray-500 normal-case">
-                                                        {option.subOption}
-                                                    </span>
+                                filteredOptions.map(
+                                    ({ option, radixValue }) => (
+                                        <SelectPrimitive.Item
+                                            key={radixValue}
+                                            value={radixValue}
+                                            onPointerDown={() => {
+                                                if (multiple) {
+                                                    shouldKeepOpen.current = true
+                                                }
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (
+                                                    multiple &&
+                                                    (e.key === 'Enter' ||
+                                                        e.key === ' ')
+                                                ) {
+                                                    shouldKeepOpen.current = true
+                                                }
+                                            }}
+                                            className="relative flex w-full cursor-pointer select-none items-center rounded-md py-2 pl-8 pr-2 text-[11px] font-bold uppercase tracking-wider text-gray-300 outline-none focus:bg-primary/20 focus:text-primary transition-colors data-disabled:opacity-50"
+                                        >
+                                            <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                                                {multiple ? (
+                                                    selectedValues.some(
+                                                        (value) =>
+                                                            isOptionEqualToValue(
+                                                                option.value,
+                                                                value,
+                                                            ),
+                                                    ) && (
+                                                        <Check className="h-4 w-4" />
+                                                    )
+                                                ) : (
+                                                    <SelectPrimitive.ItemIndicator>
+                                                        <Check className="h-4 w-4" />
+                                                    </SelectPrimitive.ItemIndicator>
                                                 )}
                                             </span>
-                                        </SelectPrimitive.ItemText>
-                                    </SelectPrimitive.Item>
-                                ))
+                                            <SelectPrimitive.ItemText>
+                                                <span className="flex min-w-0 flex-col gap-0.5">
+                                                    <span className="truncate leading-4">
+                                                        {option.label}
+                                                    </span>
+                                                    {option.subOption && (
+                                                        <span className="truncate text-[10px] font-semibold leading-3 tracking-normal text-gray-500 normal-case">
+                                                            {option.subOption}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            </SelectPrimitive.ItemText>
+                                        </SelectPrimitive.Item>
+                                    ),
+                                )
                             ) : (
                                 <div className="relative flex w-full select-none items-center rounded-md py-2 pl-8 pr-2 text-[11px] font-bold uppercase tracking-wider text-gray-500 opacity-60 outline-none italic cursor-not-allowed">
                                     {searchValue.trim()
