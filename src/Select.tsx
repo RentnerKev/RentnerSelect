@@ -1,10 +1,26 @@
 import * as SelectPrimitive from '@radix-ui/react-select'
 import { CustomTooltip } from './Internal/Tooltip.js'
 import { AlertCircle, Check, ChevronDown } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+    useCallback,
+    useEffect,
+    useId,
+    useImperativeHandle,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
 import type { InvalidEvent } from 'react'
 import { resolveSelectMessages } from './i18n.js'
 import type { CustomSelectProps } from './types.js'
+
+function mergeAriaIds(...values: Array<string | undefined>) {
+    const ids = values.flatMap(
+        (value) => value?.split(/\s+/).filter(Boolean) ?? [],
+    )
+
+    return [...new Set(ids)].join(' ') || undefined
+}
 
 export function CustomSelect({
     id,
@@ -13,6 +29,15 @@ export function CustomSelect({
     onValueChange,
     options,
     required = false,
+    label,
+    description,
+    error: externalError,
+    disabled = false,
+    readOnly = false,
+    'aria-label': ariaLabel,
+    'aria-labelledby': ariaLabelledBy,
+    'aria-describedby': ariaDescribedBy,
+    triggerRef,
     icon,
     placeholder,
     className,
@@ -22,6 +47,7 @@ export function CustomSelect({
     maxSelection,
     locale = 'de',
     messages: providedMessages,
+    ...ariaProps
 }: CustomSelectProps) {
     const messages = resolveSelectMessages(locale, providedMessages)
     const [open, setOpen] = useState(false)
@@ -29,14 +55,41 @@ export function CustomSelect({
     const [isTouched, setIsTouched] = useState(false)
     const searchInputRef = useRef<HTMLInputElement>(null)
     const validationInputRef = useRef<HTMLInputElement>(null)
+    const internalTriggerRef = useRef<HTMLButtonElement>(null)
     const shouldKeepOpen = useRef(false)
+
+    const generatedId = useId()
+    const triggerId = id ?? `select-${generatedId}`
+    const labelId = `${triggerId}-label`
+    const descriptionId = `${triggerId}-description`
+    const errorId = `${triggerId}-error`
+    const labelledBy = mergeAriaIds(
+        ariaLabelledBy,
+        label !== undefined && label !== null ? labelId : undefined,
+    )
+
+    const setTriggerRef = useCallback(
+        (node: HTMLButtonElement | null) => {
+            internalTriggerRef.current = node
+
+            if (typeof triggerRef === 'function') {
+                triggerRef(node)
+            }
+        },
+        [triggerRef],
+    )
+
+    useImperativeHandle(
+        typeof triggerRef === 'object' ? triggerRef : null,
+        () => internalTriggerRef.current as HTMLButtonElement,
+    )
 
     const selectedValues = useMemo(() => {
         if (!value) return []
         return multiple ? value.split(',') : [value]
     }, [value, multiple])
 
-    const error = useMemo(() => {
+    const internalError = useMemo(() => {
         if (required && selectedValues.length === 0) {
             return messages.required
         }
@@ -64,8 +117,21 @@ export function CustomSelect({
         messages,
     ])
 
-    const hasError = isTouched && error !== null
+    const resolvedError =
+        externalError !== undefined ? externalError : internalError
+    const hasError =
+        externalError !== undefined
+            ? Boolean(resolvedError)
+            : isTouched && Boolean(resolvedError)
     const hasLeftIcon = Boolean(icon || hasError)
+
+    const describedBy = mergeAriaIds(
+        ariaDescribedBy,
+        description !== undefined && description !== null
+            ? descriptionId
+            : undefined,
+        hasError ? errorId : undefined,
+    )
 
     const filteredOptions = useMemo(() => {
         const normalizedSearch = searchValue.trim().toLowerCase()
@@ -75,12 +141,12 @@ export function CustomSelect({
         }
 
         return options.filter((option) => {
-            const label = option.label.toLowerCase()
+            const optionLabel = option.label.toLowerCase()
             const optionValue = option.value.toLowerCase()
             const subOption = option.subOption?.toLowerCase() || ''
 
             return (
-                label.includes(normalizedSearch) ||
+                optionLabel.includes(normalizedSearch) ||
                 optionValue.includes(normalizedSearch) ||
                 subOption.includes(normalizedSearch)
             )
@@ -92,6 +158,10 @@ export function CustomSelect({
     }, [options, selectedValues])
 
     function handleValueChange(nextValue: string) {
+        if (disabled || readOnly) {
+            return
+        }
+
         if (multiple) {
             let nextArray = selectedValues.includes(nextValue)
                 ? selectedValues.filter((v) => v !== nextValue)
@@ -115,6 +185,7 @@ export function CustomSelect({
     function handleInvalid(event: InvalidEvent<HTMLInputElement>) {
         event.preventDefault()
         setIsTouched(true)
+        internalTriggerRef.current?.focus()
     }
 
     const focusSearchInput = useCallback(() => {
@@ -129,8 +200,10 @@ export function CustomSelect({
     }, [open, focusSearchInput])
 
     useEffect(() => {
-        validationInputRef.current?.setCustomValidity(error || '')
-    }, [error])
+        validationInputRef.current?.setCustomValidity(
+            disabled ? '' : resolvedError || '',
+        )
+    }, [disabled, resolvedError])
 
     useEffect(() => {
         const input = validationInputRef.current
@@ -155,10 +228,19 @@ export function CustomSelect({
         }
     }, [])
 
+    if ((disabled || readOnly) && open) {
+        setOpen(false)
+    }
+
     return (
         <SelectPrimitive.Root
-            open={open}
+            open={open && !disabled && !readOnly}
             onOpenChange={(nextOpen) => {
+                if (disabled || readOnly) {
+                    setOpen(false)
+                    return
+                }
+
                 if (multiple && !nextOpen && shouldKeepOpen.current) {
                     shouldKeepOpen.current = false
                     return
@@ -175,13 +257,26 @@ export function CustomSelect({
             onValueChange={handleValueChange}
         >
             <div className="group relative">
+                {label !== undefined && label !== null && (
+                    <label
+                        id={labelId}
+                        htmlFor={triggerId}
+                        className="mb-1 block text-sm font-medium text-gray-300"
+                    >
+                        {label}
+                    </label>
+                )}
                 <input
                     ref={validationInputRef}
                     name={name}
                     value={value}
                     onChange={() => undefined}
                     onInvalid={handleInvalid}
-                    required={required}
+                    required={
+                        required && !disabled && externalError === undefined
+                    }
+                    disabled={disabled}
+                    readOnly={readOnly}
                     tabIndex={-1}
                     aria-hidden="true"
                     className="pointer-events-none absolute left-0 top-1/2 h-px w-px -translate-y-1/2 opacity-0"
@@ -189,7 +284,10 @@ export function CustomSelect({
                 {hasLeftIcon && (
                     <div className="absolute left-2.5 top-1/2 -translate-y-1/2 z-10 text-gray-500">
                         {hasError ? (
-                            <CustomTooltip content={error || ''} side="bottom">
+                            <CustomTooltip
+                                content={resolvedError || ''}
+                                side="bottom"
+                            >
                                 <AlertCircle className="h-4 w-4 text-red-500" />
                             </CustomTooltip>
                         ) : (
@@ -200,11 +298,54 @@ export function CustomSelect({
                     </div>
                 )}
                 <SelectPrimitive.Trigger
-                    id={id}
-                    aria-invalid={hasError}
+                    ref={setTriggerRef}
+                    id={triggerId}
+                    disabled={disabled}
+                    {...ariaProps}
+                    aria-invalid={
+                        hasError || ariaProps['aria-invalid'] || undefined
+                    }
+                    aria-required={
+                        disabled
+                            ? undefined
+                            : externalError === undefined
+                              ? required ||
+                                ariaProps['aria-required'] ||
+                                undefined
+                              : ariaProps['aria-required']
+                    }
+                    aria-label={ariaLabel}
+                    aria-labelledby={labelledBy}
+                    aria-describedby={describedBy}
+                    aria-errormessage={
+                        hasError ? errorId : ariaProps['aria-errormessage']
+                    }
+                    aria-readonly={
+                        readOnly || ariaProps['aria-readonly'] || undefined
+                    }
+                    aria-disabled={
+                        disabled || ariaProps['aria-disabled'] || undefined
+                    }
+                    onPointerDown={(event) => {
+                        if (readOnly) {
+                            event.preventDefault()
+                            event.currentTarget.focus()
+                        }
+                    }}
+                    onKeyDown={(event) => {
+                        if (
+                            readOnly &&
+                            (event.key === 'Enter' ||
+                                event.key === ' ' ||
+                                event.key === 'ArrowDown' ||
+                                event.key === 'ArrowUp')
+                        ) {
+                            event.preventDefault()
+                        }
+                    }}
                     className={`bg-input-dark border text-[11px] text-gray-300 rounded-lg ${
                         hasLeftIcon ? 'pl-8' : 'pl-3'
-                    } pr-8 py-2 outline-none w-full uppercase font-bold tracking-wider cursor-pointer flex items-center justify-between transition-colors min-w-45 ${
+                    } pr-8 py-2 outline-none w-full uppercase font-bold tracking-wider cursor-pointer flex items-center justify-between transition-colors min-w-45 disabled:cursor-not-allowed disabled:opacity-50 ${
                         hasError
                             ? 'border-red-500 focus:ring-2 focus:ring-red-500/50 data-[state=open]:border-red-500'
                             : 'border-border-dark focus:border-primary data-[state=open]:border-primary'
@@ -234,6 +375,18 @@ export function CustomSelect({
                     </SelectPrimitive.Icon>
                 </SelectPrimitive.Trigger>
             </div>
+
+            {description !== undefined && description !== null && (
+                <div id={descriptionId} className="mt-1 text-xs text-gray-400">
+                    {description}
+                </div>
+            )}
+
+            {hasError && (
+                <span id={errorId} className="sr-only">
+                    {resolvedError}
+                </span>
+            )}
 
             <SelectPrimitive.Portal>
                 <SelectPrimitive.Content

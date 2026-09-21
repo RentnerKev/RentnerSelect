@@ -1,5 +1,13 @@
 import { describe, expect, test } from 'bun:test'
-import { resolveSelectMessages, selectMessageCatalog } from '../index.js'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import {
+    CustomSelect,
+    resolveSelectMessages,
+    selectMessageCatalog,
+} from '../index.js'
+
+const options = [{ value: 'one', label: 'One' }]
 
 describe('select locale messages', () => {
     test('keeps German defaults', () => {
@@ -37,5 +45,91 @@ describe('select locale messages', () => {
         expect(messages.minSelection(3)).toBe('Choose 3 or more')
         expect(messages.searchOptions).toBe('Search options')
         expect(messages.noResults).toBe('No results')
+    })
+
+    test('renders the shared field contract and external error', () => {
+        const markup = renderToStaticMarkup(
+            createElement(CustomSelect, {
+                id: 'department',
+                name: 'department',
+                value: '',
+                onValueChange: () => undefined,
+                options,
+                required: true,
+                label: 'Department',
+                description: 'Choose one department',
+                error: 'Department is required',
+                'aria-label': 'Department select',
+                'aria-labelledby': 'external-label department-label',
+                'aria-describedby': 'external-help department-description',
+                'aria-controls': 'department-options',
+                'aria-keyshortcuts': 'Alt+ArrowDown',
+            }),
+        )
+
+        expect(markup).toContain('id="department-label"')
+        expect(markup).toContain('for="department"')
+        expect(markup).toContain('id="department-description"')
+        expect(markup).toContain('Department is required')
+        expect(markup).toContain('aria-invalid="true"')
+        expect(markup).toContain(
+            'aria-describedby="external-help department-description department-error"',
+        )
+        expect(markup).toContain(
+            'aria-labelledby="external-label department-label"',
+        )
+        expect(markup).toContain('aria-errormessage="department-error"')
+        expect(markup).toContain('aria-label="Department select"')
+        expect(markup).toContain('aria-controls="department-options"')
+        expect(markup).toContain('aria-keyshortcuts="Alt+ArrowDown"')
+
+        const requiredMarkup = renderToStaticMarkup(
+            createElement(CustomSelect, {
+                value: '',
+                onValueChange: () => undefined,
+                options,
+                required: true,
+            }),
+        )
+
+        expect(requiredMarkup).toContain('aria-required="true"')
+    })
+
+    test('error null clears required validation and generated error state', () => {
+        const markup = renderToStaticMarkup(
+            createElement(CustomSelect, {
+                value: '',
+                onValueChange: () => undefined,
+                options,
+                required: true,
+                error: null,
+            }),
+        )
+
+        expect(markup).not.toContain('required=""')
+        expect(markup).not.toContain('aria-required="true"')
+        expect(markup).not.toContain('aria-invalid="true"')
+        expect(markup).not.toContain('aria-errormessage=')
+    })
+
+    test('disables the hidden input and visible trigger', () => {
+        const markup = renderToStaticMarkup(
+            createElement(CustomSelect, {
+                value: '',
+                onValueChange: () => undefined,
+                options,
+                required: true,
+                disabled: true,
+                readOnly: true,
+                error: 'Server error',
+            }),
+        )
+
+        expect(markup).toContain('disabled=""')
+        expect(markup).toContain('aria-disabled="true"')
+        expect(markup).toContain('aria-readonly="true"')
+        expect(markup).toContain('aria-invalid="true"')
+        expect(markup).toContain('aria-errormessage=')
+        expect(markup).toContain('readOnly=""')
     })
 })

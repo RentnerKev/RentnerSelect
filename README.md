@@ -136,23 +136,35 @@ function RequiredSelectForm() {
 
 Die Komponente nimmt folgende Parameter entgegen:
 
-| Parameter        | Typ                       | Beschreibung                                                             |
-| ---------------- | ------------------------- | ------------------------------------------------------------------------ |
-| `id`             | `string`                  | (Optional) ID für den sichtbaren Trigger, nützlich für Labels.           |
-| `name`           | `string`                  | (Optional) Name für Formular-Submit und native Validierung.              |
-| `value`          | `string`                  | Der aktuell ausgewählte Wert.                                            |
-| `onValueChange`  | `(value: string) => void` | Callback-Funktion, die bei Änderung aufgerufen wird.                     |
-| `options`        | `Option[]`                | Ein Array von Optionen (siehe unten).                                    |
-| `required`       | `boolean`                 | (Optional) Aktiviert Pflichtfeld-Validierung. Default ist `false`.       |
-| `className`      | `string`                  | (Optional) Überträgt classes an die Select-Komponente.                   |
-| `placeholder`    | `string`                  | (Optional) Text, der angezeigt wird, wenn nichts ausgewählt ist.         |
-| `icon`           | `React.ReactNode`         | (Optional) Ein Icon, das links im Select angezeigt wird.                 |
-| `fallbackOption` | `string`                  | (Optional) Text, der angezeigt wird, wenn keine Optionen vorhanden sind. |
-| `multiple`       | `boolean`                 | (Optional) Aktiviert die Mehrfachauswahl. Default ist false.             |
-| `minSelection`   | `number`                  | (Optional) Bestimmt die Mindestanzahl an auszuwählenden Optionen.        |
-| `maxSelection`   | `number`                  | (Optional) Bestimmt die maximale Anzahl an auszuwählenden Optionen.      |
-| `locale`         | `'de' \| 'en'`            | (Optional) Sprache der Standardtexte, standardmäßig `'de'`.              |
-| `messages`       | `Partial<SelectMessages>` | (Optional) Überschreibt einzelne Standard- und ARIA-Texte.               |
+| Parameter          | Typ                       | Beschreibung                                                               |
+| ------------------ | ------------------------- | -------------------------------------------------------------------------- |
+| `id`               | `string`                  | (Optional) ID für den sichtbaren Trigger, nützlich für Labels.             |
+| `name`             | `string`                  | (Optional) Name für Formular-Submit und native Validierung.                |
+| `value`            | `string`                  | Der aktuell ausgewählte Wert.                                              |
+| `onValueChange`    | `(value: string) => void` | Callback-Funktion, die bei Änderung aufgerufen wird.                       |
+| `options`          | `Option[]`                | Ein Array von Optionen (siehe unten).                                      |
+| `required`         | `boolean`                 | (Optional) Aktiviert Pflichtfeld-Validierung. Default ist `false`.         |
+| `label`            | `ReactNode`               | (Optional) Sichtbare Beschriftung mit stabiler Zuordnung zum Trigger.      |
+| `description`      | `ReactNode`               | (Optional) Zusatzbeschreibung, die per `aria-describedby` verknüpft wird.  |
+| `error`            | `string \| null`          | (Optional) Externer Fehler; `null` löscht interne und native Validierung.  |
+| `disabled`         | `boolean`                 | (Optional) Deaktiviert Trigger, Auswahl und Formularvalidierung.           |
+| `readOnly`         | `boolean`                 | (Optional) Verhindert Öffnen und Änderungen, behält aber den Formularwert. |
+| `className`        | `string`                  | (Optional) Überträgt classes an die Select-Komponente.                     |
+| `placeholder`      | `string`                  | (Optional) Text, der angezeigt wird, wenn nichts ausgewählt ist.           |
+| `icon`             | `React.ReactNode`         | (Optional) Ein Icon, das links im Select angezeigt wird.                   |
+| `fallbackOption`   | `string`                  | (Optional) Text, der angezeigt wird, wenn keine Optionen vorhanden sind.   |
+| `multiple`         | `boolean`                 | (Optional) Aktiviert die Mehrfachauswahl. Default ist false.               |
+| `minSelection`     | `number`                  | (Optional) Bestimmt die Mindestanzahl an auszuwählenden Optionen.          |
+| `maxSelection`     | `number`                  | (Optional) Bestimmt die maximale Anzahl an auszuwählenden Optionen.        |
+| `locale`           | `'de' \| 'en'`            | (Optional) Sprache der Standardtexte, standardmäßig `'de'`.                |
+| `messages`         | `Partial<SelectMessages>` | (Optional) Überschreibt einzelne Standard- und ARIA-Texte.                 |
+| `aria-label`       | `string`                  | (Optional) Eigene zugängliche Beschriftung des sichtbaren Triggers.        |
+| `aria-labelledby`  | `string`                  | (Optional) Externe ID(s) für die zugängliche Beschriftung.                 |
+| `aria-describedby` | `string`                  | (Optional) Externe ID(s), zusätzlich zu Beschreibung und Fehlertext.       |
+| `triggerRef`       | `Ref<HTMLButtonElement>`  | (Optional) Ref auf den sichtbaren, fokussierbaren Trigger.                 |
+
+Weitere React-`aria-*`-Attribute werden direkt an den sichtbaren Trigger
+weitergegeben.
 
 ### Option
 
