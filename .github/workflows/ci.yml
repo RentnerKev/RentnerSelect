@@ -1,0 +1,42 @@
+name: CI
+
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+
+permissions:
+    contents: read
+
+jobs:
+    quality:
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+              with:
+                  persist-credentials: false
+
+            - name: Set up Bun
+              uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: 1.4.2
+
+            - name: Install library dependencies
+              run: bun install --frozen-lockfile
+
+            - name: Verify library
+              run: bun run verify
+
+            - name: Install playground dependencies
+              working-directory: playground
+              run: bun install --frozen-lockfile
+
+            - name: Build playground
+              working-directory: playground
+              run: bun run build

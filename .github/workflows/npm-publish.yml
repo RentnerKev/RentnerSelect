@@ -1,0 +1,81 @@
+name: Publish npm package
+
+on:
+    release:
+        types:
+            - published
+
+permissions:
+    contents: read
+    id-token: write
+
+jobs:
+    publish:
+        name: Publish @rentnerkev/select
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+
+        steps:
+            - name: Validate release tag
+              id: release
+              shell: bash
+              env:
+                  RELEASE_TAG: ${{ github.event.release.tag_name }}
+              run: |
+                  set -euo pipefail
+
+                  if [[ ! "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+                    echo "::error title=Invalid release tag::Release tag must match vMAJOR.MINOR.PATCH: $RELEASE_TAG"
+                    exit 1
+                  fi
+
+                  echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+                  echo "version=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
+
+            - name: Checkout release tag
+              uses: actions/checkout@v7
+              with:
+                  ref: ${{ steps.release.outputs.tag }}
+                  fetch-depth: 1
+                  persist-credentials: false
+
+            - name: Set up Bun
+              uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: 1.4.2
+
+            - name: Set up Node.js and npm registry
+              uses: actions/setup-node@v7
+              with:
+                  node-version: 24
+                  registry-url: https://registry.npmjs.org
+                  package-manager-cache: false
+
+            - name: Install dependencies
+              run: bun install --frozen-lockfile
+
+            - name: Verify package name
+              shell: bash
+              run: |
+                  set -euo pipefail
+
+                  PACKAGE_NAME="$(node -p "require('./package.json').name")"
+
+                  if [[ "$PACKAGE_NAME" != "@rentnerkev/select" ]]; then
+                    echo "::error title=Invalid package name::Expected @rentnerkev/select, received '$PACKAGE_NAME'"
+                    exit 1
+                  fi
+
+            - name: Set package version from release tag
+              env:
+                  PACKAGE_VERSION: ${{ steps.release.outputs.version }}
+              run: npm version "$PACKAGE_VERSION" --no-git-tag-version --ignore-scripts
+
+            - name: Verify package
+              run: bun run verify
+
+            - name: Inspect npm package
+              run: npm pack --dry-run --ignore-scripts
+
+            - name: Publish to npm with trusted publishing
+              run: npm publish --access public

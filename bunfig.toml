@@ -1,0 +1,8 @@
+[install]
+minimumReleaseAge = 86400
+minimumReleaseAgeExcludes = ["@rentnerkev/select"]
+linker = "isolated"
+globalStore = false
+[test]
+root = "src/test"
+pathIgnorePatterns = ["**/*.db.test.ts"]
