@@ -41,8 +41,8 @@
         "registry": "https://registry.npmjs.org"
     },
     "peerDependencies": {
-        "react": "^19.2.8",
-        "react-dom": "^19.2.8"
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0"
     },
     "devDependencies": {
         "@happy-dom/global-registrator": "^20.14.5",
@@ -72,10 +72,19 @@
             "import": "./dist/Select.js",
             "types": "./dist/Select.d.ts"
         },
+        "./value": {
+            "import": "./dist/selectValue.js",
+            "types": "./dist/selectValue.d.ts"
+        },
+        "./messages": {
+            "import": "./dist/i18n.js",
+            "types": "./dist/i18n.d.ts"
+        },
         "./types": {
             "import": "./dist/types.js",
             "types": "./dist/types.d.ts"
-        }
+        },
+        "./package.json": "./package.json"
     },
     "packageManager": "bun@1.4.2"
 }
