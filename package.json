@@ -8,9 +8,12 @@
     "types": "dist/index.d.ts",
     "type": "module",
     "files": [
-        "dist"
+        "dist",
+        "tailwind.css"
     ],
-    "sideEffects": false,
+    "sideEffects": [
+        "./tailwind.css"
+    ],
     "scripts": {
         "build": "bun -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true })\" && tsc",
         "typecheck": "tsc --noEmit && tsc --project tsconfig.type-tests.json",
@@ -64,6 +67,7 @@
             "import": "./dist/index.js",
             "types": "./dist/index.d.ts"
         },
+        "./tailwind.css": "./tailwind.css",
         "./select": {
             "import": "./dist/Select.js",
             "types": "./dist/Select.d.ts"
