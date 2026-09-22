@@ -80,7 +80,9 @@ export default function useSelectLogic<TValue>({
         [options],
     )
     const filteredOptions = useMemo(() => {
-        const normalizedSearch = searchValue.trim().toLowerCase()
+        const normalizedSearch = (searchable ? searchValue : '')
+            .trim()
+            .toLowerCase()
 
         if (!normalizedSearch) return optionEntries
 
@@ -95,7 +97,7 @@ export default function useSelectLogic<TValue>({
                 subOption.includes(normalizedSearch)
             )
         })
-    }, [optionEntries, searchValue])
+    }, [optionEntries, searchValue, searchable])
     const selectedEntries = useMemo(
         () =>
             optionEntries.filter(({ option }) =>
@@ -162,10 +164,6 @@ export default function useSelectLogic<TValue>({
     useEffect(() => {
         if (open) focusSearchInput()
     }, [focusSearchInput, open])
-
-    useEffect(() => {
-        if (!searchable) setSearchValue('')
-    }, [searchable])
 
     if (previousInteractionDisabled !== interactionDisabled) {
         setPreviousInteractionDisabled(interactionDisabled)

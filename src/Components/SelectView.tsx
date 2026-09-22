@@ -412,7 +412,7 @@ export default function SelectView<TValue>({
                                 <div
                                     className={`relative flex w-full select-none items-center rounded-lg py-2 pl-9 pr-3 text-sm text-select-muted ${classNames.empty || ''}`}
                                 >
-                                    {searchValue.trim()
+                                    {searchable && searchValue.trim()
                                         ? resolvedMessages.noResults
                                         : fallbackOption ||
                                           resolvedMessages.noOptions}
