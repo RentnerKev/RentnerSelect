@@ -154,7 +154,7 @@ export function DepartmentForm() {
 
 ## Localization
 
-German messages remain the default for backward compatibility. Set `locale="en"` for the complete English catalog, or override individual messages with a typed `Partial<SelectMessages>`. The catalog and resolver are available as `selectMessageCatalog` and `resolveSelectMessages`.
+German messages remain the default for backward compatibility. Set `locale` to `de`, `en`, `es`, or `fr`, or override individual messages with a typed `Partial<SelectMessages>`. The catalog and resolver are available as `selectMessageCatalog` and `resolveSelectMessages`.
 
 ```tsx
 import { CustomSelect, type SelectMessages } from '@rentnerkev/select'
@@ -181,38 +181,90 @@ export function LocalizedSelect() {
 }
 ```
 
+## Project-wide defaults
+
+Use `SelectProvider` once near the root of your app to set locale, messages, search behavior, styling slots, and a CSP nonce. Any prop passed to an individual select overrides the corresponding provider default; `messages` and `classNames` are merged by key.
+
+```tsx
+import { CustomSelect, SelectProvider } from '@rentnerkev/select'
+
+export function App({ cspNonce }: { cspNonce?: string }) {
+    return (
+        <SelectProvider
+            locale="en"
+            searchable={false}
+            nonce={cspNonce}
+            classNames={{ trigger: 'w-full', content: 'shadow-xl' }}
+        >
+            <CustomSelect
+                value=""
+                onValueChange={() => undefined}
+                options={[{ value: 'one', label: 'One' }]}
+                placeholder="Choose"
+            />
+        </SelectProvider>
+    )
+}
+```
+
+The nonce is forwarded to Radix's viewport style tag. The package CSS also contains the viewport scrollbar rules, so the scrollbar remains styled under strict CSP. Search is enabled by default for compatibility; set `searchable={false}` globally or per select for short menus.
+
+## Custom option content
+
+`renderOption` and `renderValue` allow icons, flags, or project-specific layouts without replacing the select's interaction logic. Keep decorative content `aria-hidden`; the plain `label` remains the searchable, accessible text. Individual options can be disabled.
+
+```tsx
+<CustomSelect
+    value={language}
+    onValueChange={setLanguage}
+    options={[
+        { value: 'de', label: 'Deutsch' },
+        { value: 'en', label: 'English', disabled: true },
+    ]}
+    renderOption={(option) => <span>{option.label}</span>}
+    renderValue={(selected) => <span>{selected[0]?.label}</span>}
+    onBlur={handleBlur}
+/>
+```
+
 ## API
 
 ### `CustomSelect` props
 
-| Prop                   | Type                                                     | Description                                                            |
-| ---------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `id`                   | `string`                                                 | ID for the visible trigger and associated labels.                      |
-| `name`                 | `string`                                                 | Native form field name.                                                |
-| `value`                | `TValue \| null \| undefined` or `ReadonlyArray<TValue>` | Controlled single or multiple value.                                   |
-| `onValueChange`        | `(value: TValue) => void` or `(value: TValue[]) => void` | Typed callback for the selected mode.                                  |
-| `options`              | `ReadonlyArray<Option<TValue>>`                          | Available options.                                                     |
-| `required`             | `boolean`                                                | Enables required-field validation. Defaults to `false`.                |
-| `label`                | `ReactNode`                                              | Visible label linked to the trigger.                                   |
-| `description`          | `ReactNode`                                              | Supporting text linked through `aria-describedby`.                     |
-| `error`                | `string \| null`                                         | External validation message; `null` clears external and native errors. |
-| `disabled`             | `boolean`                                                | Disables interaction and validation.                                   |
-| `readOnly`             | `boolean`                                                | Prevents changes while retaining the form value.                       |
-| `className`            | `string`                                                 | Additional Tailwind classes for the visible trigger.                   |
-| `placeholder`          | `string`                                                 | Text shown while no value is selected.                                 |
-| `icon`                 | `ReactNode`                                              | Icon rendered at the start of the trigger.                             |
-| `fallbackOption`       | `string`                                                 | Message shown when no options are available.                           |
-| `multiple`             | `true`                                                   | Enables array-based multiple selection.                                |
-| `minSelection`         | `number`                                                 | Minimum number of selected options.                                    |
-| `maxSelection`         | `number`                                                 | Maximum number of selected options.                                    |
-| `isOptionEqualToValue` | `(optionValue, value) => boolean`                        | Compares option and selected values.                                   |
-| `getFormValue`         | `(value: TValue) => string`                              | Serializes a value for native form submission.                         |
-| `locale`               | `'de' \| 'en'`                                           | Selects the default message catalog. Defaults to `'de'`.               |
-| `messages`             | `Partial<SelectMessages>`                                | Overrides individual messages and ARIA text.                           |
-| `aria-label`           | `string`                                                 | Accessible name for the visible trigger.                               |
-| `aria-labelledby`      | `string`                                                 | External accessible-label IDs.                                         |
-| `aria-describedby`     | `string`                                                 | External description IDs combined with internal text.                  |
-| `triggerRef`           | `Ref<HTMLButtonElement>`                                 | Ref for the visible, focusable trigger.                                |
+| Prop                   | Type                                                     | Description                                                                                        |
+| ---------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `id`                   | `string`                                                 | ID for the visible trigger and associated labels.                                                  |
+| `name`                 | `string`                                                 | Native form field name.                                                                            |
+| `value`                | `TValue \| null \| undefined` or `ReadonlyArray<TValue>` | Controlled single or multiple value.                                                               |
+| `onValueChange`        | `(value: TValue) => void` or `(value: TValue[]) => void` | Typed callback for the selected mode.                                                              |
+| `options`              | `ReadonlyArray<Option<TValue>>`                          | Available options.                                                                                 |
+| `required`             | `boolean`                                                | Enables required-field validation. Defaults to `false`.                                            |
+| `label`                | `ReactNode`                                              | Visible label linked to the trigger.                                                               |
+| `description`          | `ReactNode`                                              | Supporting text linked through `aria-describedby`.                                                 |
+| `error`                | `string \| null`                                         | External validation message; `null` clears external and native errors.                             |
+| `disabled`             | `boolean`                                                | Disables interaction and validation.                                                               |
+| `readOnly`             | `boolean`                                                | Prevents changes while retaining the form value.                                                   |
+| `className`            | `string`                                                 | Additional Tailwind classes for the visible trigger.                                               |
+| `classNames`           | `SelectClassNames`                                       | Classes for root, trigger, content, search, viewport, option, empty state, label, and description. |
+| `searchable`           | `boolean`                                                | Show the search field. Defaults to `true`.                                                         |
+| `nonce`                | `string`                                                 | CSP nonce for Radix's generated viewport style.                                                    |
+| `onBlur`               | `FocusEventHandler<HTMLButtonElement>`                   | Blur handler on the visible trigger.                                                               |
+| `renderOption`         | `(option, state) => ReactNode`                           | Custom content for each menu item; `state` includes selected/disabled.                             |
+| `renderValue`          | `(selectedOptions) => ReactNode`                         | Custom content for the closed trigger.                                                             |
+| `placeholder`          | `string`                                                 | Text shown while no value is selected.                                                             |
+| `icon`                 | `ReactNode`                                              | Icon rendered at the start of the trigger.                                                         |
+| `fallbackOption`       | `string`                                                 | Message shown when no options are available.                                                       |
+| `multiple`             | `true`                                                   | Enables array-based multiple selection.                                                            |
+| `minSelection`         | `number`                                                 | Minimum number of selected options.                                                                |
+| `maxSelection`         | `number`                                                 | Maximum number of selected options.                                                                |
+| `isOptionEqualToValue` | `(optionValue, value) => boolean`                        | Compares option and selected values.                                                               |
+| `getFormValue`         | `(value: TValue) => string`                              | Serializes a value for native form submission.                                                     |
+| `locale`               | `'de' \| 'en' \| 'es' \| 'fr'`                           | Selects the default message catalog. Defaults to `'de'`.                                           |
+| `messages`             | `Partial<SelectMessages>`                                | Overrides individual messages and ARIA text.                                                       |
+| `aria-label`           | `string`                                                 | Accessible name for the visible trigger.                                                           |
+| `aria-labelledby`      | `string`                                                 | External accessible-label IDs.                                                                     |
+| `aria-describedby`     | `string`                                                 | External description IDs combined with internal text.                                              |
+| `triggerRef`           | `Ref<HTMLButtonElement>`                                 | Ref for the visible, focusable trigger.                                                            |
 
 Additional React `aria-*` attributes are forwarded to the visible trigger.
 
@@ -223,6 +275,7 @@ interface Option<TValue = string> {
     value: TValue
     label: string
     subOption?: string
+    disabled?: boolean
 }
 ```
 
@@ -237,7 +290,20 @@ Import the package entry after Tailwind CSS in your application stylesheet:
 @import '@rentnerkev/select/tailwind.css';
 ```
 
-The package entry scans only the published JavaScript under `dist` and provides the shared theme tokens `primary`, `primary-hover`, `background-dark`, `surface-dark`, `input-dark`, `border-dark`, `secondary-text`, and `muted-foreground`. Override them with a later `@theme` block when needed.
+The package entry scans only the published JavaScript under `dist`. Select styling uses `--color-select-control`, `--color-select-surface`, `--color-select-hover`, `--color-select-border`, `--color-select-border-strong`, `--color-select-foreground`, `--color-select-muted`, and `--color-select-accent`. Override these tokens with a later `@theme inline` block to map them to your app's light/dark tokens. The older shared theme tokens remain available for compatibility.
+
+```css
+@theme inline {
+    --color-select-control: var(--app-input);
+    --color-select-surface: var(--app-panel);
+    --color-select-hover: var(--app-hover);
+    --color-select-border: var(--app-border);
+    --color-select-border-strong: var(--app-border-strong);
+    --color-select-foreground: var(--app-text);
+    --color-select-muted: var(--app-muted);
+    --color-select-accent: var(--app-accent);
+}
+```
 
 ## Public entry points
 

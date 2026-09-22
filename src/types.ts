@@ -1,10 +1,28 @@
-import type { AriaAttributes, ReactNode, Ref } from 'react'
+import type { AriaAttributes, FocusEventHandler, ReactNode, Ref } from 'react'
 import type { SelectLocale, SelectMessages } from './i18n.js'
 
 export interface Option<TValue = string> {
     value: TValue
     label: string
     subOption?: string
+    disabled?: boolean
+}
+
+export interface SelectClassNames {
+    root?: string
+    trigger?: string
+    content?: string
+    search?: string
+    viewport?: string
+    option?: string
+    empty?: string
+    label?: string
+    description?: string
+}
+
+export interface SelectOptionState {
+    selected: boolean
+    disabled: boolean
 }
 
 interface SharedCustomSelectProps<TValue> extends AriaAttributes {
@@ -18,9 +36,18 @@ interface SharedCustomSelectProps<TValue> extends AriaAttributes {
     disabled?: boolean
     readOnly?: boolean
     triggerRef?: Ref<HTMLButtonElement>
+    onBlur?: FocusEventHandler<HTMLButtonElement>
     icon?: ReactNode
     placeholder?: string
     className?: string
+    classNames?: SelectClassNames
+    searchable?: boolean
+    nonce?: string
+    renderOption?: (
+        option: Option<TValue>,
+        state: SelectOptionState,
+    ) => ReactNode
+    renderValue?: (options: ReadonlyArray<Option<TValue>>) => ReactNode
     fallbackOption?: string
     minSelection?: number
     maxSelection?: number

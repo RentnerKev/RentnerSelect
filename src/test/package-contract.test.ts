@@ -15,7 +15,7 @@ const readme = readFileSync(new URL('../../README.md', import.meta.url), 'utf8')
 
 describe('published package contract', () => {
     test('keeps the shared React and test contracts', () => {
-        expect(packageJson.version).toBe('3.0.0')
+        expect(packageJson.version).toBe('3.1.0')
         expect(packageJson.peerDependencies.react).toBe('^19.0.0')
         expect(packageJson.peerDependencies['react-dom']).toBe('^19.0.0')
         expect(packageJson.scripts.test).toBe('bun test')

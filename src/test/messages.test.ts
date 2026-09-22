@@ -35,6 +35,13 @@ describe('select locale messages', () => {
         expect(messages.noOptions).toBe('No options')
     })
 
+    test('provides complete Spanish and French defaults', () => {
+        expect(resolveSelectMessages('es')).toEqual(selectMessageCatalog.es)
+        expect(resolveSelectMessages('fr')).toEqual(selectMessageCatalog.fr)
+        expect(resolveSelectMessages('es').searchPlaceholder).toBe('Buscar…')
+        expect(resolveSelectMessages('fr').noResults).toBe('Aucun résultat')
+    })
+
     test('merges partial overrides without losing locale defaults', () => {
         const messages = resolveSelectMessages('en', {
             searchPlaceholder: 'Find an option',

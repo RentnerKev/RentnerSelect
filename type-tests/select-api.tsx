@@ -1,5 +1,5 @@
 import { createElement } from 'react'
-import { CustomSelect } from '../src/index.js'
+import { CustomSelect, SelectProvider } from '../src/index.js'
 import type { Option } from '../src/index.js'
 
 const statuses = ['todo', 'done'] as const
@@ -80,3 +80,28 @@ export const createElementSingle = createElement(CustomSelect<number>, {
     onValueChange: (_value: number) => undefined,
     options: [{ value: 0, label: 'Zero' }],
 })
+
+export function CustomizedSelect({ value }: { value: Status }) {
+    return (
+        <SelectProvider
+            locale="fr"
+            searchable={false}
+            classNames={{ trigger: 'h-12' }}
+        >
+            <CustomSelect
+                value={value}
+                onValueChange={(nextValue) => {
+                    const typedValue: Status = nextValue
+                    void typedValue
+                }}
+                options={statusOptions}
+                renderOption={(option, state) => {
+                    const typedOption: Status = option.value
+                    return `${typedOption}: ${state.selected}`
+                }}
+                renderValue={(selected) => selected[0]?.label}
+                onBlur={(event) => event.currentTarget.focus()}
+            />
+        </SelectProvider>
+    )
+}

@@ -25,6 +25,7 @@ export interface UseSelectLogicOptions<TValue> {
     externalError?: string | null
     disabled?: boolean
     readOnly?: boolean
+    searchable?: boolean
     triggerRef?: Ref<HTMLButtonElement>
     minSelection?: number
     maxSelection?: number
@@ -43,6 +44,7 @@ export default function useSelectLogic<TValue>({
     externalError,
     disabled = false,
     readOnly = false,
+    searchable = true,
     triggerRef,
     minSelection,
     maxSelection,
@@ -152,13 +154,18 @@ export default function useSelectLogic<TValue>({
     )
 
     const focusSearchInput = useCallback(() => {
+        if (!searchable) return
         requestAnimationFrame(() => searchInputRef.current?.focus())
         window.setTimeout(() => searchInputRef.current?.focus(), 0)
-    }, [])
+    }, [searchable])
 
     useEffect(() => {
         if (open) focusSearchInput()
     }, [focusSearchInput, open])
+
+    useEffect(() => {
+        if (!searchable) setSearchValue('')
+    }, [searchable])
 
     if (previousInteractionDisabled !== interactionDisabled) {
         setPreviousInteractionDisabled(interactionDisabled)
@@ -219,6 +226,7 @@ export default function useSelectLogic<TValue>({
     }
 
     function handleContentKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
+        if (!searchable) return
         if (event.target === searchInputRef.current) {
             if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
                 const focusableOptions = Array.from(

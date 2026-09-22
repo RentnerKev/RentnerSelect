@@ -1,4 +1,4 @@
-export type SelectLocale = 'de' | 'en'
+export type SelectLocale = 'de' | 'en' | 'es' | 'fr'
 
 export interface SelectMessages {
     required: string
@@ -30,9 +30,31 @@ const englishMessages: SelectMessages = {
     noOptions: 'No options',
 }
 
+const spanishMessages: SelectMessages = {
+    required: 'Este campo es obligatorio',
+    minSelection: (count) => `Selecciona al menos ${count} opciones`,
+    maxSelection: (count) => `Selecciona como máximo ${count} opciones`,
+    searchOptions: 'Buscar opciones',
+    searchPlaceholder: 'Buscar…',
+    noResults: 'Sin resultados',
+    noOptions: 'No hay opciones',
+}
+
+const frenchMessages: SelectMessages = {
+    required: 'Ce champ est obligatoire',
+    minSelection: (count) => `Sélectionnez au moins ${count} options`,
+    maxSelection: (count) => `Sélectionnez au maximum ${count} options`,
+    searchOptions: 'Rechercher des options',
+    searchPlaceholder: 'Rechercher…',
+    noResults: 'Aucun résultat',
+    noOptions: 'Aucune option',
+}
+
 export const selectMessageCatalog: Record<SelectLocale, SelectMessages> = {
     de: germanMessages,
     en: englishMessages,
+    es: spanishMessages,
+    fr: frenchMessages,
 }
 
 export function resolveSelectMessages(
