@@ -20,6 +20,7 @@
         "test": "bun test",
         "prepare": "bun run build",
         "pack:check": "bun pm pack --dry-run",
+        "playground:install": "bun install --cwd playground --frozen-lockfile",
         "playground:dev": "bun --cwd playground dev",
         "playground:build": "bun --cwd playground build",
         "e2e": "playwright test",
@@ -27,7 +28,7 @@
         "lint:fix": "oxlint --fix .",
         "format": "oxfmt .",
         "format:check": "oxfmt --check .",
-        "verify": "bun run typecheck && bun run lint && bun run format:check && bun run test && bun run build && bun run pack:check && bun run e2e"
+        "verify": "bun run playground:install && bun run typecheck && bun run lint && bun run format:check && bun run test && bun run build && bun run pack:check && bun run e2e"
     },
     "repository": {
         "type": "git",

@@ -36,10 +36,6 @@ jobs:
             - name: Verify library
               run: bun run verify
 
-            - name: Install playground dependencies
-              working-directory: playground
-              run: bun install --frozen-lockfile
-
             - name: Build playground
               working-directory: playground
               run: bun run build
