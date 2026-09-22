@@ -254,12 +254,18 @@ interface Option<TValue = string> {
 
 ## CSS-Integration
 
-Füge die folgenden Zeilen in deine Haupt-CSS-Datei ein, um die Stile zu konfigurieren.
+Importiere den Paket-Einstieg nach Tailwind CSS in deine Haupt-CSS-Datei:
 
 ```css
 @import 'tailwindcss';
-@source "../node_modules/@rentnerkev/select";
+@import '@rentnerkev/select/tailwind.css';
 ```
+
+Der Paket-Einstieg scannt ausschließlich die veröffentlichten JavaScript-Dateien
+unter `dist`. Er stellt die gemeinsamen Theme-Tokens `primary`, `primary-hover`,
+`background-dark`, `surface-dark`, `input-dark`, `border-dark`, `secondary-text`
+und `muted-foreground` bereit. Eigene Werte können danach mit einem weiteren
+`@theme`-Block überschrieben werden.
 
 ## Entwicklung
 
