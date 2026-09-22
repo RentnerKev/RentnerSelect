@@ -1,6 +1,6 @@
 {
     "name": "@rentnerkev/select",
-    "version": "1.0.0",
+    "version": "3.0.0",
     "description": "Accessible, searchable React select with single and multiple selection support.",
     "author": "RentnerKev",
     "license": "MIT",
@@ -22,11 +22,12 @@
         "pack:check": "bun pm pack --dry-run",
         "playground:dev": "bun --cwd playground dev",
         "playground:build": "bun --cwd playground build",
+        "e2e": "playwright test",
         "lint": "oxlint .",
         "lint:fix": "oxlint --fix .",
         "format": "oxfmt .",
         "format:check": "oxfmt --check .",
-        "verify": "bun run typecheck && bun run lint && bun run format:check && bun run test && bun run build && bun run pack:check"
+        "verify": "bun run typecheck && bun run lint && bun run format:check && bun run test && bun run build && bun run pack:check && bun run e2e"
     },
     "repository": {
         "type": "git",
@@ -45,7 +46,9 @@
         "react-dom": "^19.0.0"
     },
     "devDependencies": {
+        "@axe-core/playwright": "^4.13.0",
         "@happy-dom/global-registrator": "^20.14.5",
+        "@playwright/test": "^1.63.0",
         "@testing-library/react": "^16.3.3",
         "@testing-library/user-event": "^14.6.7",
         "@types/react": "^19.3.0",
@@ -59,7 +62,7 @@
     },
     "dependencies": {
         "@radix-ui/react-select": "^2.3.7",
-        "@radix-ui/react-tooltip": "^1.2.16",
+        "@rentnerkev/tooltips": "^2.0.0",
         "lucide-react": "^1.47.0"
     },
     "exports": {

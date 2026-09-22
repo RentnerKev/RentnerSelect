@@ -2,11 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { CustomSelect } from '../index.js'
-import {
-    isSingleValueEmpty,
-    parseLegacyMultipleValue,
-    toggleSelectedValue,
-} from '../selectValue.js'
+import { isSingleValueEmpty, toggleSelectedValue } from '../selectValue.js'
 
 describe('generic select values', () => {
     test('keeps comma-containing values intact in array mode', () => {
@@ -24,11 +20,6 @@ describe('generic select values', () => {
     test('removes values without string coercion and respects the maximum', () => {
         expect(toggleSelectedValue([1, '1'], 1, Object.is)).toEqual(['1'])
         expect(toggleSelectedValue([1], 2, Object.is, 1)).toBeNull()
-    })
-
-    test('preserves the deprecated CSV parser for simple legacy values', () => {
-        expect(parseLegacyMultipleValue('one,two')).toEqual(['one', 'two'])
-        expect(parseLegacyMultipleValue('')).toEqual([])
     })
 
     test('treats only empty single values as empty', () => {
@@ -110,25 +101,6 @@ describe('generic select values', () => {
         expect(markup).toContain('value="north,west"')
         expect(markup).toContain('value="south"')
         expect(markup).toContain('North-West, South')
-    })
-
-    test('keeps legacy multiple form output backward compatible', () => {
-        const markup = renderToStaticMarkup(
-            createElement(CustomSelect, {
-                name: 'legacy-regions',
-                multiple: true,
-                value: 'north,south',
-                onValueChange: () => undefined,
-                options: [
-                    { value: 'north', label: 'North' },
-                    { value: 'south', label: 'South' },
-                ],
-            }),
-        )
-
-        expect(markup.match(/name="legacy-regions"/g)).toHaveLength(1)
-        expect(markup).toContain('value="north,south"')
-        expect(markup).toContain('North, South')
     })
 
     test('normalizes invalid modern multiple input defensively', () => {

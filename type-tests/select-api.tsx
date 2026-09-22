@@ -1,10 +1,6 @@
 import { createElement } from 'react'
 import { CustomSelect } from '../src/index.js'
-import type {
-    CustomSelectProps,
-    LegacyMultipleSelectProps,
-    Option,
-} from '../src/index.js'
+import type { Option } from '../src/index.js'
 
 const statuses = ['todo', 'done'] as const
 type Status = (typeof statuses)[number]
@@ -79,53 +75,8 @@ export function GenericNumberSelect({
     )
 }
 
-export const legacyMultipleProps: LegacyMultipleSelectProps = {
-    multiple: true,
-    value: 'one,two',
-    onValueChange: () => undefined,
-    options: [
-        { value: 'one', label: 'One' },
-        { value: 'two', label: 'Two' },
-    ],
-}
-
 export const createElementSingle = createElement(CustomSelect<number>, {
     value: 0,
     onValueChange: (_value: number) => undefined,
     options: [{ value: 0, label: 'Zero' }],
 })
-
-export const createElementLegacy = createElement(CustomSelect, {
-    multiple: true,
-    value: 'one,two',
-    onValueChange: (_value: string) => undefined,
-    options: legacyMultipleProps.options,
-})
-
-export function DynamicLegacyMultiple({ multiple }: { multiple: boolean }) {
-    return (
-        <CustomSelect
-            multiple={multiple}
-            value="one,two"
-            onValueChange={(_value: string) => undefined}
-            options={legacyMultipleProps.options}
-        />
-    )
-}
-
-type LegacyLeaksIntoNumber =
-    LegacyMultipleSelectProps extends CustomSelectProps<number> ? true : false
-
-export const excludesLegacyStringsFromNumberProps: LegacyLeaksIntoNumber = false
-
-type LegacyLeaksIntoStatus =
-    LegacyMultipleSelectProps extends CustomSelectProps<Status> ? true : false
-
-export const excludesLegacyStringsFromLiteralProps: LegacyLeaksIntoStatus = false
-
-type LegacyLeaksIntoMixedValues =
-    LegacyMultipleSelectProps extends CustomSelectProps<string | number>
-        ? true
-        : false
-
-export const excludesLegacyStringsFromMixedProps: LegacyLeaksIntoMixedValues = false

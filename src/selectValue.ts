@@ -9,10 +9,6 @@ export function isSingleValueEmpty(
     return value === null || value === undefined || value === ''
 }
 
-export function parseLegacyMultipleValue(value: string): Array<string> {
-    return value ? value.split(',') : []
-}
-
 export function toggleSelectedValue<TValue>(
     selectedValues: ReadonlyArray<TValue>,
     nextValue: TValue,

@@ -2,7 +2,6 @@ export { CustomSelect } from './Select.js'
 export { resolveSelectMessages, selectMessageCatalog } from './i18n.js'
 export type {
     CustomSelectProps,
-    LegacyMultipleSelectProps,
     MultipleSelectProps,
     Option,
     SingleSelectProps,

@@ -46,29 +46,8 @@ export interface MultipleSelectProps<
     multiple: true
 }
 
-/**
- * @deprecated Verwende `MultipleSelectProps<TValue>` mit `TValue[]`. Das
- * kommagetrennte Stringformat wird in Version 2.0 entfernt.
- */
-export interface LegacyMultipleSelectProps extends SharedCustomSelectProps<string> {
-    /** @deprecated Übergib ein Array und behandle Änderungen als `string[]`. */
-    value: string
-    /** @deprecated Der Callback erhält mit der Array-API ein `string[]`. */
-    onValueChange: (value: string) => void
-    /**
-     * @deprecated Dynamische Booleans bleiben bis Version 2.0 kompatibel.
-     * Verwende für neue Mehrfachauswahlen `multiple: true` mit einem Array.
-     */
-    multiple: boolean
-}
-
 export type CustomSelectProps<TValue = string> =
     | SingleSelectProps<TValue>
     | MultipleSelectProps<TValue>
-    | ([TValue] extends [string]
-          ? [string] extends [TValue]
-              ? LegacyMultipleSelectProps
-              : never
-          : never)
 
 export type { SelectLocale, SelectMessages } from './i18n.js'

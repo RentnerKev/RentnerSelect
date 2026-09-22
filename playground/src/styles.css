@@ -1,11 +1,15 @@
 @import 'tailwindcss';
 
+html {
+    color-scheme: dark;
+}
+
 @source "../../src/**/*.{ts,tsx}";
 @source "./**/*.{ts,tsx}";
 
 @theme {
-    --color-primary: #3f40ad;
-    --color-primary-hover: #343598;
+    --color-primary: #8586f4;
+    --color-primary-hover: #7778e8;
     --color-background-dark: #0f1014;
     --color-surface-dark: #181a1f;
     --color-input-dark: #22252b;

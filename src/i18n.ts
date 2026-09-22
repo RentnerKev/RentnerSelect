@@ -15,7 +15,7 @@ const germanMessages: SelectMessages = {
     minSelection: (count) => `Mindestens ${count} Optionen auswählen`,
     maxSelection: (count) => `Maximal ${count} Optionen auswählen`,
     searchOptions: 'Optionen suchen',
-    searchPlaceholder: 'Suchen...',
+    searchPlaceholder: 'Suchen…',
     noResults: 'Keine Ergebnisse',
     noOptions: 'Keine Optionen',
 }
@@ -25,7 +25,7 @@ const englishMessages: SelectMessages = {
     minSelection: (count) => `Select at least ${count} options`,
     maxSelection: (count) => `Select at most ${count} options`,
     searchOptions: 'Search options',
-    searchPlaceholder: 'Search...',
+    searchPlaceholder: 'Search…',
     noResults: 'No results',
     noOptions: 'No options',
 }

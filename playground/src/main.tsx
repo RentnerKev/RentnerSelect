@@ -148,7 +148,7 @@ function App() {
                                 {(field) => (
                                     <div className="flex flex-col gap-2">
                                         <label
-                                            className="text-[11px] font-bold uppercase tracking-wider text-gray-500"
+                                            className="text-[11px] font-bold uppercase tracking-wider text-gray-400"
                                             htmlFor={field.name}
                                         >
                                             Name
@@ -183,7 +183,7 @@ function App() {
                                 {(field) => (
                                     <div className="flex flex-col gap-2">
                                         <label
-                                            className="text-[11px] font-bold uppercase tracking-wider text-gray-500"
+                                            className="text-[11px] font-bold uppercase tracking-wider text-gray-400"
                                             htmlFor={field.name}
                                         >
                                             E-Mail
@@ -213,7 +213,7 @@ function App() {
                             {(field) => (
                                 <div className="flex flex-col gap-2">
                                     <label
-                                        className="text-[11px] font-bold uppercase tracking-wider text-gray-500"
+                                        className="text-[11px] font-bold uppercase tracking-wider text-gray-400"
                                         htmlFor={field.name}
                                     >
                                         Kontakt
@@ -248,7 +248,7 @@ function App() {
                             {(field) => (
                                 <div className="flex flex-col gap-2">
                                     <label
-                                        className="text-[11px] font-bold uppercase tracking-wider text-gray-500"
+                                        className="text-[11px] font-bold uppercase tracking-wider text-gray-400"
                                         htmlFor={field.name}
                                     >
                                         Nachricht
@@ -286,12 +286,12 @@ function App() {
                         >
                             {([canSubmit, isSubmitting]) => (
                                 <button
-                                    className="inline-flex h-11 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60 md:w-fit"
+                                    className="inline-flex h-11 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-bold text-[#101419] transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60 md:w-fit"
                                     disabled={!canSubmit || isSubmitting}
                                     type="submit"
                                 >
                                     {isSubmitting
-                                        ? 'Wird gesendet...'
+                                        ? 'Wird gesendet…'
                                         : 'Absenden'}
                                 </button>
                             )}
@@ -299,7 +299,7 @@ function App() {
                     </section>
 
                     <aside className="rounded-lg border border-border-dark bg-surface-dark p-5">
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
                             Submit-Werte
                         </p>
                         <pre className="mt-3 min-h-52 overflow-auto rounded-md border border-border-dark bg-background-dark p-3 text-xs leading-6 text-gray-300">

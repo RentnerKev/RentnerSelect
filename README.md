@@ -114,7 +114,7 @@ export function RegionSelect() {
 
 When `name` is set, each selected array item is submitted under the same field name. Read all values with `new FormData(form).getAll('regions')`.
 
-The legacy combination of `multiple`, a comma-separated string value, and a string callback remains compatible in version 1 but is deprecated. It cannot represent values containing commas unambiguously and will be removed in version 2.
+Multiple selection uses a typed array value and submits one native form entry per selected option. Values containing commas remain unambiguous.
 
 ## Forms and accessibility
 
@@ -241,15 +241,15 @@ The package entry scans only the published JavaScript under `dist` and provides 
 
 ## Public entry points
 
-| Entry point                       | Purpose                                        |
-| --------------------------------- | ---------------------------------------------- |
-| `@rentnerkev/select`              | Component, messages, and public types.         |
-| `@rentnerkev/select/select`       | `CustomSelect` component module.               |
-| `@rentnerkev/select/value`        | Value parsing, comparison, and toggle helpers. |
-| `@rentnerkev/select/messages`     | Locale catalog, resolver, and message types.   |
-| `@rentnerkev/select/types`        | Component and option types.                    |
-| `@rentnerkev/select/tailwind.css` | Tailwind source and shared theme tokens.       |
-| `@rentnerkev/select/package.json` | Package metadata.                              |
+| Entry point                       | Purpose                                      |
+| --------------------------------- | -------------------------------------------- |
+| `@rentnerkev/select`              | Component, messages, and public types.       |
+| `@rentnerkev/select/select`       | `CustomSelect` component module.             |
+| `@rentnerkev/select/value`        | Value comparison and toggle helpers.         |
+| `@rentnerkev/select/messages`     | Locale catalog, resolver, and message types. |
+| `@rentnerkev/select/types`        | Component and option types.                  |
+| `@rentnerkev/select/tailwind.css` | Tailwind source and shared theme tokens.     |
+| `@rentnerkev/select/package.json` | Package metadata.                            |
 
 ## Development
 
