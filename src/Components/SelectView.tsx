@@ -15,6 +15,7 @@ export type SelectViewProps<TValue> = Omit<
     onSelectValue: (value: TValue) => void
     clearable?: boolean
     onClear?: () => void
+    omitEmptyFormValue?: boolean
 }
 
 function mergeAriaIds(...values: Array<string | undefined>) {
@@ -34,6 +35,7 @@ export default function SelectView<TValue>({
     onSelectValue,
     clearable = false,
     onClear,
+    omitEmptyFormValue = false,
     required = false,
     label,
     description,
@@ -150,7 +152,13 @@ export default function SelectView<TValue>({
                 )}
                 <input
                     ref={validationInput}
-                    name={name}
+                    name={
+                        multiple &&
+                        omitEmptyFormValue &&
+                        formEntries.length === 0
+                            ? undefined
+                            : name
+                    }
                     value={formEntries[0]?.value ?? ''}
                     onChange={() => undefined}
                     onInvalid={handleInvalid}
