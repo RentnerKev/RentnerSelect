@@ -58,17 +58,40 @@ interface SharedCustomSelectProps<TValue> extends AriaAttributes {
     getFormValue?: (value: TValue) => string
 }
 
+type SingleSelectPropsBase<TValue> = SharedCustomSelectProps<TValue> & {
+    value: TValue | null | undefined
+    multiple?: false
+}
+
 type ClearableSelectProps =
-    | { clearable: true; onClear: () => void }
+    | { clearable: true; onClear?: () => void }
     | { clearable?: false; onClear?: never }
 
+export type LegacySingleSelectProps<TValue = string> =
+    SingleSelectPropsBase<TValue> & {
+        clearable: true
+        onClear: () => void
+        onValueChange: (value: TValue) => void
+    }
+
+export type DirectClearableSingleSelectProps<TValue = string> =
+    SingleSelectPropsBase<TValue> & {
+        clearable: true
+        onClear?: never
+        onValueChange: (value: TValue | null) => void
+    }
+
+export type DefaultSingleSelectProps<TValue = string> =
+    SingleSelectPropsBase<TValue> & {
+        clearable?: false
+        onClear?: never
+        onValueChange: (value: TValue) => void
+    }
+
 export type SingleSelectProps<TValue = string> =
-    SharedCustomSelectProps<TValue> &
-        ClearableSelectProps & {
-            value: TValue | null | undefined
-            onValueChange: (value: TValue) => void
-            multiple?: false
-        }
+    | LegacySingleSelectProps<TValue>
+    | DirectClearableSingleSelectProps<TValue>
+    | DefaultSingleSelectProps<TValue>
 
 export type MultipleSelectProps<TValue = string> =
     SharedCustomSelectProps<TValue> &

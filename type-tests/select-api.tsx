@@ -47,6 +47,57 @@ export function ClearableSelect({
     )
 }
 
+export function LegacyClearableSelect({
+    value,
+    onChange,
+}: {
+    value: Status
+    onChange: (value: Status) => void
+}) {
+    return (
+        <CustomSelect
+            value={value}
+            onValueChange={onChange}
+            options={statusOptions}
+            clearable
+            onClear={() => undefined}
+        />
+    )
+}
+
+export function InlineClearableSelect({ value }: { value: Status }) {
+    return (
+        <CustomSelect
+            value={value}
+            onValueChange={(nextValue) => {
+                const typedValue: Status = nextValue
+                void typedValue
+            }}
+            options={statusOptions}
+            clearable
+            onClear={() => undefined}
+        />
+    )
+}
+
+export function InlineDirectClearableSelect({
+    value,
+}: {
+    value: Status | null
+}) {
+    return (
+        <CustomSelect
+            value={value}
+            onValueChange={(nextValue) => {
+                const typedValue: Status | null = nextValue
+                void typedValue
+            }}
+            options={statusOptions}
+            clearable
+        />
+    )
+}
+
 type Region = 'north,west' | 'south'
 
 const regionOptions: ReadonlyArray<Option<Region>> = [
