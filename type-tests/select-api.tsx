@@ -98,6 +98,24 @@ export function InlineDirectClearableSelect({
     )
 }
 
+export function StringFieldClearableSelect({
+    value,
+    onChange,
+}: {
+    value: string
+    onChange: (value: string) => void
+}) {
+    return (
+        <CustomSelect
+            value={value}
+            onValueChange={onChange}
+            options={statusOptions}
+            clearable
+            emptyValue=""
+        />
+    )
+}
+
 type Region = 'north,west' | 'south'
 
 const regionOptions: ReadonlyArray<Option<Region>> = [
@@ -169,7 +187,10 @@ export function CustomizedSelect({ value }: { value: Status }) {
                     return `${typedOption}: ${state.selected}`
                 }}
                 renderValue={(selected) => selected[0]?.label}
-                onBlur={(event) => event.currentTarget.focus()}
+                onBlur={(event) => {
+                    const field: HTMLDivElement = event.currentTarget
+                    field.focus()
+                }}
             />
         </SelectProvider>
     )

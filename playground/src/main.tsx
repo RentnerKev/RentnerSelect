@@ -209,7 +209,12 @@ function App() {
                             </form.Field>
                         </div>
 
-                        <form.Field name="department">
+                        <form.Field
+                            name="department"
+                            validators={{
+                                onBlur: requiredValidator('Kontakt'),
+                            }}
+                        >
                             {(field) => (
                                 <div className="flex flex-col gap-2">
                                     <label
@@ -222,11 +227,10 @@ function App() {
                                         id={field.name}
                                         name={field.name}
                                         value={field.state.value}
-                                        onValueChange={(value) =>
-                                            field.handleChange(value)
-                                        }
+                                        onValueChange={field.handleChange}
+                                        onBlur={field.handleBlur}
                                         clearable
-                                        onClear={() => field.handleChange('')}
+                                        emptyValue=""
                                         options={roleOptions}
                                         placeholder="Kontakt auswählen"
                                         required
@@ -236,6 +240,9 @@ function App() {
                                         }
                                         minSelection={2}
                                         maxSelection={3}
+                                    />
+                                    <FieldError
+                                        errors={field.state.meta.errors}
                                     />
                                 </div>
                             )}

@@ -7,7 +7,13 @@ import {
     useRef,
     useState,
 } from 'react'
-import type { InvalidEvent, KeyboardEvent, Ref } from 'react'
+import type {
+    FocusEvent,
+    FocusEventHandler,
+    InvalidEvent,
+    KeyboardEvent,
+    Ref,
+} from 'react'
 import {
     resolveSelectMessages,
     type SelectLocale,
@@ -27,6 +33,7 @@ export interface UseSelectLogicOptions<TValue> {
     readOnly?: boolean
     searchable?: boolean
     triggerRef?: Ref<HTMLButtonElement>
+    onBlur?: FocusEventHandler<HTMLDivElement>
     minSelection?: number
     maxSelection?: number
     locale?: SelectLocale
@@ -47,6 +54,7 @@ export default function useSelectLogic<TValue>({
     readOnly = false,
     searchable = true,
     triggerRef,
+    onBlur,
     minSelection,
     maxSelection,
     locale = 'de',
@@ -63,6 +71,8 @@ export default function useSelectLogic<TValue>({
     const [searchValue, setSearchValue] = useState('')
     const [isTouched, setIsTouched] = useState(false)
     const searchInputRef = useRef<HTMLInputElement>(null)
+    const rootRef = useRef<HTMLDivElement>(null)
+    const contentRef = useRef<HTMLDivElement>(null)
     const validationInputRef = useRef<HTMLInputElement>(null)
     const internalTriggerRef = useRef<HTMLButtonElement>(null)
     const shouldKeepOpen = useRef(false)
@@ -201,6 +211,20 @@ export default function useSelectLogic<TValue>({
         internalTriggerRef.current?.focus()
     }
 
+    function handleFieldBlur(event: FocusEvent<HTMLDivElement>) {
+        const nextTarget = event.relatedTarget
+
+        if (
+            nextTarget instanceof Node &&
+            (rootRef.current?.contains(nextTarget) ||
+                contentRef.current?.contains(nextTarget))
+        ) {
+            return
+        }
+
+        onBlur?.(event)
+    }
+
     function handleValueChange(nextRadixValue: string) {
         if (disabled || readOnly) return
         const entry = optionEntries.find(
@@ -272,6 +296,8 @@ export default function useSelectLogic<TValue>({
 
     return {
         ref: {
+            root: rootRef,
+            content: contentRef,
             trigger: setTriggerRef,
             searchInput: searchInputRef,
             validationInput: validationInputRef,
@@ -294,6 +320,7 @@ export default function useSelectLogic<TValue>({
             isOptionEqualToValue,
         },
         handler: {
+            handleFieldBlur,
             handleInvalid,
             handleValueChange,
             handleClear,

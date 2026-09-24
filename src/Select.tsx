@@ -3,6 +3,7 @@ import SelectView from './Components/SelectView.js'
 import { isSingleValueEmpty, toggleSelectedValue } from './selectValue.js'
 import type {
     CustomSelectProps,
+    ConfiguredClearableSingleSelectProps,
     DefaultSingleSelectProps,
     DirectClearableSingleSelectProps,
     LegacySingleSelectProps,
@@ -24,6 +25,7 @@ function TypedCustomSelect<TValue>({
     onValueChange,
     multiple,
     getFormValue = defaultGetFormValue,
+    emptyValue,
     ...viewProps
 }: TypedCustomSelectProps<TValue>) {
     const isOptionEqualToValue = viewProps.isOptionEqualToValue ?? Object.is
@@ -31,7 +33,8 @@ function TypedCustomSelect<TValue>({
         multiple && Array.isArray(value) ? value : []
     const selectedValues: ReadonlyArray<TValue> = multiple
         ? multipleValues
-        : isSingleValueEmpty(value)
+        : isSingleValueEmpty(value) ||
+            (emptyValue !== undefined && Object.is(value, emptyValue))
           ? []
           : [value]
     const formEntries = selectedValues.map((selectedValue) => {
@@ -81,7 +84,7 @@ function TypedCustomSelect<TValue>({
             const clearSingleValue = onValueChange as (
                 value: TValue | null,
             ) => void
-            clearSingleValue(null)
+            clearSingleValue(emptyValue ?? null)
         }
     }
 
@@ -102,6 +105,9 @@ export function CustomSelect<TValue = string>(
 ): ReactElement
 export function CustomSelect<TValue = string>(
     props: DirectClearableSingleSelectProps<TValue>,
+): ReactElement
+export function CustomSelect<TValue = string>(
+    props: ConfiguredClearableSingleSelectProps<TValue>,
 ): ReactElement
 export function CustomSelect<TValue = string>(
     props: DefaultSingleSelectProps<TValue>,
