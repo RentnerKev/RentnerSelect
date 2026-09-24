@@ -116,11 +116,7 @@ export default function SelectView<TValue>({
     const { shouldKeepOpen } = logic.setter
     const hasLeftIcon = Boolean(icon || hasError)
     const showClear =
-        clearable &&
-        Boolean(onClear) &&
-        selectedValues.length > 0 &&
-        !disabled &&
-        !readOnly
+        clearable && selectedValues.length > 0 && !disabled && !readOnly
     const describedBy = mergeAriaIds(
         ariaDescribedBy,
         description !== undefined && description !== null

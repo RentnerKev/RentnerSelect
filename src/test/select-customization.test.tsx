@@ -48,6 +48,37 @@ describe('project customization', () => {
         expect(onValueChange).toHaveBeenCalledWith('one')
     })
 
+    test('inherits outer provider defaults in nested providers', async () => {
+        const user = userEvent.setup()
+
+        render(
+            <SelectProvider
+                locale="fr"
+                searchable={false}
+                classNames={{
+                    trigger: 'outer-trigger',
+                    option: 'outer-option',
+                }}
+            >
+                <SelectProvider classNames={{ trigger: 'inner-trigger' }}>
+                    <CustomSelect
+                        value=""
+                        onValueChange={() => undefined}
+                        options={[{ value: 'one', label: 'One' }]}
+                    />
+                </SelectProvider>
+            </SelectProvider>,
+        )
+
+        const trigger = screen.getByRole('combobox')
+        expect(trigger.className).toContain('inner-trigger')
+        await user.click(trigger)
+        expect(screen.queryByRole('textbox')).toBeNull()
+        expect(screen.getByRole('option', { name: 'One' }).className).toContain(
+            'outer-option',
+        )
+    })
+
     test('renders option content, respects disabled items, and forwards blur', async () => {
         const user = userEvent.setup()
         const onBlur = mock(() => undefined)
