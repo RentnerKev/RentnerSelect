@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, mock, test } from 'bun:test'
 import { useState } from 'react'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -17,7 +17,6 @@ function ClearableSingleHarness() {
                 value={value}
                 onValueChange={setValue}
                 clearable
-                onClear={() => setValue(null)}
                 options={[{ value: 'north', label: 'North' }]}
             />
         </form>
@@ -32,7 +31,6 @@ function ClearableMultipleHarness({ readOnly = false, disabled = false }) {
             value={value}
             onValueChange={setValue}
             clearable
-            onClear={() => setValue([])}
             options={[
                 { value: 'north', label: 'North' },
                 { value: 'south', label: 'South' },
@@ -67,6 +65,29 @@ describe('select interactions', () => {
             ),
         ).toBe('')
         expect(document.activeElement).toBe(screen.getByRole('combobox'))
+    })
+
+    test('keeps the legacy onClear callback semantics', async () => {
+        const user = userEvent.setup()
+        const onValueChange = mock((_value: string) => undefined)
+        const onClear = mock(() => undefined)
+
+        render(
+            <CustomSelect
+                value="north"
+                onValueChange={onValueChange}
+                clearable
+                onClear={onClear}
+                options={[{ value: 'north', label: 'North' }]}
+            />,
+        )
+
+        await user.click(
+            screen.getByRole('button', { name: 'Auswahl löschen' }),
+        )
+
+        expect(onClear).toHaveBeenCalledTimes(1)
+        expect(onValueChange).not.toHaveBeenCalled()
     })
 
     test('clears multiple values and hides the clear control when read-only or disabled', async () => {
