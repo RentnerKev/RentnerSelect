@@ -2,6 +2,19 @@
 
 An accessible, searchable React select for typed single and multiple selection, native form integration, validation, localization, and Tailwind CSS styling.
 
+## Requirements
+
+Use React 19 with React DOM 19, an ESM-capable build, and Tailwind CSS 4 for
+the documented styling. Import this package's `tailwind.css` entry into your
+Tailwind stylesheet. It uses `@source` for published classes and `@theme` for
+global tokens such as `--color-primary`. Check for token name collisions with
+your app and override them in a later `@theme` block if needed.
+
+In a React Server Components app, import and render the select from a module
+beginning with `'use client'`; define its state and callbacks there. See the
+[Tailwind directives](https://tailwindcss.com/docs/functions-and-directives)
+and [React client boundary](https://react.dev/reference/rsc/use-client) guides.
+
 ## Installation
 
 Install the package with npm:
@@ -115,6 +128,11 @@ export function RegionSelect() {
 When `name` is set, each selected array item is submitted under the same field name. Read all values with `new FormData(form).getAll('regions')`.
 
 Multiple selection uses a typed array value and submits one native form entry per selected option. Values containing commas remain unambiguous.
+
+For compatibility, an empty multiple selection submits one empty entry by
+default. Set `omitEmptyFormValue` to submit no entry instead; then
+`FormData.getAll('regions')` returns `[]`. Native `required` validation still
+works when the empty entry is omitted.
 
 ## Clearing a selection
 
@@ -274,6 +292,7 @@ The nonce is forwarded to Radix's viewport style tag. The package CSS also conta
 | `icon`                 | `ReactNode`                                              | Icon rendered at the start of the trigger.                                                                       |
 | `fallbackOption`       | `string`                                                 | Message shown when no options are available.                                                                     |
 | `multiple`             | `true`                                                   | Enables array-based multiple selection.                                                                          |
+| `omitEmptyFormValue`   | `boolean`                                                | Multiple mode only: omits the form entry for an empty selection. Defaults to `false`.                            |
 | `minSelection`         | `number`                                                 | Minimum number of selected options.                                                                              |
 | `maxSelection`         | `number`                                                 | Maximum number of selected options.                                                                              |
 | `isOptionEqualToValue` | `(optionValue, value) => boolean`                        | Compares option and selected values.                                                                             |

@@ -76,6 +76,7 @@ export type MultipleSelectProps<TValue = string> =
             value: ReadonlyArray<TValue>
             onValueChange: (value: Array<TValue>) => void
             multiple: true
+            omitEmptyFormValue?: boolean
         }
 
 export type CustomSelectProps<TValue = string> =

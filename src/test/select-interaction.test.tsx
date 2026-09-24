@@ -193,6 +193,57 @@ describe('select interactions', () => {
         ])
     })
 
+    test('can omit an empty multiple value without changing the default', () => {
+        const options = [{ value: 'north', label: 'North' }]
+        const { rerender } = render(
+            <form aria-label="region form">
+                <CustomSelect
+                    name="regions"
+                    multiple
+                    value={[]}
+                    onValueChange={() => undefined}
+                    options={options}
+                />
+            </form>,
+        )
+        const form = screen.getByRole('form') as HTMLFormElement
+        expect(new FormData(form).getAll('regions')).toEqual([''])
+
+        rerender(
+            <form aria-label="region form">
+                <CustomSelect
+                    name="regions"
+                    multiple
+                    value={[]}
+                    onValueChange={() => undefined}
+                    options={options}
+                    omitEmptyFormValue
+                    required
+                />
+            </form>,
+        )
+        expect(new FormData(form).getAll('regions')).toEqual([])
+        expect(
+            form.querySelector('input[required]')?.validity.valueMissing,
+        ).toBe(true)
+
+        rerender(
+            <form aria-label="region form">
+                <CustomSelect
+                    name="regions"
+                    multiple
+                    value={['north']}
+                    onValueChange={() => undefined}
+                    options={options}
+                    omitEmptyFormValue
+                    required
+                />
+            </form>,
+        )
+        expect(new FormData(form).getAll('regions')).toEqual(['north'])
+        expect(form.querySelector('input[required]')).toBeNull()
+    })
+
     test('focuses the trigger when required validation fails', () => {
         render(
             <CustomSelect
