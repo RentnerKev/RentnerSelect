@@ -81,6 +81,7 @@ export default function SelectView<TValue>({
         readOnly,
         searchable,
         triggerRef,
+        onBlur,
         minSelection,
         maxSelection,
         locale,
@@ -104,8 +105,9 @@ export default function SelectView<TValue>({
         resolvedError,
         isOptionEqualToValue,
     } = logic.state
-    const { trigger, validationInput, searchInput } = logic.ref
+    const { root, content, trigger, validationInput, searchInput } = logic.ref
     const {
+        handleFieldBlur,
         handleInvalid,
         handleValueChange,
         handleClear,
@@ -136,7 +138,11 @@ export default function SelectView<TValue>({
             value={selectedRadixValue}
             onValueChange={handleValueChange}
         >
-            <div className={`group relative ${classNames.root || ''}`}>
+            <div
+                ref={root}
+                onBlurCapture={handleFieldBlur}
+                className={`group relative ${classNames.root || ''}`}
+            >
                 {label !== undefined && label !== null && (
                     <label
                         id={labelId}
@@ -203,7 +209,6 @@ export default function SelectView<TValue>({
                     ref={trigger}
                     id={triggerId}
                     disabled={disabled}
-                    onBlur={onBlur}
                     {...ariaProps}
                     aria-invalid={
                         hasError || ariaProps['aria-invalid'] || undefined
@@ -323,6 +328,8 @@ export default function SelectView<TValue>({
 
             <SelectPrimitive.Portal>
                 <SelectPrimitive.Content
+                    ref={content}
+                    onBlurCapture={handleFieldBlur}
                     position="popper"
                     sideOffset={4}
                     onKeyDownCapture={handleContentKeyDownCapture}

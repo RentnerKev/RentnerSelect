@@ -65,3 +65,24 @@ test('clears a selection by keyboard without a synthetic option', async ({
     await expect(page.locator('input[name="department"]')).toHaveValue('')
     await expect(combobox).toBeFocused()
 })
+
+test('marks the field touched only after focus leaves the select', async ({
+    page,
+}) => {
+    await page.goto('/')
+    const combobox = page.getByRole('combobox')
+    const error = page.getByText('Kontakt ist erforderlich.')
+
+    await combobox.press('Enter')
+    await expect(
+        page.getByRole('textbox', { name: 'Optionen suchen' }),
+    ).toBeFocused()
+    await expect(error).toHaveCount(0)
+
+    await page.keyboard.press('Escape')
+    await expect(combobox).toBeFocused()
+    await expect(error).toHaveCount(0)
+
+    await page.keyboard.press('Tab')
+    await expect(error).toBeVisible()
+})

@@ -37,7 +37,7 @@ interface SharedCustomSelectProps<TValue> extends AriaAttributes {
     disabled?: boolean
     readOnly?: boolean
     triggerRef?: Ref<HTMLButtonElement>
-    onBlur?: FocusEventHandler<HTMLButtonElement>
+    onBlur?: FocusEventHandler<HTMLDivElement>
     icon?: ReactNode
     placeholder?: string
     className?: string
@@ -71,6 +71,7 @@ export type LegacySingleSelectProps<TValue = string> =
     SingleSelectPropsBase<TValue> & {
         clearable: true
         onClear: () => void
+        emptyValue?: never
         onValueChange: (value: TValue) => void
     }
 
@@ -78,19 +79,30 @@ export type DirectClearableSingleSelectProps<TValue = string> =
     SingleSelectPropsBase<TValue> & {
         clearable: true
         onClear?: never
+        emptyValue?: null
         onValueChange: (value: TValue | null) => void
+    }
+
+export type ConfiguredClearableSingleSelectProps<TValue = string> =
+    SingleSelectPropsBase<TValue> & {
+        clearable: true
+        onClear?: never
+        emptyValue: TValue
+        onValueChange: (value: TValue) => void
     }
 
 export type DefaultSingleSelectProps<TValue = string> =
     SingleSelectPropsBase<TValue> & {
         clearable?: false
         onClear?: never
+        emptyValue?: never
         onValueChange: (value: TValue) => void
     }
 
 export type SingleSelectProps<TValue = string> =
     | LegacySingleSelectProps<TValue>
     | DirectClearableSingleSelectProps<TValue>
+    | ConfiguredClearableSingleSelectProps<TValue>
     | DefaultSingleSelectProps<TValue>
 
 export type MultipleSelectProps<TValue = string> =
@@ -99,6 +111,7 @@ export type MultipleSelectProps<TValue = string> =
             value: ReadonlyArray<TValue>
             onValueChange: (value: Array<TValue>) => void
             multiple: true
+            emptyValue?: never
             omitEmptyFormValue?: boolean
         }
 
