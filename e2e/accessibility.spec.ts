@@ -47,3 +47,21 @@ test('announces required validation and honors reduced motion', async ({
         'none',
     )
 })
+
+test('clears a selection by keyboard without a synthetic option', async ({
+    page,
+}) => {
+    await page.goto('/')
+    const combobox = page.getByRole('combobox')
+    await combobox.click()
+    await page.getByRole('option', { name: /Erika/ }).click()
+
+    const clearButton = page.getByRole('button', { name: 'Auswahl löschen' })
+    await expect(clearButton).toBeVisible()
+    await clearButton.focus()
+    await page.keyboard.press('Enter')
+
+    await expect(clearButton).toHaveCount(0)
+    await expect(page.locator('input[name="department"]')).toHaveValue('')
+    await expect(combobox).toBeFocused()
+})

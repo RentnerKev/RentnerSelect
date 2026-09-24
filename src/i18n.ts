@@ -8,6 +8,7 @@ export interface SelectMessages {
     searchPlaceholder: string
     noResults: string
     noOptions: string
+    clearSelection: string
 }
 
 const germanMessages: SelectMessages = {
@@ -18,6 +19,7 @@ const germanMessages: SelectMessages = {
     searchPlaceholder: 'Suchen…',
     noResults: 'Keine Ergebnisse',
     noOptions: 'Keine Optionen',
+    clearSelection: 'Auswahl löschen',
 }
 
 const englishMessages: SelectMessages = {
@@ -28,6 +30,7 @@ const englishMessages: SelectMessages = {
     searchPlaceholder: 'Search…',
     noResults: 'No results',
     noOptions: 'No options',
+    clearSelection: 'Clear selection',
 }
 
 const spanishMessages: SelectMessages = {
@@ -38,6 +41,7 @@ const spanishMessages: SelectMessages = {
     searchPlaceholder: 'Buscar…',
     noResults: 'Sin resultados',
     noOptions: 'No hay opciones',
+    clearSelection: 'Borrar selección',
 }
 
 const frenchMessages: SelectMessages = {
@@ -48,6 +52,7 @@ const frenchMessages: SelectMessages = {
     searchPlaceholder: 'Rechercher…',
     noResults: 'Aucun résultat',
     noOptions: 'Aucune option',
+    clearSelection: 'Effacer la sélection',
 }
 
 export const selectMessageCatalog: Record<SelectLocale, SelectMessages> = {

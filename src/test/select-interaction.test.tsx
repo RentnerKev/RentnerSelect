@@ -8,7 +8,87 @@ afterEach(() => {
     cleanup()
 })
 
+function ClearableSingleHarness() {
+    const [value, setValue] = useState<string | null>('north')
+    return (
+        <form aria-label="filter form">
+            <CustomSelect
+                name="region"
+                value={value}
+                onValueChange={setValue}
+                clearable
+                onClear={() => setValue(null)}
+                options={[{ value: 'north', label: 'North' }]}
+            />
+        </form>
+    )
+}
+
+function ClearableMultipleHarness({ readOnly = false, disabled = false }) {
+    const [value, setValue] = useState(['north', 'south'])
+    return (
+        <CustomSelect
+            multiple
+            value={value}
+            onValueChange={setValue}
+            clearable
+            onClear={() => setValue([])}
+            options={[
+                { value: 'north', label: 'North' },
+                { value: 'south', label: 'South' },
+            ]}
+            readOnly={readOnly}
+            disabled={disabled}
+        />
+    )
+}
+
 describe('select interactions', () => {
+    test('clears a single selection with an accessible button and native form value', async () => {
+        const user = userEvent.setup()
+        render(<ClearableSingleHarness />)
+        const clearButton = screen.getByRole('button', {
+            name: 'Auswahl löschen',
+        })
+        expect(
+            new FormData(screen.getByRole('form') as HTMLFormElement).get(
+                'region',
+            ),
+        ).toBe('north')
+        clearButton.focus()
+        await user.keyboard('{Enter}')
+
+        expect(
+            screen.queryByRole('button', { name: 'Auswahl löschen' }),
+        ).toBeNull()
+        expect(
+            new FormData(screen.getByRole('form') as HTMLFormElement).get(
+                'region',
+            ),
+        ).toBe('')
+        expect(document.activeElement).toBe(screen.getByRole('combobox'))
+    })
+
+    test('clears multiple values and hides the clear control when read-only or disabled', async () => {
+        const user = userEvent.setup()
+        const { rerender } = render(<ClearableMultipleHarness readOnly />)
+        expect(
+            screen.queryByRole('button', { name: 'Auswahl löschen' }),
+        ).toBeNull()
+        rerender(<ClearableMultipleHarness disabled />)
+        expect(
+            screen.queryByRole('button', { name: 'Auswahl löschen' }),
+        ).toBeNull()
+        rerender(<ClearableMultipleHarness />)
+        await user.click(
+            screen.getByRole('button', { name: 'Auswahl löschen' }),
+        )
+        expect(
+            screen.queryByRole('button', { name: 'Auswahl löschen' }),
+        ).toBeNull()
+        expect(screen.getByRole('combobox').textContent).not.toContain('North')
+    })
+
     test('adds and removes comma-containing values as complete array entries', async () => {
         const changes: Array<Array<string>> = []
 

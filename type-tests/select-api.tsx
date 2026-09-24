@@ -29,6 +29,24 @@ export function GenericSingleSelect({
     )
 }
 
+export function ClearableSelect({
+    value,
+    onChange,
+}: {
+    value: Status | null
+    onChange: (value: Status | null) => void
+}) {
+    return (
+        <CustomSelect
+            value={value}
+            onValueChange={onChange}
+            options={statusOptions}
+            clearable
+            onClear={() => onChange(null)}
+        />
+    )
+}
+
 type Region = 'north,west' | 'south'
 
 const regionOptions: ReadonlyArray<Option<Region>> = [

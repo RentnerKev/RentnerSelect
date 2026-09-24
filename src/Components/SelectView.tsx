@@ -1,6 +1,6 @@
 import * as SelectPrimitive from '@radix-ui/react-select'
 import { CustomTooltip } from '@rentnerkev/tooltips'
-import { AlertCircle, Check, ChevronDown } from 'lucide-react'
+import { AlertCircle, Check, ChevronDown, X } from 'lucide-react'
 import { useSelectDefaults } from '../SelectProvider.js'
 import useSelectLogic from '../Hooks/useSelect.logic.js'
 import type { SingleSelectProps } from '../types.js'
@@ -13,6 +13,8 @@ export type SelectViewProps<TValue> = Omit<
     formEntries: ReadonlyArray<{ key: string; value: string }>
     multiple: boolean
     onSelectValue: (value: TValue) => void
+    clearable?: boolean
+    onClear?: () => void
 }
 
 function mergeAriaIds(...values: Array<string | undefined>) {
@@ -30,6 +32,8 @@ export default function SelectView<TValue>({
     selectedValues,
     formEntries,
     onSelectValue,
+    clearable = false,
+    onClear,
     required = false,
     label,
     description,
@@ -81,6 +85,7 @@ export default function SelectView<TValue>({
         messages,
         isOptionEqualToValue: isOptionEqualToValueProp,
         onSelectValue,
+        onClear,
     })
     const {
         triggerId,
@@ -101,12 +106,19 @@ export default function SelectView<TValue>({
     const {
         handleInvalid,
         handleValueChange,
+        handleClear,
         handleOpenChange,
         handleContentKeyDownCapture,
         setSearchValue,
     } = logic.handler
     const { shouldKeepOpen } = logic.setter
     const hasLeftIcon = Boolean(icon || hasError)
+    const showClear =
+        clearable &&
+        Boolean(onClear) &&
+        selectedValues.length > 0 &&
+        !disabled &&
+        !readOnly
     const describedBy = mergeAriaIds(
         ariaDescribedBy,
         description !== undefined && description !== null
@@ -230,7 +242,7 @@ export default function SelectView<TValue>({
                             event.preventDefault()
                         }
                     }}
-                    className={`box-border flex h-12 w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-xl border bg-select-control pr-9 text-left text-sm font-medium tracking-normal normal-case text-select-foreground outline-none transition-[border-color,box-shadow,background-color] hover:border-select-border-strong focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none ${
+                    className={`box-border flex h-12 w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-xl border bg-select-control ${showClear ? 'pr-17' : 'pr-9'} text-left text-sm font-medium tracking-normal normal-case text-select-foreground outline-none transition-[border-color,box-shadow,background-color] hover:border-select-border-strong focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none ${
                         hasLeftIcon ? 'pl-9' : 'pl-3'
                     } ${
                         hasError
@@ -278,6 +290,16 @@ export default function SelectView<TValue>({
                         <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-select-muted" />
                     </SelectPrimitive.Icon>
                 </SelectPrimitive.Trigger>
+                {showClear && (
+                    <button
+                        type="button"
+                        aria-label={resolvedMessages.clearSelection}
+                        onClick={handleClear}
+                        className={`absolute right-8 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-select-muted transition-colors hover:text-select-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-select-accent motion-reduce:transition-none ${classNames.clear || ''}`}
+                    >
+                        <X aria-hidden="true" className="h-4 w-4" />
+                    </button>
+                )}
             </div>
 
             {description !== undefined && description !== null && (

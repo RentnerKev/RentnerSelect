@@ -225,6 +225,8 @@ function App() {
                                         onValueChange={(value) =>
                                             field.handleChange(value)
                                         }
+                                        clearable
+                                        onClear={() => field.handleChange('')}
                                         options={roleOptions}
                                         placeholder="Kontakt auswählen"
                                         required

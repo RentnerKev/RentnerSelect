@@ -18,6 +18,7 @@ export interface SelectClassNames {
     empty?: string
     label?: string
     description?: string
+    clear?: string
 }
 
 export interface SelectOptionState {
@@ -57,21 +58,25 @@ interface SharedCustomSelectProps<TValue> extends AriaAttributes {
     getFormValue?: (value: TValue) => string
 }
 
-export interface SingleSelectProps<
-    TValue = string,
-> extends SharedCustomSelectProps<TValue> {
-    value: TValue | null | undefined
-    onValueChange: (value: TValue) => void
-    multiple?: false
-}
+type ClearableSelectProps =
+    | { clearable: true; onClear: () => void }
+    | { clearable?: false; onClear?: never }
 
-export interface MultipleSelectProps<
-    TValue = string,
-> extends SharedCustomSelectProps<TValue> {
-    value: ReadonlyArray<TValue>
-    onValueChange: (value: Array<TValue>) => void
-    multiple: true
-}
+export type SingleSelectProps<TValue = string> =
+    SharedCustomSelectProps<TValue> &
+        ClearableSelectProps & {
+            value: TValue | null | undefined
+            onValueChange: (value: TValue) => void
+            multiple?: false
+        }
+
+export type MultipleSelectProps<TValue = string> =
+    SharedCustomSelectProps<TValue> &
+        ClearableSelectProps & {
+            value: ReadonlyArray<TValue>
+            onValueChange: (value: Array<TValue>) => void
+            multiple: true
+        }
 
 export type CustomSelectProps<TValue = string> =
     | SingleSelectProps<TValue>

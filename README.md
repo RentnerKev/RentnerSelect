@@ -116,6 +116,23 @@ When `name` is set, each selected array item is submitted under the same field n
 
 Multiple selection uses a typed array value and submits one native form entry per selected option. Values containing commas remain unambiguous.
 
+## Clearing a selection
+
+Use `clearable` with `onClear` to expose a keyboard-accessible clear button when a value is selected. The callback updates your controlled value. Single selection can use `null`; multiple selection can use an empty array. The clear button is hidden for disabled and read-only selects.
+
+```tsx
+const [status, setStatus] = useState<string | null>(null)
+
+;<CustomSelect
+    value={status}
+    onValueChange={setStatus}
+    clearable
+    onClear={() => setStatus(null)}
+    options={statusOptions}
+    placeholder="All statuses"
+/>
+```
+
 ## Forms and accessibility
 
 The visible trigger supports labels, descriptions, external errors, native validation, and forwarded `aria-*` attributes. Set `required` to participate in form validation. `disabled` removes the field from interaction and validation; `readOnly` prevents changes while retaining the submitted value.
@@ -231,40 +248,42 @@ The nonce is forwarded to Radix's viewport style tag. The package CSS also conta
 
 ### `CustomSelect` props
 
-| Prop                   | Type                                                     | Description                                                                                        |
-| ---------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `id`                   | `string`                                                 | ID for the visible trigger and associated labels.                                                  |
-| `name`                 | `string`                                                 | Native form field name.                                                                            |
-| `value`                | `TValue \| null \| undefined` or `ReadonlyArray<TValue>` | Controlled single or multiple value.                                                               |
-| `onValueChange`        | `(value: TValue) => void` or `(value: TValue[]) => void` | Typed callback for the selected mode.                                                              |
-| `options`              | `ReadonlyArray<Option<TValue>>`                          | Available options.                                                                                 |
-| `required`             | `boolean`                                                | Enables required-field validation. Defaults to `false`.                                            |
-| `label`                | `ReactNode`                                              | Visible label linked to the trigger.                                                               |
-| `description`          | `ReactNode`                                              | Supporting text linked through `aria-describedby`.                                                 |
-| `error`                | `string \| null`                                         | External validation message; `null` clears external and native errors.                             |
-| `disabled`             | `boolean`                                                | Disables interaction and validation.                                                               |
-| `readOnly`             | `boolean`                                                | Prevents changes while retaining the form value.                                                   |
-| `className`            | `string`                                                 | Additional Tailwind classes for the visible trigger.                                               |
-| `classNames`           | `SelectClassNames`                                       | Classes for root, trigger, content, search, viewport, option, empty state, label, and description. |
-| `searchable`           | `boolean`                                                | Show the search field. Defaults to `true`.                                                         |
-| `nonce`                | `string`                                                 | CSP nonce for Radix's generated viewport style.                                                    |
-| `onBlur`               | `FocusEventHandler<HTMLButtonElement>`                   | Blur handler on the visible trigger.                                                               |
-| `renderOption`         | `(option, state) => ReactNode`                           | Custom content for each menu item; `state` includes selected/disabled.                             |
-| `renderValue`          | `(selectedOptions) => ReactNode`                         | Custom content for the closed trigger.                                                             |
-| `placeholder`          | `string`                                                 | Text shown while no value is selected.                                                             |
-| `icon`                 | `ReactNode`                                              | Icon rendered at the start of the trigger.                                                         |
-| `fallbackOption`       | `string`                                                 | Message shown when no options are available.                                                       |
-| `multiple`             | `true`                                                   | Enables array-based multiple selection.                                                            |
-| `minSelection`         | `number`                                                 | Minimum number of selected options.                                                                |
-| `maxSelection`         | `number`                                                 | Maximum number of selected options.                                                                |
-| `isOptionEqualToValue` | `(optionValue, value) => boolean`                        | Compares option and selected values.                                                               |
-| `getFormValue`         | `(value: TValue) => string`                              | Serializes a value for native form submission.                                                     |
-| `locale`               | `'de' \| 'en' \| 'es' \| 'fr'`                           | Selects the default message catalog. Defaults to `'de'`.                                           |
-| `messages`             | `Partial<SelectMessages>`                                | Overrides individual messages and ARIA text.                                                       |
-| `aria-label`           | `string`                                                 | Accessible name for the visible trigger.                                                           |
-| `aria-labelledby`      | `string`                                                 | External accessible-label IDs.                                                                     |
-| `aria-describedby`     | `string`                                                 | External description IDs combined with internal text.                                              |
-| `triggerRef`           | `Ref<HTMLButtonElement>`                                 | Ref for the visible, focusable trigger.                                                            |
+| Prop                   | Type                                                     | Description                                                                                                      |
+| ---------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `id`                   | `string`                                                 | ID for the visible trigger and associated labels.                                                                |
+| `name`                 | `string`                                                 | Native form field name.                                                                                          |
+| `value`                | `TValue \| null \| undefined` or `ReadonlyArray<TValue>` | Controlled single or multiple value.                                                                             |
+| `onValueChange`        | `(value: TValue) => void` or `(value: TValue[]) => void` | Typed callback for the selected mode.                                                                            |
+| `options`              | `ReadonlyArray<Option<TValue>>`                          | Available options.                                                                                               |
+| `required`             | `boolean`                                                | Enables required-field validation. Defaults to `false`.                                                          |
+| `label`                | `ReactNode`                                              | Visible label linked to the trigger.                                                                             |
+| `description`          | `ReactNode`                                              | Supporting text linked through `aria-describedby`.                                                               |
+| `error`                | `string \| null`                                         | External validation message; `null` clears external and native errors.                                           |
+| `disabled`             | `boolean`                                                | Disables interaction and validation.                                                                             |
+| `readOnly`             | `boolean`                                                | Prevents changes while retaining the form value.                                                                 |
+| `className`            | `string`                                                 | Additional Tailwind classes for the visible trigger.                                                             |
+| `classNames`           | `SelectClassNames`                                       | Classes for root, trigger, clear button, content, search, viewport, option, empty state, label, and description. |
+| `clearable`            | `true`                                                   | Shows a clear button when selected; requires `onClear`.                                                          |
+| `onClear`              | `() => void`                                             | Clears the controlled selection.                                                                                 |
+| `searchable`           | `boolean`                                                | Show the search field. Defaults to `true`.                                                                       |
+| `nonce`                | `string`                                                 | CSP nonce for Radix's generated viewport style.                                                                  |
+| `onBlur`               | `FocusEventHandler<HTMLButtonElement>`                   | Blur handler on the visible trigger.                                                                             |
+| `renderOption`         | `(option, state) => ReactNode`                           | Custom content for each menu item; `state` includes selected/disabled.                                           |
+| `renderValue`          | `(selectedOptions) => ReactNode`                         | Custom content for the closed trigger.                                                                           |
+| `placeholder`          | `string`                                                 | Text shown while no value is selected.                                                                           |
+| `icon`                 | `ReactNode`                                              | Icon rendered at the start of the trigger.                                                                       |
+| `fallbackOption`       | `string`                                                 | Message shown when no options are available.                                                                     |
+| `multiple`             | `true`                                                   | Enables array-based multiple selection.                                                                          |
+| `minSelection`         | `number`                                                 | Minimum number of selected options.                                                                              |
+| `maxSelection`         | `number`                                                 | Maximum number of selected options.                                                                              |
+| `isOptionEqualToValue` | `(optionValue, value) => boolean`                        | Compares option and selected values.                                                                             |
+| `getFormValue`         | `(value: TValue) => string`                              | Serializes a value for native form submission.                                                                   |
+| `locale`               | `'de' \| 'en' \| 'es' \| 'fr'`                           | Selects the default message catalog. Defaults to `'de'`.                                                         |
+| `messages`             | `Partial<SelectMessages>`                                | Overrides individual messages and ARIA text.                                                                     |
+| `aria-label`           | `string`                                                 | Accessible name for the visible trigger.                                                                         |
+| `aria-labelledby`      | `string`                                                 | External accessible-label IDs.                                                                                   |
+| `aria-describedby`     | `string`                                                 | External description IDs combined with internal text.                                                            |
+| `triggerRef`           | `Ref<HTMLButtonElement>`                                 | Ref for the visible, focusable trigger.                                                                          |
 
 Additional React `aria-*` attributes are forwarded to the visible trigger.
 

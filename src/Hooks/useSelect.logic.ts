@@ -33,6 +33,7 @@ export interface UseSelectLogicOptions<TValue> {
     messages?: Partial<SelectMessages>
     isOptionEqualToValue?: (optionValue: TValue, value: TValue) => boolean
     onSelectValue: (value: TValue) => void
+    onClear?: () => void
 }
 
 export default function useSelectLogic<TValue>({
@@ -52,6 +53,7 @@ export default function useSelectLogic<TValue>({
     messages: providedMessages,
     isOptionEqualToValue: isOptionEqualToValueProp,
     onSelectValue,
+    onClear,
 }: UseSelectLogicOptions<TValue>) {
     const messages = resolveSelectMessages(locale, providedMessages)
     const [open, setOpen] = useState(false)
@@ -209,6 +211,14 @@ export default function useSelectLogic<TValue>({
         onSelectValue(entry.option.value)
     }
 
+    function handleClear() {
+        if (disabled || readOnly || selectedValues.length === 0) return
+        onClear?.()
+        setSearchValue('')
+        setOpen(false)
+        internalTriggerRef.current?.focus()
+    }
+
     function handleOpenChange(nextOpen: boolean) {
         if (disabled || readOnly) {
             setOpen(false)
@@ -286,6 +296,7 @@ export default function useSelectLogic<TValue>({
         handler: {
             handleInvalid,
             handleValueChange,
+            handleClear,
             handleOpenChange,
             handleContentKeyDownCapture,
             setSearchValue,
