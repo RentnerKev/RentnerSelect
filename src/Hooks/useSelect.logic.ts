@@ -1,12 +1,4 @@
-import {
-    useCallback,
-    useEffect,
-    useId,
-    useImperativeHandle,
-    useMemo,
-    useRef,
-    useState,
-} from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import type {
     FocusEvent,
     FocusEventHandler,
@@ -20,6 +12,7 @@ import {
     type SelectMessages,
 } from '../i18n.js'
 import type { Option } from '../types.js'
+import useComposedRefs from './useComposedRefs.js'
 
 export interface UseSelectLogicOptions<TValue> {
     id?: string
@@ -154,18 +147,7 @@ export default function useSelectLogic<TValue>({
             ? Boolean(resolvedError)
             : isTouched && Boolean(resolvedError)
 
-    const setTriggerRef = useCallback(
-        (node: HTMLButtonElement | null) => {
-            internalTriggerRef.current = node
-            if (typeof triggerRef === 'function') triggerRef(node)
-        },
-        [triggerRef],
-    )
-
-    useImperativeHandle(
-        typeof triggerRef === 'object' ? triggerRef : null,
-        () => internalTriggerRef.current as HTMLButtonElement,
-    )
+    const composedTriggerRef = useComposedRefs(internalTriggerRef, triggerRef)
 
     const focusSearchInput = useCallback(() => {
         if (!searchable) return
@@ -300,7 +282,7 @@ export default function useSelectLogic<TValue>({
         ref: {
             root: rootRef,
             content: contentRef,
-            trigger: setTriggerRef,
+            trigger: composedTriggerRef,
             searchInput: searchInputRef,
             validationInput: validationInputRef,
         },

@@ -1,4 +1,24 @@
 export async function check({ page, expect }) {
+    const refEvents = page.getByTestId('trigger-ref-events')
+    const objectRefStatus = page.getByTestId('trigger-object-ref-status')
+    await expect(refEvents).toHaveText('cleanup:attached')
+    await page.getByRole('button', { name: 'Use legacy trigger ref' }).click()
+    await expect(refEvents).toHaveText(
+        'cleanup:attached,cleanup:cleanup,legacy:attached',
+    )
+    await page.getByRole('button', { name: 'Use object trigger ref' }).click()
+    await expect(refEvents).toHaveText(
+        'cleanup:attached,cleanup:cleanup,legacy:attached,legacy:null',
+    )
+    await expect(objectRefStatus).toHaveText('attached')
+    await page.getByRole('button', { name: 'Use cleanup trigger ref' }).click()
+    await expect(objectRefStatus).toHaveText('detached')
+    await page.getByRole('button', { name: 'Remove ref target' }).click()
+    await expect(refEvents).toHaveText(
+        'cleanup:attached,cleanup:cleanup,legacy:attached,legacy:null,cleanup:attached,cleanup:cleanup',
+    )
+    await expect(objectRefStatus).toHaveText('detached')
+
     const form = page.getByRole('form', { name: 'Region form' })
     const trigger = page.getByRole('combobox', { name: 'Region' })
 
