@@ -34,7 +34,7 @@
         "type": "git",
         "url": "git+https://github.com/RentnerKev/RentnerSelect.git"
     },
-    "homepage": "https://github.com/RentnerKev/RentnerSelect#readme",
+    "homepage": "https://packages.rentner.dev/packages/select",
     "bugs": {
         "url": "https://github.com/RentnerKev/RentnerSelect/issues"
     },
