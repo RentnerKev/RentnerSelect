@@ -1,6 +1,10 @@
 import { createElement } from 'react'
 import { CustomSelect, SelectProvider } from '../src/index.js'
-import type { Option } from '../src/index.js'
+import type {
+    MultipleSelectProps,
+    Option,
+    SingleSelectProps,
+} from '../src/index.js'
 
 const statuses = ['todo', 'done'] as const
 type Status = (typeof statuses)[number]
@@ -142,6 +146,31 @@ export function GenericMultipleSelect({
         />
     )
 }
+
+export const multipleSelectionBoundsAccepted: MultipleSelectProps<Region> = {
+    multiple: true,
+    value: [],
+    onValueChange: () => undefined,
+    options: regionOptions,
+    minSelection: 1,
+    maxSelection: 2,
+}
+
+export const singleSelectMinimumRejected = {
+    value: 'todo',
+    onValueChange: (_value: Status) => undefined,
+    options: statusOptions,
+    // @ts-expect-error Selection bounds are only supported in multiple mode.
+    minSelection: 1,
+} satisfies SingleSelectProps<Status>
+
+export const singleSelectMaximumRejected = {
+    value: 'todo',
+    onValueChange: (_value: Status) => undefined,
+    options: statusOptions,
+    // @ts-expect-error Selection bounds are only supported in multiple mode.
+    maxSelection: 2,
+} satisfies SingleSelectProps<Status>
 
 export function GenericNumberSelect({
     value,

@@ -1,6 +1,6 @@
 {
     "name": "@rentnerkev/select",
-    "version": "4.0.0",
+    "version": "5.0.0",
     "description": "Accessible, searchable React select with single and multiple selection support.",
     "author": "RentnerKev",
     "license": "MIT",
@@ -20,6 +20,7 @@
         "test": "bun test",
         "prepare": "bun run build",
         "pack:check": "bun pm pack --dry-run",
+        "pack:consumer": "node scripts/verify-package.mjs",
         "playground:install": "bun install --cwd playground --frozen-lockfile",
         "playground:dev": "bun --cwd playground dev",
         "playground:build": "bun --cwd playground build",
@@ -28,7 +29,7 @@
         "lint:fix": "oxlint --fix .",
         "format": "oxfmt .",
         "format:check": "oxfmt --check .",
-        "verify": "bun run playground:install && bun run typecheck && bun run lint && bun run format:check && bun run test && bun run build && bun run pack:check && bun run e2e"
+        "verify": "bun run playground:install && bun run typecheck && bun run lint && bun run format:check && bun run test && bun run build && bun run pack:check && bun run pack:consumer && bun run e2e"
     },
     "repository": {
         "type": "git",

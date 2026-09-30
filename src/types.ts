@@ -50,8 +50,6 @@ interface SharedCustomSelectProps<TValue> extends AriaAttributes {
     ) => ReactNode
     renderValue?: (options: ReadonlyArray<Option<TValue>>) => ReactNode
     fallbackOption?: string
-    minSelection?: number
-    maxSelection?: number
     locale?: SelectLocale
     messages?: Partial<SelectMessages>
     isOptionEqualToValue?: (optionValue: TValue, value: TValue) => boolean
@@ -113,6 +111,8 @@ export type MultipleSelectProps<TValue = string> =
             multiple: true
             emptyValue?: never
             omitEmptyFormValue?: boolean
+            minSelection?: number
+            maxSelection?: number
         }
 
 export type CustomSelectProps<TValue = string> =

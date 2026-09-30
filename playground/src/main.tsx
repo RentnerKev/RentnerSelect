@@ -78,14 +78,19 @@ const roleOptions = [
 type PlaygroundFormValues = {
     firstName: string
     email: string
-    department: string
+    department: Array<string>
     message: string
 }
 
 const requiredValidator =
     (label: string) =>
-    ({ value }: { value: string }) =>
-        value.trim().length === 0 ? `${label} ist erforderlich.` : undefined
+    ({ value }: { value: unknown }) => {
+        const isEmpty = Array.isArray(value)
+            ? value.length === 0
+            : typeof value !== 'string' || value.trim().length === 0
+
+        return isEmpty ? `${label} ist erforderlich.` : undefined
+    }
 
 function FieldError({ errors }: { errors: Array<unknown> }) {
     if (errors.length === 0) {
@@ -105,7 +110,7 @@ function App() {
         defaultValues: {
             firstName: '',
             email: '',
-            department: '',
+            department: [],
             message: '',
         } as PlaygroundFormValues,
         onSubmit: ({ value }) => {
@@ -226,11 +231,11 @@ function App() {
                                     <CustomSelect
                                         id={field.name}
                                         name={field.name}
+                                        multiple
                                         value={field.state.value}
                                         onValueChange={field.handleChange}
                                         onBlur={field.handleBlur}
                                         clearable
-                                        emptyValue=""
                                         options={roleOptions}
                                         placeholder="Kontakt auswählen"
                                         required

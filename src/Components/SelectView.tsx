@@ -3,7 +3,7 @@ import { CustomTooltip } from '@rentnerkev/tooltips'
 import { AlertCircle, Check, ChevronDown, X } from 'lucide-react'
 import { useSelectDefaults } from '../SelectProvider.js'
 import useSelectLogic from '../Hooks/useSelect.logic.js'
-import type { SingleSelectProps } from '../types.js'
+import type { Option, SingleSelectProps } from '../types.js'
 
 export type SelectViewProps<TValue> = Omit<
     SingleSelectProps<TValue>,
@@ -16,6 +16,8 @@ export type SelectViewProps<TValue> = Omit<
     clearable?: boolean
     onClear?: () => void
     omitEmptyFormValue?: boolean
+    minSelection?: number
+    maxSelection?: number
 }
 
 function mergeAriaIds(...values: Array<string | undefined>) {
@@ -130,6 +132,20 @@ export default function SelectView<TValue>({
         ariaLabelledBy,
         label !== undefined && label !== null ? labelId : undefined,
     )
+    function isSelected(optionValue: TValue) {
+        return selectedValues.some((value) =>
+            isOptionEqualToValue(optionValue, value),
+        )
+    }
+    function isOptionDisabled(option: Option<TValue>) {
+        return (
+            option.disabled === true ||
+            (multiple &&
+                maxSelection !== undefined &&
+                selectedValues.length >= maxSelection &&
+                !isSelected(option.value))
+        )
+    }
 
     return (
         <SelectPrimitive.Root
@@ -207,6 +223,7 @@ export default function SelectView<TValue>({
                 )}
                 <SelectPrimitive.Trigger
                     ref={trigger}
+                    aria-haspopup={searchable ? 'dialog' : undefined}
                     id={triggerId}
                     disabled={disabled}
                     {...ariaProps}
@@ -329,6 +346,17 @@ export default function SelectView<TValue>({
             <SelectPrimitive.Portal>
                 <SelectPrimitive.Content
                     ref={content}
+                    role={searchable ? 'dialog' : 'listbox'}
+                    aria-label={
+                        searchable ? resolvedMessages.searchOptions : ariaLabel
+                    }
+                    aria-labelledby={
+                        searchable ? undefined : (labelledBy ?? triggerId)
+                    }
+                    aria-modal={searchable ? true : undefined}
+                    aria-multiselectable={
+                        !searchable && multiple ? true : undefined
+                    }
                     onBlurCapture={handleFieldBlur}
                     position="popper"
                     sideOffset={4}
@@ -364,6 +392,15 @@ export default function SelectView<TValue>({
                     )}
                     <div className="rentnerselect-scrollbar max-h-[min(var(--radix-select-content-available-height),16rem)] overflow-y-scroll scrollbar-gutter-stable">
                         <SelectPrimitive.Viewport
+                            role={searchable ? 'listbox' : 'presentation'}
+                            aria-label={
+                                searchable
+                                    ? resolvedMessages.searchOptions
+                                    : undefined
+                            }
+                            aria-multiselectable={
+                                searchable && multiple ? true : undefined
+                            }
                             nonce={nonce}
                             className={`p-1.5 ${classNames.viewport || ''}`}
                         >
@@ -374,7 +411,7 @@ export default function SelectView<TValue>({
                                             key={radixValue}
                                             value={radixValue}
                                             textValue={option.label}
-                                            disabled={option.disabled}
+                                            disabled={isOptionDisabled(option)}
                                             onPointerDown={() => {
                                                 if (multiple) {
                                                     shouldKeepOpen.current = true
@@ -393,12 +430,8 @@ export default function SelectView<TValue>({
                                         >
                                             <span className="absolute left-3 flex h-3.5 w-3.5 items-center justify-center">
                                                 {multiple ? (
-                                                    selectedValues.some(
-                                                        (value) =>
-                                                            isOptionEqualToValue(
-                                                                option.value,
-                                                                value,
-                                                            ),
+                                                    isSelected(
+                                                        option.value,
                                                     ) && (
                                                         <Check className="h-4 w-4" />
                                                     )
@@ -411,17 +444,13 @@ export default function SelectView<TValue>({
                                             <SelectPrimitive.ItemText>
                                                 {renderOption ? (
                                                     renderOption(option, {
-                                                        selected:
-                                                            selectedValues.some(
-                                                                (value) =>
-                                                                    isOptionEqualToValue(
-                                                                        option.value,
-                                                                        value,
-                                                                    ),
-                                                            ),
+                                                        selected: isSelected(
+                                                            option.value,
+                                                        ),
                                                         disabled:
-                                                            option.disabled ??
-                                                            false,
+                                                            isOptionDisabled(
+                                                                option,
+                                                            ),
                                                     })
                                                 ) : (
                                                     <span className="flex min-w-0 flex-col gap-0.5">

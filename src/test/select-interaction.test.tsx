@@ -41,6 +41,31 @@ function ClearableMultipleHarness({ readOnly = false, disabled = false }) {
     )
 }
 
+function MaxSelectionHarness() {
+    const [value, setValue] = useState<Array<string>>(['north', 'south'])
+
+    return (
+        <>
+            <CustomSelect
+                multiple
+                value={value}
+                onValueChange={setValue}
+                maxSelection={2}
+                searchable={false}
+                options={[
+                    { value: 'north', label: 'North' },
+                    { value: 'south', label: 'South' },
+                    { value: 'west', label: 'West' },
+                ]}
+                renderOption={(option, state) =>
+                    `${option.label}${state.disabled ? ' unavailable' : ''}`
+                }
+            />
+            <output>{JSON.stringify(value)}</output>
+        </>
+    )
+}
+
 describe('select interactions', () => {
     test('clears a single selection with an accessible button and native form value', async () => {
         const user = userEvent.setup()
@@ -307,6 +332,97 @@ describe('select interactions', () => {
             'north,west',
             'south',
         ])
+    })
+
+    test('disables unselected options at the maximum and keeps selected options removable', async () => {
+        const user = userEvent.setup()
+        render(<MaxSelectionHarness />)
+        await user.click(screen.getByRole('combobox'))
+
+        const north = screen.getByRole('option', { name: 'North' })
+        const west = screen.getByRole('option', { name: /West/ })
+        expect(north.getAttribute('aria-disabled')).not.toBe('true')
+        expect(west.getAttribute('aria-disabled')).toBe('true')
+        expect(west.className).toContain('data-disabled:opacity-40')
+        expect(screen.getByText('West unavailable')).toBeTruthy()
+
+        await user.click(north)
+
+        expect(screen.getByText('["south"]')).toBeTruthy()
+        expect(west.getAttribute('aria-disabled')).toBeNull()
+    })
+
+    test('treats controlled values missing from options as unselected', () => {
+        const { rerender } = render(
+            <form aria-label="region form">
+                <CustomSelect
+                    name="region"
+                    value="retired"
+                    onValueChange={() => undefined}
+                    options={[{ value: 'north', label: 'North' }]}
+                    placeholder="Choose a region"
+                    required
+                />
+            </form>,
+        )
+
+        const form = screen.getByRole('form') as HTMLFormElement
+        const trigger = screen.getByRole('combobox')
+        expect(trigger.textContent).toContain('Choose a region')
+        expect(trigger.textContent).not.toContain('Retired')
+        expect(new FormData(form).get('region')).toBe('')
+        expect(
+            form.querySelector('input[required]')?.validity.valueMissing,
+        ).toBe(true)
+
+        rerender(
+            <form aria-label="region form">
+                <CustomSelect
+                    name="regions"
+                    multiple
+                    value={['north', 'retired']}
+                    onValueChange={() => undefined}
+                    options={[
+                        { value: 'north', label: 'North' },
+                        { value: 'south', label: 'South' },
+                    ]}
+                    required
+                />
+            </form>,
+        )
+
+        expect(screen.getByRole('combobox').textContent).toContain('North')
+        expect(screen.getByRole('combobox').textContent).not.toContain(
+            'Retired',
+        )
+        expect(new FormData(form).getAll('regions')).toEqual(['north'])
+        expect(form.querySelector('input[required]')).toBeNull()
+
+        rerender(
+            <form aria-label="region form">
+                <CustomSelect
+                    name="regions"
+                    multiple
+                    value={['retired']}
+                    onValueChange={() => undefined}
+                    options={[
+                        { value: 'north', label: 'North' },
+                        { value: 'south', label: 'South' },
+                    ]}
+                    placeholder="Choose regions"
+                    omitEmptyFormValue
+                    required
+                />
+            </form>,
+        )
+
+        expect(screen.getByRole('combobox').textContent).toContain(
+            'Choose regions',
+        )
+        expect(new FormData(form).getAll('regions')).toEqual([])
+        expect(
+            form.querySelector('input[required]')?.validity.valueMissing,
+        ).toBe(true)
     })
 
     test('can omit an empty multiple value without changing the default', () => {

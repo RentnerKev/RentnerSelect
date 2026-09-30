@@ -29,12 +29,19 @@ function TypedCustomSelect<TValue>({
     ...viewProps
 }: TypedCustomSelectProps<TValue>) {
     const isOptionEqualToValue = viewProps.isOptionEqualToValue ?? Object.is
+    const maxSelection =
+        'maxSelection' in viewProps ? viewProps.maxSelection : undefined
     const multipleValues: ReadonlyArray<TValue> =
         multiple && Array.isArray(value) ? value : []
+    const isAvailableValue = (selectedValue: TValue) =>
+        viewProps.options.some((option: Option<TValue>) =>
+            isOptionEqualToValue(option.value, selectedValue),
+        )
     const selectedValues: ReadonlyArray<TValue> = multiple
-        ? multipleValues
+        ? multipleValues.filter(isAvailableValue)
         : isSingleValueEmpty(value) ||
-            (emptyValue !== undefined && Object.is(value, emptyValue))
+            (emptyValue !== undefined && Object.is(value, emptyValue)) ||
+            !isAvailableValue(value)
           ? []
           : [value]
     const formEntries = selectedValues.map((selectedValue) => {
@@ -56,10 +63,10 @@ function TypedCustomSelect<TValue>({
     function handleSelectValue(nextValue: TValue) {
         if (multiple) {
             const nextValues = toggleSelectedValue(
-                multipleValues,
+                selectedValues,
                 nextValue,
                 isOptionEqualToValue,
-                viewProps.maxSelection,
+                maxSelection,
             )
 
             if (nextValues) {

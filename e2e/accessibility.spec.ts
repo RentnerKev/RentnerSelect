@@ -16,14 +16,41 @@ test('supports keyboard navigation, search, portal rendering, and a11y', async (
     await search.press('ArrowDown')
     await expect(option).toBeFocused()
     await page.keyboard.press('Enter')
-    await expect(
-        page.getByText('Erika - Musterfrau', { exact: true }),
-    ).toBeVisible()
     await page.keyboard.press('Escape')
+    await expect(combobox).toBeVisible()
+    await expect(combobox).toContainText('Erika - Musterfrau')
     await expect(page.getByRole('listbox')).toBeHidden()
 
     const results = await new AxeBuilder({ page }).analyze()
     expect(results.violations).toEqual([])
+})
+
+test('keeps capped multiple selection accessible while the menu is open', async ({
+    page,
+}) => {
+    await page.goto('/')
+    const combobox = page.getByRole('combobox', { name: 'Kontakt' })
+    await combobox.press('Enter')
+
+    const max = page.getByRole('option', { name: /Max - Mustermann/ })
+    const erika = page.getByRole('option', { name: /Erika - Musterfrau/ })
+    const tim = page.getByRole('option', { name: /Tim - Schneider/ })
+    const sara = page.getByRole('option', { name: /Sara - Fischer/ })
+    await max.click()
+    await erika.click()
+    await tim.click()
+
+    await expect(sara).toBeVisible()
+    await expect(sara).toBeDisabled()
+    await expect(sara).toHaveCSS('opacity', '0.4')
+    await expect(max).toBeEnabled()
+
+    // Radix hides the page behind its modal popup while the menu is open.
+    const results = await new AxeBuilder({ page }).exclude('#root').analyze()
+    expect(results.violations).toEqual([])
+
+    await max.click()
+    await expect(sara).toBeEnabled()
 })
 
 test('announces required validation and honors reduced motion', async ({
@@ -55,6 +82,7 @@ test('clears a selection by keyboard without a synthetic option', async ({
     const combobox = page.getByRole('combobox')
     await combobox.click()
     await page.getByRole('option', { name: /Erika/ }).click()
+    await page.keyboard.press('Escape')
 
     const clearButton = page.getByRole('button', { name: 'Auswahl löschen' })
     await expect(clearButton).toBeVisible()

@@ -97,6 +97,14 @@ export function StatusSelect() {
 }
 ```
 
+When a controlled value has no matching option, RentnerSelect treats it as
+unselected. The trigger shows its placeholder, stale values are omitted from
+form submission, and required validation treats the field as empty. In multiple
+mode, available values remain selected while unavailable values are ignored.
+The component does not rewrite the controlled value; if a matching option is
+added later, that value becomes visible again. The next user change reports only
+values that still have matching options.
+
 ## Multiple selection
 
 The current multiple-selection API uses an array, preserving values that contain commas:
@@ -126,6 +134,12 @@ export function RegionSelect() {
 ```
 
 When `name` is set, each selected array item is submitted under the same field name. Read all values with `new FormData(form).getAll('regions')`.
+
+When `maxSelection` is reached, unselected options are visibly and accessibly
+disabled. Selected options stay enabled so users can remove them. The
+`minSelection` and `maxSelection` props are available only when `multiple` is
+enabled; TypeScript users who previously passed these props to a single select
+must remove them or use multiple mode.
 
 Multiple selection uses a typed array value and submits one native form entry per selected option. Values containing commas remain unambiguous.
 
@@ -309,8 +323,8 @@ The nonce is forwarded to Radix's viewport style tag. The package CSS also conta
 | `fallbackOption`       | `string`                                                                                     | Message shown when no options are available.                                                                              |
 | `multiple`             | `true`                                                                                       | Enables array-based multiple selection.                                                                                   |
 | `omitEmptyFormValue`   | `boolean`                                                                                    | Multiple mode only: omits the form entry for an empty selection. Defaults to `false`.                                     |
-| `minSelection`         | `number`                                                                                     | Minimum number of selected options.                                                                                       |
-| `maxSelection`         | `number`                                                                                     | Maximum number of selected options.                                                                                       |
+| `minSelection`         | `number`                                                                                     | Multiple mode only: minimum number of selected options.                                                                   |
+| `maxSelection`         | `number`                                                                                     | Multiple mode only: maximum number of selected options.                                                                   |
 | `isOptionEqualToValue` | `(optionValue, value) => boolean`                                                            | Compares option and selected values.                                                                                      |
 | `getFormValue`         | `(value: TValue) => string`                                                                  | Serializes a value for native form submission.                                                                            |
 | `locale`               | `'de' \| 'en' \| 'es' \| 'fr'`                                                               | Selects the default message catalog. Defaults to `'de'`.                                                                  |
