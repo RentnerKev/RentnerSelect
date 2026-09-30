@@ -1,6 +1,6 @@
 {
     "name": "@rentnerkev/select",
-    "version": "5.0.1",
+    "version": "5.0.2",
     "description": "Accessible, searchable React select with single and multiple selection support.",
     "author": "RentnerKev",
     "license": "MIT",
@@ -64,7 +64,7 @@
     },
     "dependencies": {
         "@radix-ui/react-select": "^2.3.7",
-        "@rentnerkev/tooltips": "^2.0.0",
+        "@rentnerkev/tooltips": "^2.0.5",
         "lucide-react": "^1.47.0"
     },
     "exports": {
