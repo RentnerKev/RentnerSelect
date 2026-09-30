@@ -66,6 +66,25 @@ function MaxSelectionHarness() {
     )
 }
 
+function MultipleSelectionHarness() {
+    const [value, setValue] = useState<Array<string>>([])
+
+    return (
+        <>
+            <CustomSelect
+                multiple
+                value={value}
+                onValueChange={setValue}
+                options={[
+                    { value: 'north', label: 'North' },
+                    { value: 'south', label: 'South' },
+                ]}
+            />
+            <output>{JSON.stringify(value)}</output>
+        </>
+    )
+}
+
 describe('select interactions', () => {
     test('clears a single selection with an accessible button and native form value', async () => {
         const user = userEvent.setup()
@@ -350,6 +369,71 @@ describe('select interactions', () => {
 
         expect(screen.getByText('["south"]')).toBeTruthy()
         expect(west.getAttribute('aria-disabled')).toBeNull()
+    })
+
+    test('keeps multiple selection ARIA state in sync and toggles with Space', async () => {
+        const user = userEvent.setup()
+        render(<MultipleSelectionHarness />)
+        await user.click(screen.getByRole('combobox'))
+
+        const search = screen.getByRole('textbox', {
+            name: 'Optionen suchen',
+        })
+        await user.click(search)
+        await user.keyboard('{ArrowDown}')
+
+        const north = screen.getByRole('option', { name: 'North' })
+        expect(document.activeElement).toBe(north)
+        expect(north.getAttribute('aria-selected')).toBe('false')
+        expect(north.getAttribute('data-state')).toBe('unchecked')
+
+        await user.keyboard(' ')
+
+        expect(screen.getByText('["north"]')).toBeTruthy()
+        expect(north.getAttribute('aria-selected')).toBe('true')
+        expect(north.getAttribute('data-state')).toBe('checked')
+
+        await user.keyboard(' ')
+
+        expect(screen.getByText('[]')).toBeTruthy()
+        expect(north.getAttribute('aria-selected')).toBe('false')
+        expect(north.getAttribute('data-state')).toBe('unchecked')
+    })
+
+    test('keeps a selected disabled option pinned until its value changes externally', async () => {
+        const user = userEvent.setup()
+        const onValueChange = mock(() => undefined)
+
+        render(
+            <form aria-label="region form">
+                <CustomSelect
+                    name="regions"
+                    multiple
+                    value={['north']}
+                    onValueChange={onValueChange}
+                    searchable={false}
+                    options={[
+                        { value: 'north', label: 'North', disabled: true },
+                        { value: 'south', label: 'South' },
+                    ]}
+                />
+            </form>,
+        )
+
+        const form = document.querySelector(
+            'form[aria-label="region form"]',
+        ) as HTMLFormElement
+        await user.click(screen.getByRole('combobox'))
+
+        const north = screen.getByRole('option', { name: 'North' })
+        expect(north.getAttribute('aria-disabled')).toBe('true')
+        expect(north.getAttribute('aria-selected')).toBe('true')
+        expect(north.getAttribute('data-state')).toBe('checked')
+
+        await user.click(north)
+
+        expect(onValueChange).not.toHaveBeenCalled()
+        expect(new FormData(form).getAll('regions')).toEqual(['north'])
     })
 
     test('treats controlled values missing from options as unselected', () => {

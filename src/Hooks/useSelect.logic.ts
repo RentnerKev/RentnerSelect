@@ -284,6 +284,8 @@ export default function useSelectLogic<TValue>({
             event.ctrlKey ||
             event.altKey ||
             event.metaKey ||
+            event.nativeEvent.isComposing ||
+            event.key === ' ' ||
             event.key.length !== 1
         ) {
             return

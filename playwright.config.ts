@@ -1,19 +1,25 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const baseURL = 'http://127.0.0.1:4176'
+
 export default defineConfig({
     testDir: './e2e',
     testMatch: '**/*.spec.ts',
     fullyParallel: true,
-    reporter: 'line',
-    use: {
-        ...devices['Desktop Chrome'],
-        baseURL: 'http://127.0.0.1:4176',
-        trace: 'on-first-retry',
-    },
+    forbidOnly: Boolean(process.env.CI),
+    retries: process.env.CI ? 2 : 0,
+    workers: 2,
+    reporter: 'list',
+    use: { baseURL, trace: 'retain-on-failure' },
+    projects: [
+        { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+        { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+        { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+    ],
     webServer: {
-        command: 'bun --cwd playground dev --host 127.0.0.1 --port 4176',
-        url: 'http://127.0.0.1:4176',
-        reuseExistingServer: true,
+        command: 'bun --cwd playground dev -- --host 127.0.0.1 --port 4176',
+        url: baseURL,
+        reuseExistingServer: !process.env.CI,
         timeout: 120_000,
     },
 })

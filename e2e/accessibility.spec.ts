@@ -114,3 +114,27 @@ test('marks the field touched only after focus leaves the select', async ({
     await page.keyboard.press('Tab')
     await expect(error).toBeVisible()
 })
+
+test('keeps multiple option state accessible and toggles the focused option with Space', async ({
+    page,
+}) => {
+    await page.goto('/')
+    const combobox = page.getByRole('combobox', { name: 'Kontakt' })
+    await combobox.press('Enter')
+
+    const search = page.getByRole('textbox', { name: 'Optionen suchen' })
+    await search.fill('Max')
+    const max = page.getByRole('option', { name: /Max - Mustermann/ })
+    await search.press('ArrowDown')
+    await expect(max).toBeFocused()
+    await expect(max).toHaveAttribute('aria-selected', 'false')
+    await expect(max).toHaveAttribute('data-state', 'unchecked')
+
+    await page.keyboard.press('Space')
+    await expect(max).toHaveAttribute('aria-selected', 'true')
+    await expect(max).toHaveAttribute('data-state', 'checked')
+
+    await page.keyboard.press('Space')
+    await expect(max).toHaveAttribute('aria-selected', 'false')
+    await expect(max).toHaveAttribute('data-state', 'unchecked')
+})

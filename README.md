@@ -143,6 +143,14 @@ must remove them or use multiple mode.
 
 Multiple selection uses a typed array value and submits one native form entry per selected option. Values containing commas remain unambiguous.
 
+In the searchable multiple menu, `Enter` or `Space` toggles the focused option.
+Typing a printable non-space character while an option is focused returns focus
+to search and filters the options; spaces can be entered in the search field.
+
+An option with `disabled: true` is pinned: users cannot add or remove it in the
+menu. If it is already selected, it remains in the value and form submission
+until the controlled value removes it or the option is enabled again.
+
 For compatibility, an empty multiple selection submits one empty entry by
 default. Set `omitEmptyFormValue` to submit no entry instead; then
 `FormData.getAll('regions')` returns `[]`. Native `required` validation still
@@ -275,7 +283,7 @@ The nonce is forwarded to Radix's viewport style tag. The package CSS also conta
 
 ## Custom option content
 
-`renderOption` and `renderValue` allow icons, flags, or project-specific layouts without replacing the select's interaction logic. Keep decorative content `aria-hidden`; the plain `label` remains the searchable, accessible text. Individual options can be disabled.
+`renderOption` and `renderValue` allow icons, flags, or project-specific layouts without replacing the select's interaction logic. Keep decorative content `aria-hidden`; the plain `label` remains the searchable, accessible text. Individual options can be disabled and pinned as described above.
 
 ```tsx
 <CustomSelect
@@ -358,7 +366,7 @@ Import the package entry after Tailwind CSS in your application stylesheet:
 @import '@rentnerkev/select/tailwind.css';
 ```
 
-The package entry scans only the published JavaScript under `dist`. Select styling uses `--color-select-control`, `--color-select-surface`, `--color-select-hover`, `--color-select-border`, `--color-select-border-strong`, `--color-select-foreground`, `--color-select-muted`, and `--color-select-accent`. Override these tokens with a later `@theme inline` block to map them to your app's light/dark tokens. The older shared theme tokens remain available for compatibility.
+The package entry scans only the published JavaScript under `dist`. Select styling uses `--color-select-control`, `--color-select-surface`, `--color-select-hover`, `--color-select-border`, `--color-select-border-strong`, `--color-select-foreground`, `--color-select-muted`, and `--color-select-accent`. The default tokens form a dark palette; use a matching surrounding surface or override the foreground and surface tokens together for a light theme. Override these tokens with a later `@theme inline` block to map them to your app's light/dark tokens. The older shared theme tokens remain available for compatibility.
 
 ```css
 @theme inline {
