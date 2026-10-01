@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react'
 import * as SelectPrimitive from '@radix-ui/react-select'
 import { CustomTooltip } from '@rentnerkev/tooltips'
 import { AlertCircle, Check, ChevronDown, X } from 'lucide-react'
@@ -100,6 +101,7 @@ export default function SelectView<TValue>({
         messages: resolvedMessages,
         open,
         searchValue,
+        optionEntries,
         filteredOptions,
         selectedEntries,
         selectedRadixValue,
@@ -108,12 +110,14 @@ export default function SelectView<TValue>({
         isOptionEqualToValue,
     } = logic.state
     const { root, content, trigger, validationInput, searchInput } = logic.ref
+    const focusedOptionValue = useRef<{ value: TValue } | null>(null)
     const {
         handleFieldBlur,
         handleInvalid,
         handleValueChange,
         handleClear,
         handleOpenChange,
+        closeAfterOptionRemoval,
         handleContentKeyDownCapture,
         setSearchValue,
     } = logic.handler
@@ -132,6 +136,48 @@ export default function SelectView<TValue>({
         ariaLabelledBy,
         label !== undefined && label !== null ? labelId : undefined,
     )
+
+    useLayoutEffect(() => {
+        if (!open || !focusedOptionValue.current) return
+
+        const activeElement = content.current?.ownerDocument.activeElement
+        if (
+            activeElement !== content.current &&
+            activeElement !== content.current?.ownerDocument.body
+        ) {
+            return
+        }
+
+        const focusedValue = focusedOptionValue.current.value
+        const isStillAvailable = optionEntries.some(({ option }) =>
+            isOptionEqualToValue(option.value, focusedValue),
+        )
+
+        if (isStillAvailable) return
+
+        if (searchable) {
+            searchInput.current?.focus()
+            return
+        }
+
+        const firstEnabledOption = content.current?.querySelector<HTMLElement>(
+            '[role="option"]:not([data-disabled])',
+        )
+        if (firstEnabledOption) {
+            firstEnabledOption.focus()
+        } else {
+            closeAfterOptionRemoval()
+        }
+    }, [
+        closeAfterOptionRemoval,
+        content,
+        isOptionEqualToValue,
+        open,
+        optionEntries,
+        searchable,
+        searchInput,
+    ])
+
     function isSelected(optionValue: TValue) {
         return selectedValues.some((value) =>
             isOptionEqualToValue(optionValue, value),
@@ -429,6 +475,37 @@ export default function SelectView<TValue>({
                                                     if (multiple) {
                                                         shouldKeepOpen.current = true
                                                     }
+                                                }}
+                                                onFocus={() => {
+                                                    focusedOptionValue.current =
+                                                        {
+                                                            value: option.value,
+                                                        }
+                                                }}
+                                                onBlur={(event) => {
+                                                    const nextTarget =
+                                                        event.relatedTarget
+
+                                                    if (
+                                                        nextTarget === null ||
+                                                        nextTarget ===
+                                                            event.currentTarget
+                                                                .ownerDocument
+                                                                .body ||
+                                                        (nextTarget instanceof
+                                                            Node &&
+                                                            (content.current?.contains(
+                                                                nextTarget,
+                                                            ) ||
+                                                                root.current?.contains(
+                                                                    nextTarget,
+                                                                )))
+                                                    ) {
+                                                        return
+                                                    }
+
+                                                    focusedOptionValue.current =
+                                                        null
                                                 }}
                                                 onKeyDown={(event) => {
                                                     if (

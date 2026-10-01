@@ -69,6 +69,13 @@ export default function useSelectLogic<TValue>({
     const validationInputRef = useRef<HTMLInputElement>(null)
     const internalTriggerRef = useRef<HTMLButtonElement>(null)
     const shouldKeepOpen = useRef(false)
+    const [optionIdentityState, setOptionIdentityState] = useState<{
+        optionEntries: ReadonlyArray<{
+            option: Option<TValue>
+            radixValue: string
+        }>
+        nextRadixValue: number
+    }>({ optionEntries: [], nextRadixValue: 0 })
 
     const generatedId = useId()
     const triggerId = id ?? `select-${generatedId}`
@@ -76,14 +83,52 @@ export default function useSelectLogic<TValue>({
     const descriptionId = `${triggerId}-description`
     const errorId = `${triggerId}-error`
     const isOptionEqualToValue = isOptionEqualToValueProp ?? Object.is
-    const optionEntries = useMemo(
-        () =>
-            options.map((option, index) => ({
+    const optionEntriesResult = useMemo(() => {
+        let nextRadixValue = optionIdentityState.nextRadixValue
+        const usedPreviousEntries = new Set<number>()
+        const previousEntries = optionIdentityState.optionEntries
+        const optionEntries = options.map((option) => {
+            const previousIndex = previousEntries.findIndex(
+                (entry, index) =>
+                    !usedPreviousEntries.has(index) &&
+                    isOptionEqualToValue(option.value, entry.option.value),
+            )
+
+            if (previousIndex >= 0) {
+                usedPreviousEntries.add(previousIndex)
+                return {
+                    option,
+                    radixValue: previousEntries[previousIndex].radixValue,
+                }
+            }
+
+            return {
                 option,
-                radixValue: `option-${index}`,
-            })),
-        [options],
-    )
+                radixValue: `option-${nextRadixValue++}`,
+            }
+        })
+
+        return { optionEntries, nextRadixValue }
+    }, [isOptionEqualToValue, optionIdentityState, options])
+    const { optionEntries } = optionEntriesResult
+
+    const optionIdentityIsCurrent =
+        optionIdentityState.optionEntries.length === optionEntries.length &&
+        optionIdentityState.optionEntries.every((entry, index) => {
+            const nextEntry = optionEntries[index]
+
+            return (
+                nextEntry !== undefined &&
+                entry.option === nextEntry.option &&
+                entry.radixValue === nextEntry.radixValue
+            )
+        }) &&
+        optionIdentityState.nextRadixValue ===
+            optionEntriesResult.nextRadixValue
+
+    if (!optionIdentityIsCurrent) {
+        setOptionIdentityState(optionEntriesResult)
+    }
     const filteredOptions = useMemo(() => {
         const normalizedSearch = (searchable ? searchValue : '')
             .trim()
@@ -239,6 +284,12 @@ export default function useSelectLogic<TValue>({
         else setSearchValue('')
     }
 
+    function closeAfterOptionRemoval() {
+        shouldKeepOpen.current = false
+        setOpen(false)
+        setSearchValue('')
+    }
+
     function handleContentKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
         if (!searchable) return
         if (event.target === searchInputRef.current) {
@@ -309,6 +360,7 @@ export default function useSelectLogic<TValue>({
             handleValueChange,
             handleClear,
             handleOpenChange,
+            closeAfterOptionRemoval,
             handleContentKeyDownCapture,
             setSearchValue,
         },

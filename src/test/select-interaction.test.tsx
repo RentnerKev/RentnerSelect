@@ -229,6 +229,75 @@ describe('select interactions', () => {
         expect(onBlur).not.toHaveBeenCalled()
     })
 
+    test('keeps the same option focused when dynamic options reorder', async () => {
+        const user = userEvent.setup()
+        const north = { value: 'north', label: 'North' }
+        const south = { value: 'south', label: 'South' }
+        const { rerender } = render(
+            <CustomSelect
+                value=""
+                onValueChange={() => undefined}
+                options={[north, south]}
+            />,
+        )
+
+        await user.click(screen.getByRole('combobox'))
+        await screen.findByRole('textbox', {
+            name: 'Optionen suchen',
+        })
+        await user.keyboard('{ArrowDown}')
+        await user.keyboard('{ArrowDown}')
+        const focusedSouth = screen.getByRole('option', { name: 'South' })
+        expect(document.activeElement === focusedSouth).toBe(true)
+
+        rerender(
+            <CustomSelect
+                value=""
+                onValueChange={() => undefined}
+                options={[south, north]}
+            />,
+        )
+
+        expect(
+            document.activeElement ===
+                screen.getByRole('option', { name: 'South' }),
+        ).toBe(true)
+    })
+
+    test('returns focus to search when the focused dynamic option is removed', async () => {
+        const user = userEvent.setup()
+        const north = { value: 'north', label: 'North' }
+        const south = { value: 'south', label: 'South' }
+        const { rerender } = render(
+            <CustomSelect
+                value=""
+                onValueChange={() => undefined}
+                options={[north, south]}
+            />,
+        )
+
+        await user.click(screen.getByRole('combobox'))
+        const search = await screen.findByRole('textbox', {
+            name: 'Optionen suchen',
+        })
+        await user.keyboard('{ArrowDown}')
+        await user.keyboard('{ArrowDown}')
+        expect(
+            document.activeElement ===
+                screen.getByRole('option', { name: 'South' }),
+        ).toBe(true)
+
+        rerender(
+            <CustomSelect
+                value=""
+                onValueChange={() => undefined}
+                options={[north]}
+            />,
+        )
+
+        expect(document.activeElement === search).toBe(true)
+    })
+
     test('clears multiple values and hides the clear control when read-only or disabled', async () => {
         const user = userEvent.setup()
         const { rerender } = render(<ClearableMultipleHarness readOnly />)

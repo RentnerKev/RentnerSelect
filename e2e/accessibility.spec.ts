@@ -138,3 +138,70 @@ test('keeps multiple option state accessible and toggles the focused option with
     await expect(max).toHaveAttribute('aria-selected', 'false')
     await expect(max).toHaveAttribute('data-state', 'unchecked')
 })
+
+test('keeps focus on the same object option after dynamic reorder', async ({
+    page,
+}) => {
+    await page.goto('/?dynamic-focus=reorder')
+    const combobox = page.getByRole('combobox', { name: 'Dynamic options' })
+    await combobox.press('Enter')
+
+    const search = page.getByRole('textbox', { name: 'Optionen suchen' })
+    await search.press('ArrowDown')
+    await page.keyboard.press('ArrowDown')
+    const south = page.getByRole('option', { name: 'South' })
+    await expect(south).toBeFocused()
+
+    await page.keyboard.press('Space')
+
+    await expect(south).toBeFocused()
+    await expect(south).toHaveAttribute('aria-selected', 'true')
+})
+
+test('returns focus to search when a dynamic refresh removes its options', async ({
+    page,
+}) => {
+    await page.goto('/?dynamic-focus=remove-searchable')
+    const combobox = page.getByRole('combobox', { name: 'Dynamic options' })
+    await combobox.press('Enter')
+
+    const search = page.getByRole('textbox', { name: 'Optionen suchen' })
+    await search.press('ArrowDown')
+    await page.keyboard.press('ArrowDown')
+    const south = page.getByRole('option', { name: 'South' })
+    await expect(south).toBeFocused()
+
+    await page.keyboard.press('Space')
+
+    await expect(page.getByRole('option')).toHaveCount(0)
+    await expect(search).toBeFocused()
+})
+
+test('returns focus to the trigger when a non-searchable refresh empties the list', async ({
+    page,
+}) => {
+    await page.goto('/?dynamic-focus=remove-static')
+    const combobox = page.getByRole('combobox', { name: 'Dynamic options' })
+    await combobox.press('Enter')
+
+    const south = page.getByRole('option', { name: 'South' })
+    await south.focus()
+    await page.keyboard.press('Space')
+
+    await expect(page.getByRole('option')).toHaveCount(0)
+    await expect(combobox).toBeFocused()
+})
+
+test('moves focus to the first enabled option after non-searchable removal', async ({
+    page,
+}) => {
+    await page.goto('/?dynamic-focus=remove-static-remaining')
+    const combobox = page.getByRole('combobox', { name: 'Dynamic options' })
+    await combobox.press('Enter')
+
+    const south = page.getByRole('option', { name: 'South' })
+    await south.focus()
+    await page.keyboard.press('Space')
+
+    await expect(page.getByRole('option', { name: 'North' })).toBeFocused()
+})

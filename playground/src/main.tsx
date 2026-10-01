@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { CustomSelect } from '../../src'
+import { CustomSelect, type Option } from '../../src'
 import './styles.css'
 
 type PlaygroundInputProps = {
@@ -80,6 +80,64 @@ type PlaygroundFormValues = {
     email: string
     department: Array<string>
     message: string
+}
+
+type DynamicChoice = { id: string }
+type DynamicOptionsMode =
+    | 'reorder'
+    | 'remove-searchable'
+    | 'remove-static'
+    | 'remove-static-remaining'
+
+function DynamicOptionsFixture({ mode }: { mode: DynamicOptionsMode }) {
+    const [options, setOptions] = useState<Array<Option<DynamicChoice>>>([
+        { value: { id: 'north' }, label: 'North' },
+        { value: { id: 'south' }, label: 'South' },
+    ])
+    const [value, setValue] = useState<Array<DynamicChoice>>([])
+
+    return (
+        <main className="min-h-screen bg-[#101419] p-8 text-gray-200">
+            <h1 className="mb-6 text-xl font-bold text-white">
+                Dynamic option focus fixture
+            </h1>
+            <CustomSelect
+                id="dynamic-options"
+                label="Dynamic options"
+                multiple
+                value={value}
+                onValueChange={(nextValue) => {
+                    setValue(nextValue)
+                    if (mode === 'reorder') {
+                        setOptions((current) =>
+                            [...current].reverse().map((option) => ({
+                                ...option,
+                                value: { ...option.value },
+                            })),
+                        )
+                    } else if (mode === 'remove-static-remaining') {
+                        const removedValue = nextValue.at(-1)
+                        setOptions((current) =>
+                            current.filter(
+                                (option) =>
+                                    option.value.id !== removedValue?.id,
+                            ),
+                        )
+                    } else {
+                        setOptions([])
+                    }
+                }}
+                isOptionEqualToValue={(optionValue, selectedValue) =>
+                    optionValue.id === selectedValue.id
+                }
+                options={options}
+                searchable={
+                    mode !== 'remove-static' &&
+                    mode !== 'remove-static-remaining'
+                }
+            />
+        </main>
+    )
 }
 
 const requiredValidator =
@@ -328,4 +386,21 @@ function App() {
     )
 }
 
-createRoot(document.getElementById('root')!).render(<App />)
+function PlaygroundRoot() {
+    const dynamicMode = new URLSearchParams(window.location.search).get(
+        'dynamic-focus',
+    )
+
+    if (
+        dynamicMode === 'reorder' ||
+        dynamicMode === 'remove-searchable' ||
+        dynamicMode === 'remove-static' ||
+        dynamicMode === 'remove-static-remaining'
+    ) {
+        return <DynamicOptionsFixture mode={dynamicMode} />
+    }
+
+    return <App />
+}
+
+createRoot(document.getElementById('root')!).render(<PlaygroundRoot />)

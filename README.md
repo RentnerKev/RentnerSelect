@@ -147,6 +147,11 @@ In the searchable multiple menu, `Enter` or `Space` toggles the focused option.
 Typing a printable non-space character while an option is focused returns focus
 to search and filters the options; spaces can be entered in the search field.
 
+When options refresh while the menu is open, focus follows the same value as
+options reorder or are recreated, using `isOptionEqualToValue` when provided.
+If the focused option is removed, focus returns to search or moves to the first
+enabled option; a non-searchable menu closes when no enabled options remain.
+
 An option with `disabled: true` is pinned: users cannot add or remove it in the
 menu. If it is already selected, it remains in the value and form submission
 until the controlled value removes it or the option is enabled again.
