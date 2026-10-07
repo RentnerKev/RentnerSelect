@@ -411,3 +411,11 @@ bun run playground:dev
 ## License
 
 MIT
+
+## Architecture
+
+Reusable select UI lives in `src/shared/Select/Components`, with its focused hooks in `src/shared/Select/Hooks` and typed contracts in `src/shared/Select/Types`. Public modules at the `src` root remain compatibility facades. UI-free color, selection, field, and message logic lives in `src/lib` under its domain. Tests are centralized in `src/tests`, mirroring the source domains; browser and compile-time contracts run separately.
+
+Public npm root, subpath, and type entry points retain their existing paths through compatibility facades. Internal code imports defining modules directly. No application routes, server stack, or additional dependencies are needed for these libraries.
+
+Closed options retain Radix Collection, ItemText, typeahead, and native BubbleSelect registration, including custom rendered native text. A memoized presentation list avoids repeating unchanged option renderers; it does not remove this required DOM. The default Object.is index preserves duplicate FIFO identities, NaN, object references, and signed zero. Custom comparators retain the compatibility scan path.

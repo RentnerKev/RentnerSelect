@@ -1,8 +1,9 @@
 [install]
 minimumReleaseAge = 86400
-minimumReleaseAgeExcludes = ["@rentnerkev/select"]
+# Coordinated, verified releases of our own packages can be adopted immediately.
+minimumReleaseAgeExcludes = ["@rentnerkev/select", "@rentnerkev/tooltips"]
 linker = "isolated"
 globalStore = false
 [test]
-root = "src/test"
+root = "src/tests"
 pathIgnorePatterns = ["**/*.db.test.ts"]

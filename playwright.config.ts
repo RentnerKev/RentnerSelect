@@ -3,8 +3,8 @@ import { defineConfig, devices } from '@playwright/test'
 const baseURL = 'http://127.0.0.1:4176'
 
 export default defineConfig({
-    testDir: './e2e',
-    testMatch: '**/*.spec.ts',
+    testDir: './src/tests',
+    testMatch: '**/*.browser.spec.ts',
     fullyParallel: true,
     forbidOnly: Boolean(process.env.CI),
     retries: process.env.CI ? 2 : 0,

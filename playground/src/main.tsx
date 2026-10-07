@@ -1,36 +1,22 @@
-import { useForm } from '@tanstack/react-form'
 import {
     BriefcaseBusiness,
     Mail,
     MessageSquareText,
     UserRound,
 } from 'lucide-react'
-import { useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { CustomSelect, type Option } from '../../src'
+import { CustomSelect } from '../../src/shared/Select/Components/CustomSelect'
+// oxlint-disable-next-line import/no-unassigned-import -- The Vite entry deliberately loads the playground stylesheet.
 import './styles.css'
-
-type PlaygroundInputProps = {
-    id?: string
-    value: string
-    placeholder?: string
-    required?: boolean
-    minLength?: number
-    maxLength?: number
-    className?: string
-    type?: React.HTMLInputTypeAttribute | 'textarea'
-    rows?: number
-    icon?: React.ReactNode
-    showLength?: boolean
-    customDesign?: unknown
-    showPasswordStrength?: boolean
-    minValue?: number
-    maxValue?: number
-    minuteStep?: number
-    onChange: (
-        event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    ) => void
-}
+import { useDynamicOptionsLogic } from './Hooks/useDynamicOptionsLogic'
+import { usePlaygroundLogic } from './Hooks/usePlaygroundLogic'
+import { usePlaygroundRootLogic } from './Hooks/usePlaygroundRootLogic'
+import { roleOptions } from './config/options.config'
+import { requiredValidator } from './lib/Form/validation'
+import type {
+    DynamicOptionsMode,
+    PlaygroundInputProps,
+} from './Types/playground.types'
 
 function CustomInput({
     type = 'text',
@@ -52,50 +38,11 @@ function CustomInput({
     return <input {...props} type={type} onChange={onChange} />
 }
 
-const roleOptions = [
-    {
-        value: 'max-mustermann',
-        label: 'Max - Mustermann',
-        subOption: 'Musterstraße 12, 10115 Berlin',
-    },
-    {
-        value: 'erika-musterfrau',
-        label: 'Erika - Musterfrau',
-        subOption: 'Hafenweg 4, 20457 Hamburg',
-    },
-    {
-        value: 'tim-schneider',
-        label: 'Tim - Schneider',
-        subOption: 'Königsallee 22, 40212 Düsseldorf',
-    },
-    {
-        value: 'sara-fischer',
-        label: 'Sara - Fischer',
-        subOption: 'Leopoldstraße 9, 80802 München',
-    },
-]
-
-type PlaygroundFormValues = {
-    firstName: string
-    email: string
-    department: Array<string>
-    message: string
-}
-
-type DynamicChoice = { id: string }
-type DynamicOptionsMode =
-    | 'reorder'
-    | 'remove-searchable'
-    | 'remove-static'
-    | 'remove-static-remaining'
-
 function DynamicOptionsFixture({ mode }: { mode: DynamicOptionsMode }) {
-    const [options, setOptions] = useState<Array<Option<DynamicChoice>>>([
-        { value: { id: 'north' }, label: 'North' },
-        { value: { id: 'south' }, label: 'South' },
-    ])
-    const [value, setValue] = useState<Array<DynamicChoice>>([])
-
+    const {
+        state: { options, value, searchable, isOptionEqualToValue },
+        handler: { handleValueChange },
+    } = useDynamicOptionsLogic(mode)
     return (
         <main className="min-h-screen bg-[#101419] p-8 text-gray-200">
             <h1 className="mb-6 text-xl font-bold text-white">
@@ -106,49 +53,14 @@ function DynamicOptionsFixture({ mode }: { mode: DynamicOptionsMode }) {
                 label="Dynamic options"
                 multiple
                 value={value}
-                onValueChange={(nextValue) => {
-                    setValue(nextValue)
-                    if (mode === 'reorder') {
-                        setOptions((current) =>
-                            [...current].reverse().map((option) => ({
-                                ...option,
-                                value: { ...option.value },
-                            })),
-                        )
-                    } else if (mode === 'remove-static-remaining') {
-                        const removedValue = nextValue.at(-1)
-                        setOptions((current) =>
-                            current.filter(
-                                (option) =>
-                                    option.value.id !== removedValue?.id,
-                            ),
-                        )
-                    } else {
-                        setOptions([])
-                    }
-                }}
-                isOptionEqualToValue={(optionValue, selectedValue) =>
-                    optionValue.id === selectedValue.id
-                }
+                onValueChange={handleValueChange}
+                isOptionEqualToValue={isOptionEqualToValue}
                 options={options}
-                searchable={
-                    mode !== 'remove-static' &&
-                    mode !== 'remove-static-remaining'
-                }
+                searchable={searchable}
             />
         </main>
     )
 }
-
-const requiredValidator =
-    (label: string) =>
-    ({ value }: { value: unknown }) => {
-        const isEmpty = Array.isArray(value)
-            ? value.length === 0
-            : typeof value !== 'string' || value.trim().length === 0
-
-        return isEmpty ? `${label} ist erforderlich.` : undefined
-    }
 
 function FieldError({ errors }: { errors: Array<unknown> }) {
     if (errors.length === 0) {
@@ -161,21 +73,11 @@ function FieldError({ errors }: { errors: Array<unknown> }) {
 }
 
 function App() {
-    const [submittedValues, setSubmittedValues] =
-        useState<PlaygroundFormValues | null>(null)
-
-    const form = useForm({
-        defaultValues: {
-            firstName: '',
-            email: '',
-            department: [],
-            message: '',
-        } as PlaygroundFormValues,
-        onSubmit: ({ value }) => {
-            setSubmittedValues(value)
-        },
-    })
-
+    const {
+        state: { submittedValues },
+        handler: { handleSubmit },
+        form,
+    } = usePlaygroundLogic()
     return (
         <main className="min-h-screen bg-[#101419] px-6 py-10 text-gray-200">
             <div className="mx-auto flex max-w-5xl flex-col gap-8">
@@ -194,11 +96,7 @@ function App() {
 
                 <form
                     className="grid gap-6 md:grid-cols-[minmax(0,1fr)_20rem]"
-                    onSubmit={(event) => {
-                        event.preventDefault()
-                        event.stopPropagation()
-                        void form.handleSubmit()
-                    }}
+                    onSubmit={handleSubmit}
                 >
                     <section className="grid gap-5 rounded-lg border border-border-dark bg-surface-dark p-5">
                         <div className="grid gap-5 md:grid-cols-2">
@@ -387,20 +285,10 @@ function App() {
 }
 
 function PlaygroundRoot() {
-    const dynamicMode = new URLSearchParams(window.location.search).get(
-        'dynamic-focus',
-    )
-
-    if (
-        dynamicMode === 'reorder' ||
-        dynamicMode === 'remove-searchable' ||
-        dynamicMode === 'remove-static' ||
-        dynamicMode === 'remove-static-remaining'
-    ) {
-        return <DynamicOptionsFixture mode={dynamicMode} />
-    }
-
-    return <App />
+    const {
+        state: { dynamicMode },
+    } = usePlaygroundRootLogic()
+    return dynamicMode ? <DynamicOptionsFixture mode={dynamicMode} /> : <App />
 }
 
 createRoot(document.getElementById('root')!).render(<PlaygroundRoot />)
