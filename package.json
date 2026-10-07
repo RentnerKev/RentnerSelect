@@ -1,6 +1,6 @@
 {
     "name": "@rentnerkev/select",
-    "version": "5.0.4",
+    "version": "5.0.5",
     "description": "Accessible, searchable React select with single and multiple selection support.",
     "author": "RentnerKev",
     "license": "MIT",
@@ -16,7 +16,7 @@
     ],
     "scripts": {
         "build": "bun -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true })\" && tsc",
-        "typecheck": "tsc --noEmit && tsc --project tsconfig.type-tests.json",
+        "typecheck": "tsc --noEmit && tsc --project tsconfig.type-tests.json && bun run typecheck:automation",
         "test": "bun test",
         "prepare": "bun run build",
         "pack:check": "bun pm pack --dry-run",
@@ -29,7 +29,8 @@
         "lint:fix": "oxlint --fix .",
         "format": "oxfmt .",
         "format:check": "oxfmt --check .",
-        "verify": "bun run playground:install && bun run typecheck && bun run lint && bun run format:check && bun run test && bun run build && bun run pack:check && bun run pack:consumer && bun run e2e"
+        "verify": "bun run playground:install && bun run typecheck && bun run lint && bun run format:check && bun run test && bun run build && bun run pack:check && bun run pack:consumer && bun run e2e",
+        "typecheck:automation": "tsc --noEmit -p .github/scripts/tsconfig.json"
     },
     "repository": {
         "type": "git",
@@ -53,6 +54,7 @@
         "@playwright/test": "^1.63.0",
         "@testing-library/react": "^16.3.3",
         "@testing-library/user-event": "^14.6.7",
+        "@types/node": "^24.19.1",
         "@types/react": "^19.3.0",
         "@types/react-dom": "^19.3.0",
         "happy-dom": "^20.14.5",

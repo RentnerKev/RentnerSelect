@@ -152,6 +152,14 @@ try {
             )
             .join('\n'),
     )
+    for (const file of ['Hooks/useConsumerAppLogic.ts', 'Types/app.types.ts']) {
+        const destination = join(consumerRoot, file)
+        mkdirSync(dirname(destination), { recursive: true })
+        writeFileSync(
+            destination,
+            readFileSync(fileURLToPath(new URL(`./${file}`, import.meta.url))),
+        )
+    }
     writeFileSync(
         join(consumerRoot, 'App.tsx'),
         readFileSync(

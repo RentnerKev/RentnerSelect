@@ -4,6 +4,14 @@
         "noEmit": true,
         "rootDir": "."
     },
-    "include": ["src", "type-tests"],
-    "exclude": ["dist", "node_modules", "playground", "src/test"]
+    "include": ["src", "src/tests/types"],
+    "exclude": [
+        "dist",
+        "node_modules",
+        "playground",
+        "src/tests/**/*.test.ts",
+        "src/tests/**/*.test.tsx",
+        "src/tests/setup.ts",
+        "src/tests/**/*.spec.ts"
+    ]
 }

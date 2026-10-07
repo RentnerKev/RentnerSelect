@@ -1,46 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
 import { CustomSelect } from '@rentnerkev/select'
 
+import { useConsumerAppLogic } from './Hooks/useConsumerAppLogic.js'
+
+import type { AppLogicResult } from './Types/app.types.js'
+
 export function App() {
-    const [regions, setRegions] = useState<Array<string>>([])
-    const [refMode, setRefMode] = useState<'cleanup' | 'legacy' | 'object'>(
-        'cleanup',
-    )
-    const [showRefSelect, setShowRefSelect] = useState(true)
-    const [refEventsText, setRefEventsText] = useState('')
-    const [objectRefStatus, setObjectRefStatus] = useState('detached')
-    const refEvents = useRef<string[]>([])
-    const objectTriggerRef = useRef<HTMLButtonElement>(null)
-    const cleanupTriggerRef = useCallback((node: HTMLButtonElement | null) => {
-        if (node) {
-            refEvents.current.push('cleanup:attached')
-            return () => {
-                refEvents.current.push('cleanup:cleanup')
-            }
-        }
-
-        refEvents.current.push('cleanup:null')
-    }, [])
-    const legacyTriggerRef = useCallback((node: HTMLButtonElement | null) => {
-        refEvents.current.push(node ? 'legacy:attached' : 'legacy:null')
-    }, [])
-
-    useEffect(() => {
-        setRefEventsText(refEvents.current.join(','))
-        setObjectRefStatus(
-            refMode === 'object' && showRefSelect && objectTriggerRef.current
-                ? 'attached'
-                : 'detached',
-        )
-    }, [refMode, showRefSelect])
-
-    const triggerRef =
-        refMode === 'cleanup'
-            ? cleanupTriggerRef
-            : refMode === 'legacy'
-              ? legacyTriggerRef
-              : objectTriggerRef
-
+    const {
+        state: { regions, showRefSelect, refEventsText, objectRefStatus },
+        setter: { setRegions, setRefMode, setShowRefSelect },
+        refs: { triggerRef },
+    }: AppLogicResult = useConsumerAppLogic()
     return (
         <>
             <form
@@ -61,7 +30,7 @@ export function App() {
                         { value: 'south', label: 'South' },
                     ]}
                 />
-                <output role="status" aria-label="Selected regions">
+                <output aria-label="Selected regions">
                     {regions.join(', ') || 'None'}
                 </output>
             </form>

@@ -4,5 +4,5 @@ minimumReleaseAgeExcludes = ["@rentnerkev/select"]
 linker = "isolated"
 globalStore = false
 [test]
-root = "src/test"
+root = "src/tests"
 pathIgnorePatterns = ["**/*.db.test.ts"]
