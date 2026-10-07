@@ -17,9 +17,9 @@ Accessible React select with search, typed single or multiple selection, native 
 Requires React 19, React DOM 19, and Tailwind CSS 4.
 
 ```bash
-bun add @rentnerkev/select
-# npm alternative
 npm install @rentnerkev/select
+# or with Bun
+bun add @rentnerkev/select
 ```
 
 Import the package styles after Tailwind in your app stylesheet:
