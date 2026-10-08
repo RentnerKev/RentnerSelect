@@ -6,7 +6,7 @@ import {
     screen,
     waitFor,
 } from '@testing-library/react'
-import { CustomSelect } from '../../../../shared/Select/Components/CustomSelect.js'
+import { CustomSelect } from '../../../../shared/Select/Components/CustomSelect.tsx'
 
 afterEach(cleanup)
 

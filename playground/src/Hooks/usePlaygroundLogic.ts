@@ -1,9 +1,21 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useForm } from '@tanstack/react-form'
-import type { PlaygroundFormValues } from '../Types/playground.types'
+import { requiredValidator } from '../lib/Form/validation.ts'
+import type {
+    PlaygroundFormValues,
+    PlaygroundLogicResult,
+    PlaygroundFieldValidators,
+} from '../Types/playground.types.ts'
 
-export function usePlaygroundLogic() {
+const fieldValidators: PlaygroundFieldValidators = {
+    firstName: { onSubmit: requiredValidator('Name') },
+    email: { onSubmit: requiredValidator('E-Mail') },
+    department: { onBlur: requiredValidator('Kontakt') },
+    message: { onSubmit: requiredValidator('Nachricht') },
+}
+
+export function usePlaygroundLogic(): PlaygroundLogicResult {
     const [submittedValues, setSubmittedValues] =
         useState<PlaygroundFormValues | null>(null)
 
@@ -24,5 +36,9 @@ export function usePlaygroundLogic() {
         event.stopPropagation()
         void form.handleSubmit()
     }
-    return { state: { submittedValues }, handler: { handleSubmit }, form }
+    return {
+        state: { submittedValues, fieldValidators },
+        handler: { handleSubmit },
+        form,
+    }
 }

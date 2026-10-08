@@ -1,5 +1,8 @@
-import type { DynamicOptionsMode } from '../Types/playground.types'
-export function usePlaygroundRootLogic() {
+import type {
+    DynamicOptionsMode,
+    PlaygroundRootLogicResult,
+} from '../Types/playground.types.ts'
+export function usePlaygroundRootLogic(): PlaygroundRootLogicResult {
     const mode = new URLSearchParams(window.location.search).get(
         'dynamic-focus',
     )

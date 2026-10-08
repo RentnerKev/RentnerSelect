@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 import { createRef, type Ref } from 'react'
 import { cleanup, render, screen } from '@testing-library/react'
-import { CustomSelect } from '../../../../index.js'
-import { composeRefs } from '../../../../shared/Select/Hooks/useComposedRefs.js'
+import { CustomSelect } from '../../../../shared/Select/Components/CustomSelect.tsx'
+import { composeRefs } from '../../../../shared/Select/Hooks/useComposedRefs.ts'
 
 afterEach(() => {
     cleanup()

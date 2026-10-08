@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { CustomSelect } from '../../../index.js'
+import { CustomSelect } from '../../../shared/Select/Components/CustomSelect.tsx'
 import {
     isSingleValueEmpty,
     toggleSelectedValue,
-} from '../../../lib/Select/selectValue.js'
+} from '../../../lib/Select/selectValue.ts'
 
 describe('generic select values', () => {
     test('keeps comma-containing values intact in array mode', () => {

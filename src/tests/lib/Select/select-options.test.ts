@@ -3,7 +3,7 @@ import {
     getOptionKey,
     indexOptions,
     reconcileOptionEntries,
-} from '../../../lib/Select/selectOptions.js'
+} from '../../../lib/Select/selectOptions.ts'
 
 const compare = (left: { id: number }, right: { id: number }) =>
     left.id === right.id

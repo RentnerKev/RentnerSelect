@@ -3,15 +3,15 @@ import type {
     Option,
     SelectValueOptions,
     SelectValuesResult,
-} from '../Types/select.types.js'
+} from '../Types/select.types.ts'
 import {
     getOptionKey,
     indexOptions,
-} from '../../../lib/Select/selectOptions.js'
+} from '../../../lib/Select/selectOptions.ts'
 import {
     isSingleValueEmpty,
     toggleSelectedValue,
-} from '../../../lib/Select/selectValue.js'
+} from '../../../lib/Select/selectValue.ts'
 
 function defaultGetFormValue(value: unknown) {
     return String(value)

@@ -3,7 +3,7 @@ import type {
     SelectDefaults,
     SelectProviderProps,
     SelectProviderLogicResult,
-} from '../Types/select.types.js'
+} from '../Types/select.types.ts'
 export const SelectContext = createContext<SelectDefaults | null>(null)
 
 export function useSelectProviderLogic({

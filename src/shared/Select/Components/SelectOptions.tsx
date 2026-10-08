@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import * as SelectPrimitive from '@radix-ui/react-select'
 import { Check } from 'lucide-react'
-import type { SelectOptionsProps } from '../Types/select.types.js'
+import type { SelectOptionsProps } from '../Types/select.types.ts'
 
 function SelectOptionsTemplate<TValue>({
     entries,

@@ -1,10 +1,10 @@
 import { createElement } from 'react'
-import { CustomSelect, SelectProvider } from '../../index.js'
+import { CustomSelect, SelectProvider } from '../../index.ts'
 import type {
     MultipleSelectProps,
     Option,
     SingleSelectProps,
-} from '../../index.js'
+} from '../../index.ts'
 
 const statuses = ['todo', 'done'] as const
 type Status = (typeof statuses)[number]

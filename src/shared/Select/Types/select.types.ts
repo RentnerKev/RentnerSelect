@@ -11,19 +11,16 @@ import type {
     ChangeEvent,
     InvalidEvent,
 } from 'react'
-import type { OptionEntry } from '../../../lib/Select/Types/selectOptions.types.js'
+import type {
+    Option,
+    OptionEntry,
+} from '../../../lib/Select/Types/selectOptions.types.ts'
 import type {
     SelectLocale,
     SelectMessages,
-} from '../../../lib/Messages/Types/i18n.types.js'
+} from '../../../lib/Messages/Types/i18n.types.ts'
 
-export interface Option<TValue = string> {
-    value: TValue
-    label: string
-    subOption?: string
-    disabled?: boolean
-}
-
+export type { Option } from '../../../lib/Select/Types/selectOptions.types.ts'
 export interface SelectClassNames {
     root?: string
     trigger?: string
@@ -138,7 +135,7 @@ export type CustomSelectProps<TValue = string> =
 export type {
     SelectLocale,
     SelectMessages,
-} from '../../../lib/Messages/i18n.js'
+} from '../../../lib/Messages/Types/i18n.types.ts'
 
 export interface SelectProviderProps {
     children: ReactNode

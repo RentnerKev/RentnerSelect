@@ -32,12 +32,12 @@ describe('published package contract', () => {
             './package.json',
         ])
         expect(packageJson.exports['./value']).toEqual({
-            import: './dist/selectValue.js',
-            types: './dist/selectValue.d.ts',
+            import: './dist/lib/Select/selectValue.js',
+            types: './dist/lib/Select/selectValue.d.ts',
         })
         expect(packageJson.exports['./messages']).toEqual({
-            import: './dist/i18n.js',
-            types: './dist/i18n.d.ts',
+            import: './dist/lib/Messages/i18n.js',
+            types: './dist/lib/Messages/i18n.d.ts',
         })
         expect(packageJson.exports['./package.json']).toBe('./package.json')
     })

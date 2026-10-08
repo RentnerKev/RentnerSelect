@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import type { Option } from '../../../src/shared/Select/Types/select.types'
+import type { Option } from '../../../src/shared/Select/Types/select.types.ts'
 import type {
+    DynamicOptionsLogicResult,
     DynamicChoice,
     DynamicOptionsMode,
-} from '../Types/playground.types'
+} from '../Types/playground.types.ts'
 
 function isOptionEqualToValue(
     optionValue: DynamicChoice,
@@ -12,7 +13,9 @@ function isOptionEqualToValue(
     return optionValue.id === selectedValue.id
 }
 
-export function useDynamicOptionsLogic(mode: DynamicOptionsMode) {
+export function useDynamicOptionsLogic(
+    mode: DynamicOptionsMode,
+): DynamicOptionsLogicResult {
     const [options, setOptions] = useState<Array<Option<DynamicChoice>>>([
         { value: { id: 'north' }, label: 'North' },
         { value: { id: 'south' }, label: 'South' },

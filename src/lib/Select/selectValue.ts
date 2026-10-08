@@ -1,7 +1,5 @@
-export type SelectValueComparator<TValue> = (
-    optionValue: TValue,
-    value: TValue,
-) => boolean
+import type { SelectValueComparator } from './Types/selectValue.types.ts'
+export type { SelectValueComparator } from './Types/selectValue.types.ts'
 
 export function isSingleValueEmpty(
     value: unknown,

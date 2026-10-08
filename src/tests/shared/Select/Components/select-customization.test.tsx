@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { CustomSelect, SelectProvider } from '../../../../index.js'
+import { CustomSelect } from '../../../../shared/Select/Components/CustomSelect.tsx'
+import { SelectProvider } from '../../../../shared/Select/Components/SelectProvider.tsx'
 
 afterEach(cleanup)
 

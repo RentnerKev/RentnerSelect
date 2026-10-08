@@ -1,4 +1,4 @@
-/* eslint-disable no-await-in-loop -- Browser engines run sequentially to bound memory use. */
+/* oxlint-disable no-await-in-loop -- Browser engines run sequentially to bound memory use. */
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import {
@@ -218,6 +218,7 @@ try {
                 jsx: 'react-jsx',
                 strict: true,
                 noEmit: true,
+                allowImportingTsExtensions: true,
                 skipLibCheck: false,
             },
             include: ['*.ts', '*.tsx'],

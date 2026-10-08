@@ -1,10 +1,8 @@
 import {
     SelectContext,
     useSelectProviderLogic,
-} from '../Hooks/useSelectContext.js'
-import type { SelectProviderProps } from '../Types/select.types.js'
-export type { SelectProviderProps } from '../Types/select.types.js'
-export { useSelectDefaults } from '../Hooks/useSelectContext.js'
+} from '../Hooks/useSelectContext.ts'
+import type { SelectProviderProps } from '../Types/select.types.ts'
 
 export function SelectProvider({ children, ...props }: SelectProviderProps) {
     const { state } = useSelectProviderLogic(props)

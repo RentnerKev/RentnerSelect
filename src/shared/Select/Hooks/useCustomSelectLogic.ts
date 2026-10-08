@@ -14,18 +14,18 @@ import type {
     InvalidEvent,
     KeyboardEvent,
 } from 'react'
-import { resolveSelectMessages } from '../../../lib/Messages/i18n.js'
+import { resolveSelectMessages } from '../../../lib/Messages/i18n.ts'
 import type {
     Option,
     CustomSelectProps,
     CustomSelectLogicResult,
-} from '../Types/select.types.js'
-import { useSelectDefaults } from './useSelectContext.js'
-import { mergeAriaIds } from '../../../lib/Field/selectField.js'
-import { getOptionKey } from '../../../lib/Select/selectOptions.js'
-import useSelectValues from './useSelectValues.js'
-import useSelectOptionIdentity from './useSelectOptionIdentity.js'
-import useComposedRefs from './useComposedRefs.js'
+} from '../Types/select.types.ts'
+import { useSelectDefaults } from './useSelectContext.ts'
+import { mergeAriaIds } from '../../../lib/Field/selectField.ts'
+import { getOptionKey } from '../../../lib/Select/selectOptions.ts'
+import useSelectValues from './useSelectValues.ts'
+import useSelectOptionIdentity from './useSelectOptionIdentity.ts'
+import useComposedRefs from './useComposedRefs.ts'
 
 function handleSearchPointerDown(event: PointerEvent<HTMLInputElement>) {
     event.stopPropagation()

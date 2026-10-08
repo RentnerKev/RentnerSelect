@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { reconcileOptionEntries } from '../../../lib/Select/selectOptions.js'
+import { reconcileOptionEntries } from '../../../lib/Select/selectOptions.ts'
 import type {
     Option,
     SelectOptionIdentityResult,
-} from '../Types/select.types.js'
+} from '../Types/select.types.ts'
 
 export default function useSelectOptionIdentity<TValue>(
     options: ReadonlyArray<Option<TValue>>,

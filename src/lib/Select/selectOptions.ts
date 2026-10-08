@@ -1,8 +1,8 @@
 import type {
     OptionEntry,
     OptionIdentity,
-} from './Types/selectOptions.types.js'
-import type { Option } from '../../shared/Select/Types/select.types.js'
+} from './Types/selectOptions.types.ts'
+import type { Option } from './Types/selectOptions.types.ts'
 
 const negativeZero = Symbol('negative-zero')
 

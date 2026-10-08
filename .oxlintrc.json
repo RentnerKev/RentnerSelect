@@ -32,7 +32,7 @@
         "playground/dist/**"
     ],
     "rules": {
-        "typescript/no-explicit-any": "warn",
+        "typescript/no-explicit-any": "error",
         "typescript/no-unused-vars": [
             "error",
             {

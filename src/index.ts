@@ -1,19 +1,19 @@
-export { CustomSelect } from './shared/Select/Components/CustomSelect.js'
-export { SelectProvider } from './shared/Select/Components/SelectProvider.js'
+export { CustomSelect } from './shared/Select/Components/CustomSelect.tsx'
+export { SelectProvider } from './shared/Select/Components/SelectProvider.tsx'
 export {
     resolveSelectMessages,
     selectMessageCatalog,
-} from './lib/Messages/i18n.js'
+} from './lib/Messages/i18n.ts'
 export type {
     CustomSelectProps,
     MultipleSelectProps,
-    Option,
     SelectClassNames,
     SelectOptionState,
     SingleSelectProps,
-} from './shared/Select/Types/select.types.js'
-export type { SelectProviderProps } from './shared/Select/Components/SelectProvider.js'
+    SelectProviderProps,
+} from './shared/Select/Types/select.types.ts'
+export type { Option } from './lib/Select/Types/selectOptions.types.ts'
 export type {
     SelectLocale,
     SelectMessages,
-} from './shared/Select/Types/select.types.js'
+} from './lib/Messages/Types/i18n.types.ts'

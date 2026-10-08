@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { CustomSelect } from '../../../shared/Select/Components/CustomSelect.tsx'
 import {
-    CustomSelect,
     resolveSelectMessages,
     selectMessageCatalog,
-} from '../../../index.js'
+} from '../../../lib/Messages/i18n.ts'
 
 const options = [{ value: 'one', label: 'One' }]
 

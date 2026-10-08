@@ -1,5 +1,5 @@
-import type { SelectLocale, SelectMessages } from './Types/i18n.types.js'
-export type { SelectLocale, SelectMessages } from './Types/i18n.types.js'
+import type { SelectLocale, SelectMessages } from './Types/i18n.types.ts'
+export type { SelectLocale, SelectMessages } from './Types/i18n.types.ts'
 const germanMessages: SelectMessages = {
     required: 'Dieses Feld ist erforderlich',
     minSelection: (count) => `Mindestens ${count} Optionen auswählen`,
