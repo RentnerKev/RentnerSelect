@@ -63,7 +63,7 @@ export function TeamSelect() {
 | **Searchable contact choices**<br>[![Searchable contact choices](https://raw.githubusercontent.com/RentnerKev/RentnerSelect/main/assets/readme/screenshots/searchable-contact-choices.png)](https://raw.githubusercontent.com/RentnerKev/RentnerSelect/main/assets/readme/screenshots/searchable-contact-choices.png) | **Multiple selection**<br>[![Multiple selection](https://raw.githubusercontent.com/RentnerKev/RentnerSelect/main/assets/readme/screenshots/multiple-selection.png)](https://raw.githubusercontent.com/RentnerKev/RentnerSelect/main/assets/readme/screenshots/multiple-selection.png)     |
 | **Secondary option details**<br>[![Secondary option details](https://raw.githubusercontent.com/RentnerKev/RentnerSelect/main/assets/readme/screenshots/secondary-option-details.png)](https://raw.githubusercontent.com/RentnerKev/RentnerSelect/main/assets/readme/screenshots/secondary-option-details.png)         | **Typed object values**<br>[![Typed object values](https://raw.githubusercontent.com/RentnerKev/RentnerSelect/main/assets/readme/screenshots/typed-object-values.png)](https://raw.githubusercontent.com/RentnerKev/RentnerSelect/main/assets/readme/screenshots/typed-object-values.png) |
 
-[Full API & usage](https://github.com/RentnerKev/RentnerSelect/blob/main/docs/usage.md) · [Local playground](./playground) · [MIT license](./LICENSE)
+[Full API & usage](https://npm.rentner.dev/docs/select) · [Local playground](./playground) · [MIT license](./LICENSE)
 
 Run the playground from the repository root:
 
