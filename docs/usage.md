@@ -419,3 +419,43 @@ Reusable select UI lives in `src/shared/Select/Components`, with its focused hoo
 Public npm root, subpath, and type entry points retain their existing import paths; package exports resolve directly to their defining modules. Internal code imports defining modules directly. No application routes, server stack, or additional dependencies are needed for these libraries.
 
 Closed options retain Radix Collection, ItemText, typeahead, and native BubbleSelect registration, including custom rendered native text. A memoized presentation list avoids repeating unchanged option renderers; it does not remove this required DOM. The default Object.is index preserves duplicate FIFO identities, NaN, object references, and signed zero. Custom comparators retain the compatibility scan path.
+
+## AI and read-only MCP access
+
+The separate `@rentnerkev/select/ai` entry is for Node.js and Bun tooling. It reads
+only this installed package's manifest, README, usage guide, and built TypeScript
+declarations. It does not import React, mount UI, run examples, perform network
+requests, or require an MCP runtime. Keep it in server/tooling code.
+
+```ts
+import {
+    getPackageInfo,
+    getPackageApi,
+    getPackageDocumentation,
+    searchPackageDocumentation,
+    getPackageExamples,
+} from '@rentnerkev/select/ai'
+
+const info = getPackageInfo()
+const api = getPackageApi() // All public typed subpaths and dependent declarations
+const usage = getPackageDocumentation('usage') // Full guide, including CSS and providers
+const readme = getPackageDocumentation('readme')
+const matches = searchPackageDocumentation('messages') // Literal, case-insensitive lines
+const examples = getPackageExamples() // Fenced examples from the usage guide
+```
+
+`getPackageApi({ subpath: '.', symbol: 'CustomSelect' })` validates the symbol
+against the selected public entry and returns its complete declaration context.
+Unknown subpaths or symbols throw an error. File paths are not accepted. The
+`./ai` entry itself is excluded from this UI API context. The manifest's `exports`
+map remains available through `getPackageInfo()`.
+
+Public website discovery is planned at
+[llms.txt](https://packages.rentner.dev/llms.txt) and
+[the MCP endpoint](https://packages.rentner.dev/mcp). These addresses become
+available after the website deployment; this documentation does not claim the
+endpoint is already online. The website's read-only tools expose public package
+information, API declarations, usage guides, examples, and search, without
+accounts, write operations, or access to private project files. The installed
+`/ai` entry works locally without that service. Always use the documentation and
+declarations for the version installed in your project.

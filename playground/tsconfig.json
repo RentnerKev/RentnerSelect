@@ -14,5 +14,5 @@
         "esModuleInterop": true
     },
     "include": ["src", "../src"],
-    "exclude": ["../src/tests"]
+    "exclude": ["../src/tests", "../src/ai.ts"]
 }

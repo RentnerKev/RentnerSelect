@@ -30,6 +30,7 @@ describe('published package contract', () => {
             './messages',
             './types',
             './package.json',
+            './ai',
         ])
         expect(packageJson.exports['./value']).toEqual({
             import: './dist/lib/Select/selectValue.js',
