@@ -6,7 +6,7 @@
       "name": "@rentnerkev/select",
       "dependencies": {
         "@radix-ui/react-select": "^2.3.8",
-        "@rentnerkev/tooltips": "^2.0.7",
+        "@rentnerkev/tooltips": "^2.0.8",
         "lucide-react": "^1.52.0",
       },
       "devDependencies": {
@@ -183,7 +183,7 @@
 
     "@radix-ui/rect": ["@radix-ui/rect@1.1.3", "", {}, "sha512-JtyZR+mqgBibTo8xea3B6ZRmzZiM/YeVBtUkas6zMuXjAlfIFIW2FgqeM9eLyvEaYX66vr6DJMK+4U6LV0KhNw=="],
 
-    "@rentnerkev/tooltips": ["@rentnerkev/tooltips@2.0.7", "", { "dependencies": { "@radix-ui/react-tooltip": "^1.3.0" }, "peerDependencies": { "react": "^19.0.0", "react-dom": "^19.0.0" } }, "sha512-7a0k7eEacYjnvIGknBuJ2oByy6i3aZwFNyK5OMh5gAZZeLr4TMf10BlKT/OOkIJhvNS8fxjDDedx4vmh15jtog=="],
+    "@rentnerkev/tooltips": ["@rentnerkev/tooltips@2.0.8", "", { "dependencies": { "@radix-ui/react-tooltip": "^1.3.0" }, "peerDependencies": { "react": "^19.0.0", "react-dom": "^19.0.0" } }, "sha512-NJ5N4FvvXRVqSxVySDP2X1bYlG0C2xPtAg2g+EqMK2/cG+1sxh0/9FQ6ePGpjKpk+ZhDAYbBR4RWqd5hOhjMCQ=="],
 
     "@testing-library/dom": ["@testing-library/dom@10.4.2", "", { "dependencies": { "@babel/code-frame": "^7.10.4", "@babel/runtime": "^7.12.5", "@types/aria-query": "^5.0.1", "aria-query": "5.3.0", "dom-accessibility-api": "^0.5.9", "lz-string": "^1.5.0", "picocolors": "1.1.1", "pretty-format": "^27.0.2" } }, "sha512-yzr2S9HyAIdhz2/6qHgbs665Q7PKVcDF05vsOlHPxG1mo36gKVesdYVeDLnXgfjJ03CrKRk08knc6+E/9m8v2Q=="],
 

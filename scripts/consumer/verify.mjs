@@ -225,6 +225,24 @@ try {
         }),
     )
     const tsc = join(consumerRoot, 'node_modules/typescript/bin/tsc')
+    writeFileSync(
+        join(consumerRoot, 'tsconfig.exports.json'),
+        JSON.stringify({
+            extends: './tsconfig.json',
+            compilerOptions: { allowImportingTsExtensions: false },
+            include: ['smoke.ts'],
+        }),
+    )
+    runNode([tsc, '--project', 'tsconfig.exports.json'])
+    runNode([
+        tsc,
+        '--project',
+        'tsconfig.exports.json',
+        '--module',
+        'NodeNext',
+        '--moduleResolution',
+        'NodeNext',
+    ])
     runNode([tsc, '--project', consumerRoot])
     // NodeNext catches declaration-resolution problems hidden by bundler mode.
     runNode([
