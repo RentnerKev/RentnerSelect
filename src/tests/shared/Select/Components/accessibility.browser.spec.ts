@@ -205,3 +205,36 @@ test('moves focus to the first enabled option after non-searchable removal', asy
 
     await expect(page.getByRole('option', { name: 'North' })).toBeFocused()
 })
+
+test('centers icons and the clear button on the labeled control', async ({
+    page,
+}) => {
+    await page.goto('/')
+    const trigger = page.getByRole('combobox', { name: 'Kontakt' })
+    await trigger.click()
+    await page.getByRole('option', { name: /Max - Mustermann/ }).click()
+    await page.getByRole('option', { name: /Erika - Musterfrau/ }).click()
+    await page.keyboard.press('Escape')
+
+    const triggerBox = await trigger.boundingBox()
+    expect(triggerBox).not.toBeNull()
+    const center = triggerBox!.y + triggerBox!.height / 2
+    const clear = page.getByRole('button', { name: 'Auswahl löschen' })
+    const clearBox = await clear.boundingBox()
+    expect(clearBox).not.toBeNull()
+    expect(
+        Math.abs(clearBox!.y + clearBox!.height / 2 - center),
+    ).toBeLessThanOrEqual(1)
+
+    const icons = trigger.locator('..').locator('svg')
+    await expect(icons).toHaveCount(3)
+    const iconBoxes = await Promise.all(
+        (await icons.all()).map((icon) => icon.boundingBox()),
+    )
+    for (const box of iconBoxes) {
+        expect(box).not.toBeNull()
+        expect(Math.abs(box!.y + box!.height / 2 - center)).toBeLessThanOrEqual(
+            1,
+        )
+    }
+})

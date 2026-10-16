@@ -102,7 +102,7 @@ describe('select locale messages', () => {
         expect(requiredMarkup).toContain('aria-required="true"')
     })
 
-    test('error null clears required validation and generated error state', () => {
+    test('error null clears native validation while preserving required semantics', () => {
         const markup = renderToStaticMarkup(
             createElement(CustomSelect, {
                 value: '',
@@ -114,7 +114,7 @@ describe('select locale messages', () => {
         )
 
         expect(markup).not.toContain('required=""')
-        expect(markup).not.toContain('aria-required="true"')
+        expect(markup).toContain('aria-required="true"')
         expect(markup).not.toContain('aria-invalid="true"')
         expect(markup).not.toContain('aria-errormessage=')
     })

@@ -100,13 +100,11 @@ export function App() {
                         >
                             {(field) => (
                                 <div className="flex flex-col gap-2">
-                                    <label
-                                        className="text-[11px] font-bold uppercase tracking-wider text-gray-400"
-                                        htmlFor={field.name}
-                                    >
-                                        Kontakt
-                                    </label>
                                     <CustomSelect
+                                        label="Kontakt"
+                                        classNames={{
+                                            label: 'text-[11px] font-bold uppercase tracking-wider text-gray-400',
+                                        }}
                                         id={field.name}
                                         name={field.name}
                                         multiple

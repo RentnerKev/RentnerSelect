@@ -132,3 +132,102 @@ describe('project customization', () => {
         expect(onValueChange).not.toHaveBeenCalled()
     })
 })
+
+describe('required field semantics', () => {
+    test.each([undefined, null, '', 'Choose a department'])(
+        'announces a required field with external error %s',
+        (error) => {
+            const { container } = render(
+                <CustomSelect
+                    name="department"
+                    label="Department"
+                    value=""
+                    onValueChange={() => undefined}
+                    options={[]}
+                    required
+                    error={error}
+                />,
+            )
+
+            expect(
+                screen.getByRole('combobox').getAttribute('aria-required'),
+            ).toBe('true')
+            const input = container.querySelector<HTMLInputElement>(
+                'input[name="department"]',
+            )!
+            expect(input.required).toBe(error === undefined)
+            expect(input.validationMessage).toBe(
+                error ??
+                    (error === undefined ? 'Dieses Feld ist erforderlich' : ''),
+            )
+        },
+    )
+
+    test.each([null, 'External error'])(
+        'does not mark optional or disabled fields required with error %s',
+        (error) => {
+            const { rerender } = render(
+                <CustomSelect
+                    label="Department"
+                    value=""
+                    onValueChange={() => undefined}
+                    options={[]}
+                    error={error}
+                />,
+            )
+            expect(
+                screen.getByRole('combobox').hasAttribute('aria-required'),
+            ).toBe(false)
+
+            rerender(
+                <CustomSelect
+                    label="Department"
+                    value=""
+                    onValueChange={() => undefined}
+                    options={[]}
+                    error={error}
+                    required
+                    disabled
+                />,
+            )
+            const trigger = screen.getByRole('combobox')
+            expect(trigger.hasAttribute('aria-required')).toBe(false)
+            expect(trigger.hasAttribute('disabled')).toBe(true)
+        },
+    )
+    test.each([true, false, 'true', 'false'] as const)(
+        "preserves an optional field's explicit aria-required=%s",
+        (ariaRequired) => {
+            render(
+                <CustomSelect
+                    value=""
+                    onValueChange={() => undefined}
+                    options={[]}
+                    error={null}
+                    aria-required={ariaRequired}
+                />,
+            )
+
+            expect(
+                screen.getByRole('combobox').getAttribute('aria-required'),
+            ).toBe(String(ariaRequired))
+        },
+    )
+
+    test('does not let an explicit false hide a required field', () => {
+        render(
+            <CustomSelect
+                value=""
+                onValueChange={() => undefined}
+                options={[]}
+                required
+                error={null}
+                aria-required={false}
+            />,
+        )
+
+        expect(screen.getByRole('combobox').getAttribute('aria-required')).toBe(
+            'true',
+        )
+    })
+})
