@@ -212,9 +212,11 @@ export default function useComboboxLogic<T>(
     const activeId = activeEntry?.id
     useEffect(() => {
         if (!activeId) return
-        input.current?.ownerDocument
-            .getElementById(activeId)
-            ?.scrollIntoView?.({ block: 'nearest' })
+        const activeOption = Array.from(
+            content.current?.querySelectorAll<HTMLElement>('[role="option"]') ??
+                [],
+        ).find((option) => option.id === activeId)
+        activeOption?.scrollIntoView?.({ block: 'nearest' })
     }, [activeId])
 
     function handleFocus() {
