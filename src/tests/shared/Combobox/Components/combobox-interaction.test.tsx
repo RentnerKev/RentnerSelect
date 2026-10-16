@@ -327,3 +327,20 @@ test('retains zero as a visible, associated accessible label in SSR and the DOM'
     expect(html).toContain('>0</label>')
     expect(html).toContain('aria-labelledby=')
 })
+
+test('scrolls the active option within a ShadowRoot portal', () => {
+    const host = document.createElement('div')
+    document.body.append(host)
+    const portal = host.attachShadow({ mode: 'open' })
+    const { unmount } = render(<Controlled portalContainer={portal} />)
+    const input = screen.getByRole('combobox')
+    fireEvent.focus(input)
+    const last = portal.querySelectorAll<HTMLElement>('[role="option"]')[2]!
+    const scroll = mock(() => undefined)
+    last.scrollIntoView = scroll
+    fireEvent.keyDown(input, { key: 'End' })
+    expect(scroll).toHaveBeenCalledWith({ block: 'nearest' })
+    expect(input.getAttribute('aria-activedescendant')).toBe(last.id)
+    unmount()
+    host.remove()
+})
