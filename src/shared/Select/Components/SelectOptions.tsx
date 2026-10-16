@@ -10,6 +10,8 @@ function SelectOptionsTemplate<TValue>({
     multiple,
     renderOption,
     className,
+    classNames,
+    textOverflow,
     handler,
 }: SelectOptionsProps<TValue>) {
     return (
@@ -30,9 +32,11 @@ function SelectOptionsTemplate<TValue>({
                         onFocus={() => handler.handleOptionFocus(option.value)}
                         onBlur={handler.handleOptionBlur}
                         onKeyDown={handler.handleOptionKeyDown}
-                        className={`relative flex min-h-11 w-full cursor-pointer select-none items-center rounded-lg py-2 pl-9 pr-3 text-sm font-medium tracking-normal normal-case text-select-foreground outline-none transition-colors data-[highlighted]:bg-select-hover data-[highlighted]:text-select-foreground data-[state=checked]:bg-select-hover data-disabled:cursor-not-allowed data-disabled:opacity-40 ${className || ''}`}
+                        className={`relative flex w-full cursor-pointer select-none items-center outline-none data-disabled:cursor-not-allowed data-disabled:opacity-40 ${className ?? 'min-h-11 rounded-lg py-2 pl-9 pr-3 text-sm font-medium tracking-normal normal-case text-select-foreground transition-colors data-[highlighted]:bg-select-hover data-[highlighted]:text-select-foreground data-[state=checked]:bg-select-hover'}`}
                     >
-                        <span className="absolute left-3 flex h-3.5 w-3.5 items-center justify-center">
+                        <span
+                            className={`absolute left-3 flex items-center justify-center ${classNames.optionIndicator ?? 'h-3.5 w-3.5'}`}
+                        >
                             {multiple ? (
                                 selected && <Check className="h-4 w-4" />
                             ) : (
@@ -41,7 +45,7 @@ function SelectOptionsTemplate<TValue>({
                                 </SelectPrimitive.ItemIndicator>
                             )}
                         </span>
-                        <SelectPrimitive.ItemText>
+                        <SelectPrimitive.ItemText className="min-w-0 flex-1">
                             {renderOption ? (
                                 renderOption(option, {
                                     selected,
@@ -49,11 +53,15 @@ function SelectOptionsTemplate<TValue>({
                                 })
                             ) : (
                                 <span className="flex min-w-0 flex-col gap-0.5">
-                                    <span className="truncate leading-5">
+                                    <span
+                                        className={`${textOverflow === 'wrap' ? 'whitespace-normal break-words' : 'truncate'} ${classNames.optionLabel ?? 'leading-5'}`}
+                                    >
                                         {option.label}
                                     </span>
                                     {option.subOption && (
-                                        <span className="truncate text-xs leading-4 text-select-muted">
+                                        <span
+                                            className={`${textOverflow === 'wrap' ? 'whitespace-normal break-words' : 'truncate'} ${classNames.optionDescription ?? 'text-xs leading-4 text-select-muted'}`}
+                                        >
                                             {option.subOption}
                                         </span>
                                     )}

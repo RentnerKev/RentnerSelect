@@ -1,4 +1,20 @@
 export async function check({ page, expect }) {
+    const external = page.getByRole('combobox', { name: 'External customer' })
+    await expect(external).toHaveCSS('height', '36px')
+    await external.fill('remote query')
+    await expect(page.getByRole('option')).toHaveCount(2)
+    await external.press('ArrowDown')
+    await expect(external).toBeFocused()
+    await external.press('Enter')
+    await expect(external).toHaveValue('Alpha')
+    expect(
+        await page
+            .getByRole('form', { name: 'Customer form' })
+            .evaluate((node) => new FormData(node).get('customer')),
+    ).toBe('Alpha')
+    await page.getByRole('button', { name: 'Clear selection' }).click()
+    await expect(external).toHaveValue('')
+
     const refEvents = page.getByTestId('trigger-ref-events')
     const objectRefStatus = page.getByTestId('trigger-object-ref-status')
     await expect(refEvents).toHaveText('cleanup:attached')

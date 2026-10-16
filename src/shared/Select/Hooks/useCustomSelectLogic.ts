@@ -39,6 +39,12 @@ export default function useCustomSelectLogic<TValue>(
     props: CustomSelectProps<TValue>,
 ): CustomSelectLogicResult<TValue> {
     const {
+        controlSize: providedControlSize,
+        textOverflow: providedTextOverflow,
+        contentWidth: providedContentWidth,
+        portalContainer: providedPortalContainer,
+        portalClassName: providedPortalClassName,
+        portalZIndex: providedPortalZIndex,
         multiple: providedMultiple,
         id,
         name,
@@ -94,10 +100,24 @@ export default function useCustomSelectLogic<TValue>(
         omitEmptyFormValue?: boolean
     }
     const defaults = useSelectDefaults()
+    const controlSize = providedControlSize ?? defaults.controlSize
+    const textOverflow =
+        providedTextOverflow ?? defaults.textOverflow ?? 'truncate'
+    const contentWidth =
+        providedContentWidth ?? defaults.contentWidth ?? 'trigger'
+    const portalContainer =
+        providedPortalContainer === undefined
+            ? defaults.portalContainer
+            : providedPortalContainer
+    const portalClassName = providedPortalClassName ?? defaults.portalClassName
+    const portalZIndex = providedPortalZIndex ?? defaults.portalZIndex
     const locale = providedLocale ?? defaults.locale ?? 'de'
     const searchable = providedSearchable ?? defaults.searchable ?? true
     const nonce = providedNonce ?? defaults.nonce
-    const classNames = { ...defaults.classNames, ...providedClassNames }
+    const classNames = useMemo(
+        () => ({ ...defaults.classNames, ...providedClassNames }),
+        [defaults.classNames, providedClassNames],
+    )
     const mergedMessages = useMemo(
         () => ({ ...defaults.messages, ...providedMessages }),
         [defaults.messages, providedMessages],
@@ -482,6 +502,12 @@ export default function useCustomSelectLogic<TValue>(
             validationInput: validationInputRef,
         },
         state: {
+            controlSize,
+            textOverflow,
+            contentWidth,
+            portalContainer,
+            portalClassName,
+            portalZIndex,
             name,
             required,
             disabled,

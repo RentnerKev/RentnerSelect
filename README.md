@@ -111,3 +111,5 @@ information, API declarations, usage guides, examples, and search, without
 accounts, write operations, or access to private project files. The installed
 `/ai` entry works locally without that service. Always use the documentation and
 declarations for the version installed in your project.
+
+CustomSelect supports replaceable text slots, `textOverflow`, popup width, shared themes and control sizes. A separate generic `Combobox<T>` accepts external search results, with independent selected value and search text. Optional pure form adapters are available from `@rentnerkev/select/form`. See [usage](docs/usage.md) for contracts and examples.

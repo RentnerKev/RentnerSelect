@@ -21,7 +21,7 @@ describe('Tailwind package contract', () => {
     test('publishes an explicit CSS entry', () => {
         expect(manifest.exports['./tailwind.css']).toBe('./tailwind.css')
         expect(manifest.files).toContain('tailwind.css')
-        expect(manifest.sideEffects).toEqual(['./tailwind.css'])
+        expect(manifest.sideEffects).toEqual(['./tailwind.css', './theme.css'])
     })
 
     test('scans only built JavaScript and provides the shared theme tokens', () => {

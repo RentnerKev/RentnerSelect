@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+function getCustomerKey(value: string) {
+    return value
+}
+
 export function useConsumerAppLogic() {
+    const [customer, setCustomer] = useState<string | null>(null)
+    const [customerSearch, setCustomerSearch] = useState('')
+    function handleCustomerChange(value: string | null) {
+        setCustomer(value)
+        setCustomerSearch(value ?? '')
+    }
     const [regions, setRegions] = useState<Array<string>>([])
     const [refMode, setRefMode] = useState<'cleanup' | 'legacy' | 'object'>(
         'cleanup',
@@ -42,8 +52,17 @@ export function useConsumerAppLogic() {
               : objectTriggerRef
 
     return {
-        state: { regions, showRefSelect, refEventsText, objectRefStatus },
-        setter: { setRegions, setRefMode, setShowRefSelect },
+        state: {
+            customer,
+            customerSearch,
+            getCustomerKey,
+            regions,
+            showRefSelect,
+            refEventsText,
+            objectRefStatus,
+        },
+        handler: { handleCustomerChange },
+        setter: { setCustomerSearch, setRegions, setRefMode, setShowRefSelect },
         refs: { triggerRef },
     }
 }

@@ -13,5 +13,12 @@ export function usePlaygroundRootLogic(): PlaygroundRootLogicResult {
         mode === 'remove-static-remaining'
             ? mode
             : null
-    return { state: { dynamicMode } }
+    return {
+        state: {
+            dynamicMode,
+            externalCombobox: new URLSearchParams(window.location.search).has(
+                'external-combobox',
+            ),
+        },
+    }
 }

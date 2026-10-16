@@ -1,4 +1,4 @@
-import { CustomSelect } from '@rentnerkev/select'
+import { CustomSelect, Combobox, getSelectFieldProps } from '@rentnerkev/select'
 
 import { useConsumerAppLogic } from './Hooks/useConsumerAppLogic.ts'
 
@@ -6,12 +6,43 @@ import type { AppLogicResult } from './Types/app.types.ts'
 
 export function App() {
     const {
-        state: { regions, showRefSelect, refEventsText, objectRefStatus },
-        setter: { setRegions, setRefMode, setShowRefSelect },
+        state: {
+            customer,
+            customerSearch,
+            getCustomerKey,
+            regions,
+            showRefSelect,
+            refEventsText,
+            objectRefStatus,
+        },
+        handler: { handleCustomerChange },
+        setter: { setCustomerSearch, setRegions, setRefMode, setShowRefSelect },
         refs: { triggerRef },
     }: AppLogicResult = useConsumerAppLogic()
     return (
         <>
+            <form
+                aria-label="Customer form"
+                className="w-64 rounded-xl bg-select-surface p-6 text-select-foreground"
+            >
+                <Combobox
+                    {...getSelectFieldProps({
+                        name: 'customer',
+                        state: { value: customer },
+                        handleChange: handleCustomerChange,
+                        handleBlur: () => undefined,
+                    })}
+                    label="External customer"
+                    options={['Alpha', 'Charlie']}
+                    getOptionKey={getCustomerKey}
+                    getOptionLabel={getCustomerKey}
+                    searchValue={customerSearch}
+                    onSearchValueChange={setCustomerSearch}
+                    controlSize="sm"
+                    clearable
+                    locale="en"
+                />
+            </form>
             <form
                 aria-label="Region form"
                 className="rounded-xl bg-select-surface p-6 text-select-foreground"

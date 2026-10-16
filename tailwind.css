@@ -1,3 +1,4 @@
+@import './theme.css';
 @import '@rentnerkev/tooltips/tailwind.css';
 
 @source "./dist/**/*.js";
@@ -11,14 +12,6 @@
     --color-border-dark: #2e323b;
     --color-secondary-text: #9ca3af;
     --color-muted-foreground: #9ca3af;
-    --color-select-control: #22252b;
-    --color-select-surface: #181a1f;
-    --color-select-hover: #2b3038;
-    --color-select-border: #2e323b;
-    --color-select-border-strong: #515965;
-    --color-select-foreground: #e5e7eb;
-    --color-select-muted: #9ca3af;
-    --color-select-accent: #8586f4;
 }
 
 /* Radix normally injects these rules. Shipping them here also works with strict CSP. */
@@ -30,4 +23,15 @@
 
 [data-radix-select-viewport]::-webkit-scrollbar {
     display: none;
+}
+
+@theme inline {
+    --color-select-control: var(--rentner-control, #22252b);
+    --color-select-surface: var(--rentner-surface, #181a1f);
+    --color-select-hover: var(--rentner-control-hover, #2b3038);
+    --color-select-border: var(--rentner-border, #2e323b);
+    --color-select-border-strong: var(--rentner-border, #515965);
+    --color-select-foreground: var(--rentner-foreground, #e5e7eb);
+    --color-select-muted: var(--rentner-muted, #9ca3af);
+    --color-select-accent: var(--rentner-accent, #8586f4);
 }

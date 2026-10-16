@@ -32,6 +32,24 @@ export interface SelectClassNames {
     label?: string
     description?: string
     clear?: string
+    control?: string
+    error?: string
+    leading?: string
+    trailing?: string
+    optionLabel?: string
+    optionDescription?: string
+    optionIndicator?: string
+    selectedLabel?: string
+    selectedDescription?: string
+}
+
+export interface SelectCustomizationProps {
+    controlSize?: 'sm' | 'md' | 'lg'
+    textOverflow?: 'truncate' | 'wrap'
+    contentWidth?: 'trigger' | 'content'
+    portalContainer?: Element | DocumentFragment | null
+    portalClassName?: string
+    portalZIndex?: number
 }
 
 export interface SelectOptionState {
@@ -39,7 +57,8 @@ export interface SelectOptionState {
     disabled: boolean
 }
 
-interface SharedCustomSelectProps<TValue> extends AriaAttributes {
+interface SharedCustomSelectProps<TValue>
+    extends AriaAttributes, SelectCustomizationProps {
     id?: string
     name?: string
     options: ReadonlyArray<Option<TValue>>
@@ -137,7 +156,7 @@ export type {
     SelectMessages,
 } from '../../../lib/Messages/Types/i18n.types.ts'
 
-export interface SelectProviderProps {
+export interface SelectProviderProps extends SelectCustomizationProps {
     children: ReactNode
     locale?: SelectLocale
     messages?: Partial<SelectMessages>
@@ -160,13 +179,17 @@ export interface SelectOptionsProps<TValue> {
     multiple: boolean
     renderOption: SharedCustomSelectProps<TValue>['renderOption']
     className: string | undefined
+    classNames: SelectClassNames
+    textOverflow: 'truncate' | 'wrap'
     isSelected: (value: TValue) => boolean
     isOptionDisabled: (option: Option<TValue>) => boolean
     handler: SelectOptionHandlers<TValue>
 }
 
 export interface CustomSelectLogicResult<TValue> {
-    state: {
+    state: SelectCustomizationProps & {
+        textOverflow: 'truncate' | 'wrap'
+        contentWidth: 'trigger' | 'content'
         name: string | undefined
         required: boolean
         disabled: boolean

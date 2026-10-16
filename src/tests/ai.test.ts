@@ -53,6 +53,18 @@ describe('read-only AI package context', () => {
             getPackageApi({ subpath: './types', symbol: 'CustomSelectProps' })
                 .declarations.length,
         ).toBeGreaterThan(0)
+        expect(
+            getPackageApi({ subpath: './combobox', symbol: 'Combobox' })
+                .declarations.length,
+        ).toBeGreaterThan(0)
+        expect(
+            getPackageApi({ subpath: './combobox', symbol: 'ComboboxProps' })
+                .declarations.length,
+        ).toBeGreaterThan(0)
+        expect(
+            getPackageApi({ subpath: './form', symbol: 'getSelectFieldProps' })
+                .declarations.length,
+        ).toBeGreaterThan(0)
         const root = api.declarations.find(
             (file) => file.path === 'dist/index.d.ts',
         )!

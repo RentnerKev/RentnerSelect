@@ -231,3 +231,55 @@ describe('required field semantics', () => {
         )
     })
 })
+
+test('replaces text styling and applies inherited popup placement defaults', async () => {
+    const user = userEvent.setup()
+    const portal = document.createElement('section')
+    document.body.append(portal)
+    const { unmount } = render(
+        <SelectProvider
+            controlSize="sm"
+            textOverflow="wrap"
+            contentWidth="content"
+            portalContainer={portal}
+            portalClassName="select-portal"
+            portalZIndex={4321}
+            classNames={{
+                trigger: 'custom-trigger',
+                optionLabel: 'custom-option-label',
+                optionDescription: 'custom-option-description',
+                selectedLabel: 'custom-selected-label',
+            }}
+        >
+            <CustomSelect
+                value="a"
+                onValueChange={() => undefined}
+                label="Styled"
+                options={[
+                    { value: 'a', label: 'Alpha', subOption: 'Description' },
+                ]}
+                searchable={false}
+            />
+        </SelectProvider>,
+    )
+    const trigger = screen.getByRole('combobox')
+    expect(trigger.className).toContain('h-rentner-control-sm')
+    expect(trigger.className).not.toContain('bg-select-control')
+    expect(
+        trigger.querySelector('.custom-selected-label')?.className,
+    ).toContain('whitespace-normal')
+    await user.click(trigger)
+    const option = portal.querySelector('[role="option"]')!
+    expect(portal.querySelector('.select-portal')).toBeTruthy()
+    expect(
+        (option.closest('[role="listbox"]') as HTMLElement).style.zIndex,
+    ).toBe('4321')
+    expect(
+        option.querySelector('.custom-option-label')?.className,
+    ).not.toContain('truncate')
+    expect(
+        option.querySelector('.custom-option-description')?.className,
+    ).not.toContain('text-select-muted')
+    unmount()
+    portal.remove()
+})

@@ -139,9 +139,23 @@ try {
         ai.getPackageApi({ symbol: 'DefinitelyNotAPublicSymbol' }),
     )
     assert.ok(existsSync(join(installedPackage, 'docs/usage.md')))
+    for (const [entry, target] of Object.entries(manifest.exports)) {
+        if (entry.endsWith('.css')) {
+            assert.equal(typeof target, 'string')
+            assert.ok(
+                readFileSync(join(installedPackage, target), 'utf8').trim(),
+                entry + ' must contain CSS',
+            )
+        }
+    }
+    assert.ok(ai.getPackageApi({ symbol: 'Combobox' }).declarations.length > 0)
+    assert.ok(
+        ai.getPackageApi({ subpath: './form', symbol: 'getSelectFieldProps' })
+            .declarations.length > 0,
+    )
     const entryPoints = Object.keys(manifest.exports)
         .filter(
-            (entry) => entry !== './package.json' && entry !== './tailwind.css',
+            (entry) => entry !== './package.json' && !entry.endsWith('.css'),
         )
         .map(
             (entry) => `${manifest.name}${entry === '.' ? '' : entry.slice(1)}`,

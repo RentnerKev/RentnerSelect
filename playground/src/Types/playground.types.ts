@@ -28,7 +28,7 @@ export interface FieldErrorProps {
     errors: Array<unknown>
 }
 export interface PlaygroundRootLogicResult {
-    state: { dynamicMode: DynamicOptionsMode | null }
+    state: { dynamicMode: DynamicOptionsMode | null; externalCombobox: boolean }
 }
 type FormValidator = undefined | FormValidateOrFn<PlaygroundFormValues>
 type AsyncFormValidator =

@@ -459,3 +459,66 @@ information, API declarations, usage guides, examples, and search, without
 accounts, write operations, or access to private project files. The installed
 `/ai` entry works locally without that service. Always use the documentation and
 declarations for the version installed in your project.
+
+## Shared styling and popup defaults
+
+Import `@rentnerkev/select/tailwind.css` after Tailwind. It imports the opt-in shared variable defaults from `@rentnerkev/select/theme.css`; override `--rentner-control`, `--rentner-surface`, `--rentner-foreground`, `--rentner-muted`, `--rentner-border`, `--rentner-accent`, `--rentner-accent-hover`, `--rentner-accent-foreground`, `--rentner-danger`, `--rentner-success`, `--rentner-warning`, `--rentner-info` and `--rentner-radius` on your theme scope. Existing select tokens and `className` remain supported.
+
+`SelectProvider` and individual controls accept `controlSize="sm" | "md" | "lg"` (36/44/48px). An omitted size preserves the existing geometry. CustomSelect also supports `textOverflow="truncate" | "wrap"` (default truncate), and `contentWidth="trigger" | "content"` (default trigger). Wrapping an unsized trigger lets it grow with its selected text; an explicit control size keeps the requested height. Content width uses the trigger as its minimum and remains bounded by available screen width.
+
+Typed `classNames` slots replace the corresponding visual defaults. Layout, disabled behavior, overflow mode and focus handling remain functional. Available slots: `root`, `control`, `label`, `description`, `error`, `trigger`, `search`, `content`, `viewport`, `option`, `optionLabel`, `optionDescription`, `optionIndicator`, `selectedLabel`, `selectedDescription`, `leading`, `trailing`, and `clear`. Nested providers inherit slots individually; a local empty string removes a visual default. In a Combobox, `search` styles the editable input, falling back to `trigger`.
+
+Provider/local `portalContainer` changes the actual destination; null selects the body fallback. `portalClassName` styles the portal wrapper. `portalZIndex` supplies the actual popup layer; otherwise `--rentner-overlay-z` falls back to 9998. For scoped themes, portal into the themed container or apply your scope through the wrapper class. Positioning dimensions and z-index use dynamic inline styles; visual styling uses Tailwind.
+
+`renderOption` and `renderValue` still replace custom content. Use the text slots for font, color and spacing overrides without descendant selectors or important utilities.
+
+## External Combobox
+
+`Combobox<T>` is a standalone editable combobox. It receives domain objects from the caller; it never fetches, debounces, caches, aborts or maps business data. `filterMode="external"` is the default and renders the supplied options unchanged. `filterMode="local"` opts into a label substring filter.
+
+`value` and `searchValue` are separately controlled. Typing only calls `onSearchValueChange`; choosing an option only calls `onValueChange`. If selection should replace the input text, update both values in your selection handler. Selection does not disappear when the result page changes. Supply unique stable keys through `getOptionKey`; the default selection equality compares keys, with `isOptionEqualToValue` as an override. `getOptionLabel`, optional `getOptionDescription`, `isOptionDisabled` and `renderOption` describe external options. Rendered option content must be presentational; keyboard focus remains on the input.
+
+`loading` replaces stale options with localized loading status. `loadingText`/`emptyText` override display content, and `messages.loading` joins the existing locale catalog. Arrow keys navigate enabled results, Home/End move to list edges while open, Enter selects, Escape closes, and Tab leaves the field. The input owns `aria-activedescendant`; dynamic removed options never leave a dangling ID. `inputRef` supports object and cleanup-returning callback refs.
+
+`label`, `description`, `error`, `required`, `disabled`, `readOnly`, ARIA labels and whole-field `onBlur` are supported. Named form submission uses `getFormValue(value)` or its stable key. Only the selected value is submitted, never uncommitted query text. An explicit external error (including null) owns validation visibility. Clear emits `onValueChange(null)` and `onSearchValueChange('')`, focuses the input, and closes the popup.
+
+`Combobox` and its props are exported from the root and `@rentnerkev/select/combobox`; type-only access is also available through `@rentnerkev/select/combobox/types`.
+
+```tsx
+import { Combobox } from '@rentnerkev/select/combobox'
+// State and requests live in your useCustomerLogic hook.
+;<Combobox
+    label="Customer"
+    value={state.customer}
+    searchValue={state.query}
+    onSearchValueChange={setter.setQuery}
+    onValueChange={handler.handleCustomerChange}
+    options={state.results}
+    getOptionKey={(customer) => customer.id}
+    getOptionLabel={(customer) => customer.name}
+    loading={state.loading}
+    clearable
+    locale="en"
+/>
+```
+
+## Optional form adapter
+
+The UI-free `@rentnerkev/select/form` entry exports `getSelectFieldProps`, `getReadableSelectError`, and structural types. It imports no React or form runtime. A field supplies `name`, `state.value`, optional `state.meta.errors/isTouched`, `handleChange(value)`, and `handleBlur()`. The returned props connect name, direct value changes, whole-field blur and external errors; use with CustomSelect or Combobox. TanStack Form FieldApi compatibility is checked against the installed playground dependency.
+
+Errors are visible after touch by default. `errorVisibility: 'always' | 'never' | 'touched'` changes visibility, and `mapError` handles application-specific error shapes. The default only accepts strings and string `message` properties. Unreadable errors are ignored. The returned null error suppresses internal validation while your form owns it.
+
+```tsx
+import { CustomSelect } from '@rentnerkev/select'
+import { getSelectFieldProps } from '@rentnerkev/select/form'
+;<form.Field name="region">
+    {(field) => (
+        <CustomSelect
+            {...getSelectFieldProps(field)}
+            options={state.regionOptions}
+            clearable
+            label="Region"
+        />
+    )}
+</form.Field>
+```

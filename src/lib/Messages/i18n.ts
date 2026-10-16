@@ -1,6 +1,7 @@
 import type { SelectLocale, SelectMessages } from './Types/i18n.types.ts'
 export type { SelectLocale, SelectMessages } from './Types/i18n.types.ts'
 const germanMessages: SelectMessages = {
+    loading: 'Wird geladen…',
     required: 'Dieses Feld ist erforderlich',
     minSelection: (count) => `Mindestens ${count} Optionen auswählen`,
     maxSelection: (count) => `Maximal ${count} Optionen auswählen`,
@@ -12,6 +13,7 @@ const germanMessages: SelectMessages = {
 }
 
 const englishMessages: SelectMessages = {
+    loading: 'Loading…',
     required: 'This field is required',
     minSelection: (count) => `Select at least ${count} options`,
     maxSelection: (count) => `Select at most ${count} options`,
@@ -23,6 +25,7 @@ const englishMessages: SelectMessages = {
 }
 
 const spanishMessages: SelectMessages = {
+    loading: 'Cargando…',
     required: 'Este campo es obligatorio',
     minSelection: (count) => `Selecciona al menos ${count} opciones`,
     maxSelection: (count) => `Selecciona como máximo ${count} opciones`,
@@ -34,6 +37,7 @@ const spanishMessages: SelectMessages = {
 }
 
 const frenchMessages: SelectMessages = {
+    loading: 'Chargement…',
     required: 'Ce champ est obligatoire',
     minSelection: (count) => `Sélectionnez au moins ${count} options`,
     maxSelection: (count) => `Sélectionnez au maximum ${count} options`,

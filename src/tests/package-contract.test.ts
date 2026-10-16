@@ -31,6 +31,10 @@ describe('published package contract', () => {
             './types',
             './package.json',
             './ai',
+            './theme.css',
+            './combobox',
+            './form',
+            './combobox/types',
         ])
         expect(packageJson.exports['./value']).toEqual({
             import: './dist/lib/Select/selectValue.js',
