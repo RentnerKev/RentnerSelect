@@ -24,6 +24,7 @@ import { useSelectDefaults } from './useSelectContext.ts'
 import { mergeAriaIds } from '../../../lib/Field/selectField.ts'
 import { getOptionKey } from '../../../lib/Select/selectOptions.ts'
 import { findTypeaheadEntry } from '../../../lib/Select/selectNavigation.ts'
+import { resolveSelectVirtualization } from '../../../lib/Select/selectVirtualization.ts'
 import type { SelectVirtualNavigation } from '../Types/select.types.ts'
 import useSelectValues from './useSelectValues.ts'
 import useSelectOptionIdentity from './useSelectOptionIdentity.ts'
@@ -113,7 +114,11 @@ export default function useCustomSelectLogic<TValue>(
     }
     const defaults = useSelectDefaults()
     const controlSize = providedControlSize ?? defaults.controlSize
-    const virtualized = providedVirtualized ?? defaults.virtualized ?? false
+    const virtualized = resolveSelectVirtualization(
+        providedVirtualized ?? defaults.virtualized,
+        options.length,
+        'select',
+    )
     const textOverflow =
         providedTextOverflow ?? defaults.textOverflow ?? 'truncate'
     const contentWidth =
@@ -159,6 +164,7 @@ export default function useCustomSelectLogic<TValue>(
     const contentRef = useRef<HTMLDivElement>(null)
     const scrollRef = useRef<HTMLDivElement>(null)
     const virtualNavigationRef = useRef<SelectVirtualNavigation>(null)
+    const previousVirtualized = useRef(Boolean(virtualized))
     const pendingVirtualNavigationRef = useRef<
         Array<KeyboardEvent<HTMLDivElement>>
     >([])
@@ -509,6 +515,60 @@ export default function useCustomSelectLogic<TValue>(
         },
         [isSelected, maxSelection, multiple, selectedValues.length],
     )
+
+    useLayoutEffect(() => {
+        const nextVirtualized = Boolean(virtualized)
+        const changed = previousVirtualized.current !== nextVirtualized
+        previousVirtualized.current = nextVirtualized
+        if (!open || !changed) return
+        pendingVirtualNavigationRef.current = []
+
+        const content = contentRef.current
+        if (!content) return
+        if (searchable) {
+            searchInputRef.current?.focus({ preventScroll: true })
+            return
+        }
+        const root = content.getRootNode()
+        const activeElement =
+            'activeElement' in root ? root.activeElement : null
+        if (
+            activeElement instanceof HTMLElement &&
+            content.contains(activeElement) &&
+            activeElement.getAttribute('role') === 'option'
+        )
+            return
+        if (nextVirtualized) {
+            // Focus the stable popup while its newly enabled module loads.
+            // The virtual controller takes over after its rows mount.
+            content.focus({ preventScroll: true })
+            return
+        }
+        const focused = focusedOptionValue.current
+        const index = filteredOptions.findIndex(
+            ({ option }) =>
+                !isOptionDisabled(option) &&
+                (focused
+                    ? isOptionEqualToValue(option.value, focused.value)
+                    : isSelected(option.value)),
+        )
+        const rows = Array.from(
+            content.querySelectorAll<HTMLElement>('[role="option"]'),
+        )
+        const target =
+            rows[index] ??
+            rows.find((row) => !row.hasAttribute('data-disabled'))
+        const nextTarget = target ?? content
+        nextTarget.focus({ preventScroll: true })
+    }, [
+        filteredOptions,
+        isOptionDisabled,
+        isOptionEqualToValue,
+        isSelected,
+        open,
+        searchable,
+        virtualized,
+    ])
 
     const handleOptionPointerDown = useCallback(() => {
         if (multiple) shouldKeepOpen.current = true

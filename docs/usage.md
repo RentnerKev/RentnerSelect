@@ -418,7 +418,7 @@ Reusable select UI lives in `src/shared/Select/Components`, with its focused hoo
 
 Public npm root, subpath, and type entry points retain their existing import paths; package exports resolve directly to their defining modules. Internal code imports defining modules directly. No application routes, server stack, or additional dependencies are needed for these libraries.
 
-By default, closed options retain Radix Collection, ItemText, typeahead, and native BubbleSelect registration, including custom rendered native text. A memoized presentation list avoids repeating unchanged option renderers; it does not remove this required DOM. The default Object.is index preserves duplicate FIFO identities, NaN, object references, and signed zero. Custom comparators retain the compatibility scan path.
+Below the automatic virtualization threshold (or with `virtualized={false}`), closed options retain Radix Collection, ItemText, typeahead, and native BubbleSelect registration, including custom rendered native text. A memoized presentation list avoids repeating unchanged option renderers; it does not remove this required DOM. The default Object.is index preserves duplicate FIFO identities, NaN, object references, and signed zero. Custom comparators retain the compatibility scan path.
 
 ## AI and read-only MCP access
 
@@ -504,17 +504,23 @@ import { Combobox } from '@rentnerkev/select/combobox'
 
 ## Large option lists
 
-Both controls and SelectProvider accept `virtualized` (default false). Use true or `{ estimateSize: 44, overscan: 5 }` to mount only the visible rows plus overscan and the active keyboard option. Import the `SelectVirtualizationOptions` type from the root or /types entry. A local false overrides an enabled provider.
+Virtualization is automatic by default: `CustomSelect` enables it from **250** supplied options, `Combobox` from **1,000**. The count uses the supplied `options` array before local search filtering, so typing does not switch renderers. External result pages are counted by their supplied page size; changed arrays are re-evaluated automatically.
+
+Both controls and `SelectProvider` accept an optional `virtualized` override: `true` always enables it, `false` always disables it, and `{ estimateSize: 44, overscan: 5 }` enables it with custom settings. `'auto'` restores the automatic policy, including inside a provider with a forced setting. A local setting wins over the provider; omitted settings inherit the provider and otherwise use auto. Import the `SelectVirtualizationOptions` type from the root or /types entry.
+
+The conservative thresholds reflect local production measurements: at 250 entries, CustomSelect opened in about 113 ms without virtualization and 67 ms with it; the lighter Combobox still had loading overhead at 250 entries and showed a benefit at 1,000. These are local medians, not universal cutoffs for every renderer or device.
 
 `estimateSize` is the initial row height in pixels, not a fixed height; ResizeObserver measurements support wrapping descriptions and custom presentational renderers. `overscan` is the number of additional rows on either side. Negative values are clamped; non-finite settings use the defaults. With `contentWidth="content"`, the currently mounted rows determine the natural width; an unmounted wider label may grow the popup when scrolled into view.
 
 `CustomSelect` uses Radix for its popup and retains its own form serialization, search, single/multiple value callbacks, complete-list typeahead, disabled-item skipping, Home/End navigation and focus restoration. Virtual mode skips the detached Radix item collection while closed. Rows advertise their full-list positions and count. The active row remains mounted when it is outside the visible range. In `Combobox`, focus remains in the input and its active descendant always refers to a mounted row.
 
-The virtualizer loads when an enabled popup opens; ordinary selects do not load its chunk. The error tooltip also loads only when its icon appears, keeping its associated accessible error message available during loading or a failed tooltip download. Consumers must preserve dynamic import splitting to obtain the loading-size benefit.
+The virtualizer loads when a virtualized popup opens; small automatic lists and explicitly disabled lists do not load its chunk. The error tooltip also loads only when its icon appears, keeping its associated accessible error message available during loading or a failed tooltip download. Consumers must preserve dynamic import splitting to obtain the loading-size benefit.
 
 ```tsx
 import { CustomSelect, SelectProvider } from '@rentnerkev/select'
 
+// No setting is required for automatic virtualization.
+// This optional provider forces it on and customizes its measurements.
 // State and handlers belong to your existing use...Logic hook.
 ;<SelectProvider virtualized={{ estimateSize: 52, overscan: 5 }}>
     <CustomSelect

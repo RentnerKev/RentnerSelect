@@ -27,6 +27,7 @@ function loadVirtualOptions() {
 }
 import { resolveSelectMessages } from '../../../lib/Messages/i18n.ts'
 import { mergeAriaIds } from '../../../lib/Field/selectField.ts'
+import { resolveSelectVirtualization } from '../../../lib/Select/selectVirtualization.ts'
 import type {
     ComboboxEntry,
     ComboboxLogicResult,
@@ -82,7 +83,11 @@ export default function useComboboxLogic<T>(
         props.textOverflow ?? defaults.textOverflow ?? 'truncate'
     const contentWidth =
         props.contentWidth ?? defaults.contentWidth ?? 'trigger'
-    const virtualization = props.virtualized ?? defaults.virtualized ?? false
+    const virtualization = resolveSelectVirtualization(
+        props.virtualized ?? defaults.virtualized,
+        props.options.length,
+        'combobox',
+    )
     const {
         state: { module: virtualOptionsModule },
     } = useDeferredModule({

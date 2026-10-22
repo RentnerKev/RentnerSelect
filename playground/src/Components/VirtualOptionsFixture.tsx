@@ -10,11 +10,7 @@ export function VirtualOptionsFixture() {
             <h1 className="mb-6 text-xl font-semibold">Virtual options</h1>
             {state.shadow && <div ref={portalHost} />}
             <SelectProvider
-                virtualized={
-                    state.virtualized
-                        ? { estimateSize: 64, overscan: 4 }
-                        : false
-                }
+                virtualized={state.virtualized}
                 contentWidth={state.contentWidth}
                 textOverflow="wrap"
                 locale="en"

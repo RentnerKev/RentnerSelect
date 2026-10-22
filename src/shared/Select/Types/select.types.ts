@@ -54,7 +54,8 @@ export interface SelectVirtualNavigation {
 }
 
 export interface SelectCustomizationProps {
-    virtualized?: boolean | SelectVirtualizationOptions
+    /** Auto by default: CustomSelect >= 250 options, Combobox >= 1000; true/options force on, false forces off. */
+    virtualized?: boolean | 'auto' | SelectVirtualizationOptions
     controlSize?: 'sm' | 'md' | 'lg'
     textOverflow?: 'truncate' | 'wrap'
     contentWidth?: 'trigger' | 'content'

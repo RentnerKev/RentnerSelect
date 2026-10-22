@@ -250,3 +250,14 @@ export const invalidVirtualSettings: SelectVirtualizationOptions = {
     // @ts-expect-error Virtualizer estimates are numeric pixel values.
     estimateSize: '44px',
 }
+
+export const automaticSelect = (
+    <SelectProvider virtualized="auto">
+        <CustomSelect
+            virtualized="auto"
+            value="todo"
+            onValueChange={() => undefined}
+            options={statusOptions}
+        />
+    </SelectProvider>
+)

@@ -14,7 +14,11 @@ export function useVirtualOptionsFixtureLogic(): VirtualOptionsFixtureLogicResul
         10,
         Math.min(10000, Number(query.get('count')) || 10000),
     )
-    const virtualized = !query.has('full-list')
+    const virtualized = query.has('full-list')
+        ? false
+        : query.has('auto')
+          ? undefined
+          : { estimateSize: 64, overscan: 4 }
     const contentWidth =
         query.get('content-width') === 'content' ? 'content' : 'trigger'
     const [mountStartedAt] = useState(() => performance.now())
@@ -73,6 +77,14 @@ export function useVirtualOptionsFixtureLogic(): VirtualOptionsFixtureLogicResul
                 previous.filter((option) => !values.includes(option.value)),
             )
         if (mutation === 'empty') setOptions([])
+        if (mutation === 'grow')
+            setOptions((previous) => [
+                ...previous,
+                {
+                    value: String(previous.length),
+                    label: 'Option ' + String(previous.length).padStart(5, '0'),
+                },
+            ])
     }
     function handleSingleChange(value: string) {
         handleMultipleChange([value])

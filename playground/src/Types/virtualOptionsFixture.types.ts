@@ -1,12 +1,15 @@
 import type { FormEvent } from 'react'
-import type { Option } from '../../../src/shared/Select/Types/select.types.ts'
+import type {
+    Option,
+    SelectCustomizationProps,
+} from '../../../src/shared/Select/Types/select.types.ts'
 export interface VirtualOptionsFixtureLogicResult {
     state: {
         kind: 'select' | 'combobox'
         shadow: boolean
         multiple: boolean
         searchable: boolean
-        virtualized: boolean
+        virtualized: SelectCustomizationProps['virtualized']
         contentWidth: 'trigger' | 'content'
         options: ReadonlyArray<Option<string>>
         selectedValues: Array<string>

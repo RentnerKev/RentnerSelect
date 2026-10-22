@@ -22,3 +22,7 @@ export const control = (
 export const invalid: import('../../shared/Combobox/Types/combobox.types.ts').ComboboxProps<
     (typeof options)[number]
 >['onValueChange'] = (value: string) => value
+
+export const automaticVirtualization: import('../../shared/Combobox/Types/combobox.types.ts').ComboboxProps<
+    (typeof options)[number]
+>['virtualized'] = 'auto'

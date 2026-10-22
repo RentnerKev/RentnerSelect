@@ -265,3 +265,80 @@ test('repeated Home navigation scrolls back after manual scrolling with the same
         input.getAttribute('aria-activedescendant'),
     )
 })
+
+test('automatically virtualizes from 1000 supplied options and re-evaluates external page sizes', async () => {
+    prepareMeasurements()
+    const { rerender } = render(
+        <Combobox
+            {...base}
+            virtualized={undefined}
+            options={items.slice(0, 999)}
+        />,
+    )
+    const input = screen.getByRole('combobox')
+    fireEvent.focus(input)
+    expect(screen.getAllByRole('option')).toHaveLength(999)
+    rerender(<Combobox {...base} virtualized={undefined} />)
+    await waitFor(() =>
+        expect(
+            screen
+                .getByRole('option', { name: 'Item 0' })
+                .getAttribute('aria-setsize'),
+        ).toBe('1000'),
+    )
+    expect(screen.getAllByRole('option').length).toBeLessThan(30)
+    fireEvent.keyDown(input, { key: 'End' })
+    await waitFor(() =>
+        expect(screen.getByRole('option', { name: 'Item 999' }).id).toBe(
+            input.getAttribute('aria-activedescendant'),
+        ),
+    )
+    rerender(
+        <Combobox
+            {...base}
+            virtualized={undefined}
+            options={items.slice(0, 999)}
+        />,
+    )
+    expect(screen.getAllByRole('option')).toHaveLength(999)
+    fireEvent.keyDown(input, { key: 'End' })
+    expect(screen.getByRole('option', { name: 'Item 998' }).id).toBe(
+        input.getAttribute('aria-activedescendant'),
+    )
+})
+
+test('local auto overrides a forced combobox provider and keeps the mode stable through local filtering', async () => {
+    prepareMeasurements()
+    const { rerender } = render(
+        <SelectProvider virtualized={false}>
+            <Combobox {...base} virtualized="auto" filterMode="local" />
+        </SelectProvider>,
+    )
+    const input = screen.getByRole('combobox')
+    fireEvent.focus(input)
+    await waitFor(() =>
+        expect(
+            screen
+                .getByRole('option', { name: 'Item 0' })
+                .getAttribute('aria-setsize'),
+        ).toBe('1000'),
+    )
+    rerender(
+        <SelectProvider virtualized={false}>
+            <Combobox
+                {...base}
+                virtualized="auto"
+                filterMode="local"
+                searchValue="Item 999"
+            />
+        </SelectProvider>,
+    )
+    await waitFor(() =>
+        expect(
+            screen
+                .getByRole('option', { name: 'Item 999' })
+                .getAttribute('aria-setsize'),
+        ).toBe('1'),
+    )
+    expect(screen.getAllByRole('option')).toHaveLength(1)
+})

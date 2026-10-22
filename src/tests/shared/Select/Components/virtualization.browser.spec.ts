@@ -336,3 +336,117 @@ test('buffers complete-list typeahead while the first virtual chunk is loading',
     ).toBeFocused()
     await expect.poll(() => page.getByRole('option').count()).toBeLessThan(40)
 })
+
+for (const [kind, threshold] of [
+    ['select', 250],
+    ['combobox', 1000],
+] as const) {
+    test(
+        'automatically enables ' +
+            kind +
+            ' virtualization at its threshold without loading it for smaller lists',
+        async ({ page }) => {
+            const modules: string[] = []
+            page.on('request', (request) => {
+                if (
+                    [
+                        '/VirtualSelectOptions.tsx',
+                        '/VirtualComboboxOptions.tsx',
+                    ].some((path) => request.url().includes(path))
+                )
+                    modules.push(request.url())
+            })
+            await page.goto(
+                '/?virtual-list=' +
+                    kind +
+                    '&auto&no-search&count=' +
+                    (threshold - 1),
+            )
+            const input = page.getByRole('combobox', {
+                name: 'Virtual choices',
+            })
+            await input.press(kind === 'select' ? 'Enter' : 'ArrowDown')
+            await expect(page.getByRole('option')).toHaveCount(threshold - 1)
+            expect(modules).toEqual([])
+            await page.goto(
+                '/?virtual-list=' + kind + '&auto&no-search&count=' + threshold,
+            )
+            await input.press(kind === 'select' ? 'Enter' : 'ArrowDown')
+            await expect
+                .poll(() => page.getByRole('option').count())
+                .toBeGreaterThan(1)
+            await expect
+                .poll(() => page.getByRole('option').count())
+                .toBeLessThan(40)
+            await page.keyboard.press('End')
+            const last = page.getByRole('option', {
+                name: new RegExp(
+                    '^Option ' +
+                        String(threshold - 1).padStart(5, '0') +
+                        '(?:$| )',
+                ),
+            })
+            await expect(last).toHaveAttribute(
+                'aria-setsize',
+                String(threshold),
+            )
+            if (kind === 'select') await expect(last).toBeFocused()
+            else
+                await expect(input).toHaveAttribute(
+                    'aria-activedescendant',
+                    (await last.getAttribute('id'))!,
+                )
+            await page.keyboard.press('Enter')
+            await expect(
+                page.getByRole('status', { name: 'Selected values' }),
+            ).toHaveText(String(threshold - 1))
+        },
+    )
+}
+
+for (const mutation of ['grow', 'remove']) {
+    test(
+        'keeps static select keyboard focus when an automatic list crosses the threshold on ' +
+            mutation,
+        async ({ page }) => {
+            const count = mutation === 'grow' ? 249 : 250
+            await page.goto(
+                '/?virtual-list=select&auto&no-search&multiple&count=' +
+                    count +
+                    '&mutation=' +
+                    mutation,
+            )
+            await page
+                .getByRole('combobox', { name: 'Virtual choices' })
+                .press('Enter')
+            await expect(
+                page.getByRole('option', { name: /^Option 00000/ }),
+            ).toBeFocused()
+            await page.keyboard.press('Space')
+            if (mutation === 'grow') {
+                await expect
+                    .poll(() => page.getByRole('option').count())
+                    .toBeLessThan(40)
+                await expect(
+                    page.getByRole('option', { name: /^Option 00000/ }),
+                ).toBeFocused()
+            } else {
+                await expect(page.getByRole('option')).toHaveCount(249)
+                await expect(
+                    page.getByRole('option', {
+                        name: 'Option 00001',
+                        exact: true,
+                    }),
+                ).toBeFocused()
+            }
+            await page.keyboard.press('End')
+            await expect(
+                page.getByRole('option', { name: /^Option 00249/ }),
+            ).toBeFocused()
+            await page.keyboard.press('Escape')
+            await expect(
+                page.getByRole('combobox', { name: 'Virtual choices' }),
+            ).toBeFocused()
+        },
+    )
+}

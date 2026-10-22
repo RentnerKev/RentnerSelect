@@ -56,7 +56,7 @@ export function TeamSelect() {
 }
 ```
 
-For large lists, enable `virtualized` on `CustomSelect`, `Combobox`, or `SelectProvider`. Only the visible rows and active keyboard option are mounted; the virtualizer and error tooltip are loaded on demand. See [large-list usage](./docs/usage.md#large-option-lists).
+Lists virtualize automatically from 250 options in `CustomSelect` and 1,000 in `Combobox`. The optional `virtualized` setting on either control or `SelectProvider` can force it on/off or configure row estimates and overscan. Only the visible rows and active keyboard option are mounted; the virtualizer and error tooltip are loaded on demand. See [large-list usage](./docs/usage.md#large-option-lists).
 
 ## Screenshots
 
