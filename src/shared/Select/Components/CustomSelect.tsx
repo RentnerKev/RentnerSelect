@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import * as SelectPrimitive from '@radix-ui/react-select'
-import { CustomTooltip } from '@rentnerkev/tooltips'
+import { SelectErrorTooltip } from './SelectErrorTooltip.tsx'
 import { AlertCircle, ChevronDown, X } from 'lucide-react'
 import SelectOptions from './SelectOptions.tsx'
 
@@ -38,7 +38,9 @@ export function CustomSelect<TValue = string>(
     props: CustomSelectProps<TValue>,
 ) {
     const { state, handler, refs } = useCustomSelectLogic(props)
+    const VirtualSelectOptions = state.virtualOptionsModule?.default
     const {
+        virtualized,
         controlSize,
         textOverflow,
         contentWidth,
@@ -88,9 +90,20 @@ export function CustomSelect<TValue = string>(
         isValueSelected,
         hasLeftIcon,
     } = state
-    const { root, content, trigger, validationInput, searchInput } = refs
+    const {
+        root,
+        content,
+        trigger,
+        validationInput,
+        searchInput,
+        scroll,
+        virtualNavigation,
+        pendingVirtualNavigation,
+    } = refs
     const {
         option: optionHandler,
+        handleContentFocusCapture,
+        handleVirtualClose,
         handleFieldBlur,
         handleInvalid,
         handleValueChange,
@@ -170,12 +183,11 @@ export function CustomSelect<TValue = string>(
                             className={`absolute left-3 top-1/2 z-10 -translate-y-1/2 ${classNames.leading ?? 'text-select-muted'}`}
                         >
                             {hasError ? (
-                                <CustomTooltip
+                                <SelectErrorTooltip
                                     content={resolvedError || ''}
-                                    side="bottom"
                                 >
                                     <AlertCircle className="h-4 w-4 text-rentner-danger" />
-                                </CustomTooltip>
+                                </SelectErrorTooltip>
                             ) : (
                                 <span className="pointer-events-none flex items-center transition-colors group-focus-within:text-primary [&>svg]:h-4 [&>svg]:w-4">
                                     {icon}
@@ -309,6 +321,7 @@ export function CustomSelect<TValue = string>(
                         position="popper"
                         sideOffset={4}
                         onKeyDownCapture={handleContentKeyDownCapture}
+                        onFocusCapture={handleContentFocusCapture}
                         style={{
                             zIndex:
                                 portalZIndex ??
@@ -335,7 +348,10 @@ export function CustomSelect<TValue = string>(
                                 />
                             </div>
                         )}
-                        <div className="rentnerselect-scrollbar max-h-[min(var(--radix-select-content-available-height),16rem)] overflow-y-scroll scrollbar-gutter-stable">
+                        <div
+                            ref={scroll}
+                            className="rentnerselect-scrollbar max-h-[min(var(--radix-select-content-available-height,16rem),16rem)] overflow-y-scroll scrollbar-gutter-stable"
+                        >
                             <SelectPrimitive.Viewport
                                 role={searchable ? 'listbox' : 'presentation'}
                                 aria-label={
@@ -349,7 +365,37 @@ export function CustomSelect<TValue = string>(
                                 nonce={nonce}
                                 className={classNames.viewport ?? 'p-1.5'}
                             >
-                                {filteredOptions.length > 0 ? (
+                                {virtualized ? (
+                                    open &&
+                                    (VirtualSelectOptions ? (
+                                        <VirtualSelectOptions
+                                            entries={filteredOptions}
+                                            isSelected={isValueSelected}
+                                            isOptionDisabled={isOptionDisabled}
+                                            multiple={multiple}
+                                            renderOption={renderOption}
+                                            className={classNames.option}
+                                            classNames={classNames}
+                                            textOverflow={textOverflow}
+                                            handler={optionHandler}
+                                            searchable={searchable}
+                                            virtualization={virtualized}
+                                            navigationRef={virtualNavigation}
+                                            pendingNavigationRef={
+                                                pendingVirtualNavigation
+                                            }
+                                            scrollRef={scroll}
+                                            contentRef={content}
+                                            searchInputRef={searchInput}
+                                            onValueChange={handleValueChange}
+                                            onClose={handleVirtualClose}
+                                        />
+                                    ) : (
+                                        <output className="p-3 text-sm text-select-muted">
+                                            {resolvedMessages.loading}
+                                        </output>
+                                    ))
+                                ) : filteredOptions.length > 0 ? (
                                     <SelectOptions
                                         entries={filteredOptions}
                                         isSelected={isValueSelected}
@@ -361,7 +407,8 @@ export function CustomSelect<TValue = string>(
                                         textOverflow={textOverflow}
                                         handler={optionHandler}
                                     />
-                                ) : (
+                                ) : null}
+                                {filteredOptions.length === 0 && (
                                     <div
                                         className={`relative flex w-full select-none items-center ${classNames.empty ?? 'rounded-lg py-2 pl-9 pr-3 text-sm text-select-muted'}`}
                                     >

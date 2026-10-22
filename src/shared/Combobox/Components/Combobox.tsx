@@ -1,11 +1,14 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role, jsx-a11y/click-events-have-key-events -- APG editable combobox uses a custom listbox; keyboard navigation remains on the input through aria-activedescendant. */
 import { createPortal } from 'react-dom'
+import ComboboxOption from './ComboboxOption.tsx'
+
 export type { ComboboxProps } from '../Types/combobox.types.ts'
 import type { ComboboxProps } from '../Types/combobox.types.ts'
 import useComboboxLogic from '../Hooks/useComboboxLogic.ts'
 
 export function Combobox<T>(props: ComboboxProps<T>) {
     const { state, handler, refs } = useComboboxLogic(props)
+    const VirtualComboboxOptions = state.virtualOptionsModule?.default
     const { root, content, input, validation } = refs
     return (
         <div
@@ -154,114 +157,76 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                             ref={content}
                             style={state.popupStyle}
                             className={
-                                'overflow-y-auto ' +
+                                (state.virtualization
+                                    ? 'flex flex-col overflow-hidden '
+                                    : 'overflow-y-auto ') +
                                 (state.classNames.content ??
                                     'rounded-rentner-control border border-select-border bg-select-surface p-1.5 text-select-foreground shadow-xl')
                             }
                         >
-                            <div
-                                id={state.listId}
-                                role="listbox"
-                                aria-label={
-                                    props['aria-label'] ??
-                                    state.messages.searchOptions
-                                }
-                                aria-labelledby={state.labelledBy}
-                                aria-busy={props.loading || undefined}
-                                className={state.classNames.viewport}
-                            >
-                                {!props.loading &&
-                                    state.entries.map((entry) => (
-                                        <div
-                                            key={entry.key}
-                                            id={entry.id}
-                                            role="option"
-                                            tabIndex={-1}
-                                            aria-selected={entry.selected}
-                                            aria-disabled={
-                                                entry.disabled || undefined
-                                            }
-                                            data-active={
-                                                entry.id === state.activeId ||
-                                                undefined
-                                            }
-                                            data-disabled={
-                                                entry.disabled || undefined
-                                            }
-                                            onMouseDown={
-                                                handler.handleKeepFocus
-                                            }
-                                            onMouseMove={() => {
-                                                if (!entry.disabled)
-                                                    handler.handleOptionActivate(
-                                                        entry.key,
-                                                    )
-                                            }}
-                                            onClick={() =>
-                                                handler.handleOptionSelect(
-                                                    entry,
-                                                )
-                                            }
-                                            className={
-                                                'relative min-w-0 cursor-pointer outline-none data-disabled:cursor-not-allowed data-disabled:opacity-40 ' +
-                                                (state.classNames.option ??
-                                                    'rounded-lg px-3 py-2 text-sm data-active:bg-select-hover aria-selected:bg-select-hover')
-                                            }
-                                        >
-                                            {props.renderOption ? (
-                                                props.renderOption(
-                                                    entry.option,
-                                                    {
-                                                        selected:
-                                                            entry.selected,
-                                                        active:
-                                                            entry.id ===
-                                                            state.activeId,
-                                                        disabled:
-                                                            entry.disabled,
-                                                    },
-                                                )
-                                            ) : (
-                                                <div className="min-w-0">
-                                                    <div
-                                                        className={
-                                                            (state.textOverflow ===
-                                                            'wrap'
-                                                                ? 'whitespace-normal break-words '
-                                                                : 'truncate ') +
-                                                            (state.classNames
-                                                                .optionLabel ??
-                                                                'leading-5')
-                                                        }
-                                                    >
-                                                        {entry.label}
-                                                    </div>
-                                                    {entry.description !==
-                                                        undefined &&
-                                                        entry.description !==
-                                                            null && (
-                                                            <div
-                                                                className={
-                                                                    (state.textOverflow ===
-                                                                    'wrap'
-                                                                        ? 'whitespace-normal break-words '
-                                                                        : 'truncate ') +
-                                                                    (state
-                                                                        .classNames
-                                                                        .optionDescription ??
-                                                                        'text-xs text-select-muted')
-                                                                }
-                                                            >
-                                                                {
-                                                                    entry.description
-                                                                }
-                                                            </div>
-                                                        )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                            </div>
+                            {state.virtualization ? (
+                                VirtualComboboxOptions ? (
+                                    <VirtualComboboxOptions
+                                        state={state}
+                                        handler={handler}
+                                        renderOption={props.renderOption}
+                                        loading={props.loading}
+                                        ariaLabel={
+                                            props['aria-label'] ??
+                                            state.messages.searchOptions
+                                        }
+                                    />
+                                ) : (
+                                    <div
+                                        id={state.listId}
+                                        role="listbox"
+                                        aria-label={
+                                            props['aria-label'] ??
+                                            state.messages.searchOptions
+                                        }
+                                        aria-labelledby={state.labelledBy}
+                                        aria-busy={props.loading || undefined}
+                                    >
+                                        {state.activeEntry && (
+                                            <ComboboxOption
+                                                entry={state.activeEntry}
+                                                state={state}
+                                                handler={handler}
+                                                renderOption={
+                                                    props.renderOption
+                                                }
+                                                index={state.activeIndex}
+                                                setSize={state.entries.length}
+                                            />
+                                        )}
+                                    </div>
+                                )
+                            ) : (
+                                <div
+                                    id={state.listId}
+                                    role="listbox"
+                                    aria-label={
+                                        props['aria-label'] ??
+                                        state.messages.searchOptions
+                                    }
+                                    aria-labelledby={state.labelledBy}
+                                    aria-busy={props.loading || undefined}
+                                    className={state.classNames.viewport}
+                                >
+                                    {!props.loading &&
+                                        state.entries.map((entry) => (
+                                            <ComboboxOption
+                                                key={entry.key}
+                                                entry={entry}
+                                                state={state}
+                                                handler={handler}
+                                                renderOption={
+                                                    props.renderOption
+                                                }
+                                            />
+                                        ))}
+                                </div>
+                            )}
                             {(props.loading || state.entries.length === 0) && (
                                 <output
                                     className={

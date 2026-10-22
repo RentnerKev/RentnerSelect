@@ -8,6 +8,7 @@ export const SelectContext = createContext<SelectDefaults | null>(null)
 
 export function useSelectProviderLogic({
     controlSize,
+    virtualized,
     textOverflow,
     contentWidth,
     portalContainer,
@@ -23,6 +24,7 @@ export function useSelectProviderLogic({
     const mergedDefaults = useMemo<SelectDefaults>(
         () => ({
             controlSize: controlSize ?? parentDefaults?.controlSize,
+            virtualized: virtualized ?? parentDefaults?.virtualized,
             textOverflow: textOverflow ?? parentDefaults?.textOverflow,
             contentWidth: contentWidth ?? parentDefaults?.contentWidth,
             portalContainer:
@@ -45,6 +47,7 @@ export function useSelectProviderLogic({
             messages,
             classNames,
             controlSize,
+            virtualized,
             textOverflow,
             contentWidth,
             portalContainer,

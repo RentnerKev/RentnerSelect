@@ -43,7 +43,18 @@ export interface SelectClassNames {
     selectedDescription?: string
 }
 
+export interface SelectVirtualizationOptions {
+    estimateSize?: number
+    overscan?: number
+}
+
+export interface SelectVirtualNavigation {
+    handleKeyDown: (event: KeyboardEvent<HTMLDivElement>) => boolean
+    handleContentFocus: () => void
+}
+
 export interface SelectCustomizationProps {
+    virtualized?: boolean | SelectVirtualizationOptions
     controlSize?: 'sm' | 'md' | 'lg'
     textOverflow?: 'truncate' | 'wrap'
     contentWidth?: 'trigger' | 'content'
@@ -188,6 +199,10 @@ export interface SelectOptionsProps<TValue> {
 
 export interface CustomSelectLogicResult<TValue> {
     state: SelectCustomizationProps & {
+        virtualOptionsModule:
+            | typeof import('../Components/VirtualSelectOptions.tsx')
+            | null
+        virtualized: boolean | SelectVirtualizationOptions
         textOverflow: 'truncate' | 'wrap'
         contentWidth: 'trigger' | 'content'
         name: string | undefined
@@ -238,6 +253,8 @@ export interface CustomSelectLogicResult<TValue> {
     }
     handler: {
         option: SelectOptionHandlers<TValue>
+        handleVirtualClose: () => void
+        handleContentFocusCapture: (event: FocusEvent<HTMLDivElement>) => void
         handleTriggerPointerDown: (
             event: PointerEvent<HTMLButtonElement>,
         ) => void
@@ -261,6 +278,11 @@ export interface CustomSelectLogicResult<TValue> {
         trigger: RefCallback<HTMLButtonElement>
         searchInput: RefObject<HTMLInputElement | null>
         validationInput: RefObject<HTMLInputElement | null>
+        scroll: RefObject<HTMLDivElement | null>
+        virtualNavigation: RefObject<SelectVirtualNavigation | null>
+        pendingVirtualNavigation: RefObject<
+            Array<KeyboardEvent<HTMLDivElement>>
+        >
     }
 }
 

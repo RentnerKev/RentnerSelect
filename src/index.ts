@@ -11,6 +11,7 @@ export type {
     SelectOptionState,
     SingleSelectProps,
     SelectProviderProps,
+    SelectVirtualizationOptions,
 } from './shared/Select/Types/select.types.ts'
 export type { Option } from './lib/Select/Types/selectOptions.types.ts'
 export type {

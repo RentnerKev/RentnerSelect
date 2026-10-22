@@ -4,6 +4,7 @@ import type {
     MultipleSelectProps,
     Option,
     SingleSelectProps,
+    SelectVirtualizationOptions,
 } from '../../index.ts'
 
 const statuses = ['todo', 'done'] as const
@@ -223,4 +224,29 @@ export function CustomizedSelect({ value }: { value: Status }) {
             />
         </SelectProvider>
     )
+}
+
+const virtualSettings = {
+    estimateSize: 52,
+    overscan: 6,
+} satisfies SelectVirtualizationOptions
+export const virtualSelect = (
+    <SelectProvider virtualized={virtualSettings}>
+        <CustomSelect
+            virtualized
+            value="todo"
+            onValueChange={() => undefined}
+            options={statusOptions}
+        />
+        <CustomSelect
+            virtualized={false}
+            value="todo"
+            onValueChange={() => undefined}
+            options={statusOptions}
+        />
+    </SelectProvider>
+)
+export const invalidVirtualSettings: SelectVirtualizationOptions = {
+    // @ts-expect-error Virtualizer estimates are numeric pixel values.
+    estimateSize: '44px',
 }

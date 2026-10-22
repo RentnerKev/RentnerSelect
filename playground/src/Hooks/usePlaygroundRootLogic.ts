@@ -15,6 +15,9 @@ export function usePlaygroundRootLogic(): PlaygroundRootLogicResult {
             : null
     return {
         state: {
+            virtualFixture: new URLSearchParams(window.location.search).has(
+                'virtual-list',
+            ),
             dynamicMode,
             externalCombobox: new URLSearchParams(window.location.search).has(
                 'external-combobox',

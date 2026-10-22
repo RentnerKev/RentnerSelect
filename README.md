@@ -56,6 +56,8 @@ export function TeamSelect() {
 }
 ```
 
+For large lists, enable `virtualized` on `CustomSelect`, `Combobox`, or `SelectProvider`. Only the visible rows and active keyboard option are mounted; the virtualizer and error tooltip are loaded on demand. See [large-list usage](./docs/usage.md#large-option-lists).
+
 ## Screenshots
 
 |                                                                                                                                                                                                                                                                                                                       |                                                                                                                                                                                                                                                                                           |

@@ -16,6 +16,15 @@ import type {
 } from 'react'
 import { useSelectDefaults } from '../../Select/Hooks/useSelectContext.ts'
 import useComposedRefs from '../../Select/Hooks/useComposedRefs.ts'
+import useDeferredModule from '../../VirtualList/Hooks/useDeferredModule.ts'
+
+let virtualOptionsPromise:
+    | Promise<typeof import('../Components/VirtualComboboxOptions.tsx')>
+    | undefined
+function loadVirtualOptions() {
+    return (virtualOptionsPromise ??=
+        import('../Components/VirtualComboboxOptions.tsx'))
+}
 import { resolveSelectMessages } from '../../../lib/Messages/i18n.ts'
 import { mergeAriaIds } from '../../../lib/Field/selectField.ts'
 import type {
@@ -50,6 +59,7 @@ export default function useComboboxLogic<T>(
     const inputRef = useComposedRefs(input, props.inputRef)
     const [requestedOpen, setOpen] = useState(false)
     const [activeKey, setActiveKey] = useState<string | null>(null)
+    const [navigationVersion, setNavigationVersion] = useState(0)
     const [touched, setTouched] = useState(false)
     const [position, setPosition] = useState<CSSProperties>({})
     const interactionDisabled = Boolean(props.disabled || props.readOnly)
@@ -72,6 +82,13 @@ export default function useComboboxLogic<T>(
         props.textOverflow ?? defaults.textOverflow ?? 'truncate'
     const contentWidth =
         props.contentWidth ?? defaults.contentWidth ?? 'trigger'
+    const virtualization = props.virtualized ?? defaults.virtualized ?? false
+    const {
+        state: { module: virtualOptionsModule },
+    } = useDeferredModule({
+        enabled: open && Boolean(virtualization),
+        load: loadVirtualOptions,
+    })
     const classNames = { ...defaults.classNames, ...props.classNames }
     const portalContainer =
         props.portalContainer === undefined
@@ -87,38 +104,55 @@ export default function useComboboxLogic<T>(
             ? messages.required
             : props.error
     const hasError = Boolean(error) && !props.disabled
+    const {
+        options,
+        filterMode,
+        getOptionLabel,
+        searchValue,
+        getOptionKey,
+        getOptionDescription,
+        isOptionDisabled,
+        value,
+        isOptionEqualToValue,
+    } = props
     const entries = useMemo(
         () =>
-            props.options
+            options
                 .filter(
                     (option) =>
-                        props.filterMode !== 'local' ||
-                        props
-                            .getOptionLabel(option)
+                        filterMode !== 'local' ||
+                        getOptionLabel(option)
                             .toLocaleLowerCase()
-                            .includes(props.searchValue.toLocaleLowerCase()),
+                            .includes(searchValue.toLocaleLowerCase()),
                 )
                 .map((option) => {
-                    const key = props.getOptionKey(option)
+                    const key = getOptionKey(option)
                     return {
                         option,
                         key,
                         id: listId + '-' + encodeURIComponent(key),
-                        label: props.getOptionLabel(option),
-                        description: props.getOptionDescription?.(option),
-                        disabled: props.isOptionDisabled?.(option) ?? false,
+                        label: getOptionLabel(option),
+                        description: getOptionDescription?.(option),
+                        disabled: isOptionDisabled?.(option) ?? false,
                         selected:
-                            props.value !== null &&
-                            (props.isOptionEqualToValue
-                                ? props.isOptionEqualToValue(
-                                      option,
-                                      props.value,
-                                  )
-                                : props.getOptionKey(option) ===
-                                  props.getOptionKey(props.value)),
+                            value !== null &&
+                            (isOptionEqualToValue
+                                ? isOptionEqualToValue(option, value)
+                                : getOptionKey(option) === getOptionKey(value)),
                     }
                 }),
-        [props, listId],
+        [
+            options,
+            filterMode,
+            getOptionLabel,
+            searchValue,
+            getOptionKey,
+            getOptionDescription,
+            isOptionDisabled,
+            value,
+            isOptionEqualToValue,
+            listId,
+        ],
     )
     const enabledEntries = props.loading
         ? []
@@ -211,13 +245,13 @@ export default function useComboboxLogic<T>(
 
     const activeId = activeEntry?.id
     useEffect(() => {
-        if (!activeId) return
+        if (!activeId || virtualization) return
         const activeOption = Array.from(
             content.current?.querySelectorAll<HTMLElement>('[role="option"]') ??
                 [],
         ).find((option) => option.id === activeId)
         activeOption?.scrollIntoView?.({ block: 'nearest' })
-    }, [activeId])
+    }, [activeId, virtualization])
 
     function handleFocus() {
         if (!props.disabled && !props.readOnly) setOpen(true)
@@ -279,6 +313,7 @@ export default function useComboboxLogic<T>(
                     : index < 0
                       ? enabledEntries.length - 1
                       : Math.max(0, index - 1)
+        setNavigationVersion((version) => version + 1)
         setActiveKey(enabledEntries[nextIndex]!.key)
     }
     function handleFieldBlur(event: FocusEvent<HTMLDivElement>) {
@@ -312,6 +347,7 @@ export default function useComboboxLogic<T>(
     }
     return {
         state: {
+            virtualOptionsModule,
             inputId,
             listId,
             hasLabel,
@@ -331,6 +367,10 @@ export default function useComboboxLogic<T>(
             ),
             open,
             activeId: activeEntry?.id,
+            activeEntry,
+            activeIndex: activeEntry ? entries.indexOf(activeEntry) : -1,
+            virtualization,
+            navigationVersion,
             entries,
             messages,
             classNames,

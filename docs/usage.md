@@ -418,7 +418,7 @@ Reusable select UI lives in `src/shared/Select/Components`, with its focused hoo
 
 Public npm root, subpath, and type entry points retain their existing import paths; package exports resolve directly to their defining modules. Internal code imports defining modules directly. No application routes, server stack, or additional dependencies are needed for these libraries.
 
-Closed options retain Radix Collection, ItemText, typeahead, and native BubbleSelect registration, including custom rendered native text. A memoized presentation list avoids repeating unchanged option renderers; it does not remove this required DOM. The default Object.is index preserves duplicate FIFO identities, NaN, object references, and signed zero. Custom comparators retain the compatibility scan path.
+By default, closed options retain Radix Collection, ItemText, typeahead, and native BubbleSelect registration, including custom rendered native text. A memoized presentation list avoids repeating unchanged option renderers; it does not remove this required DOM. The default Object.is index preserves duplicate FIFO identities, NaN, object references, and signed zero. Custom comparators retain the compatibility scan path.
 
 ## AI and read-only MCP access
 
@@ -501,6 +501,32 @@ import { Combobox } from '@rentnerkev/select/combobox'
     locale="en"
 />
 ```
+
+## Large option lists
+
+Both controls and SelectProvider accept `virtualized` (default false). Use true or `{ estimateSize: 44, overscan: 5 }` to mount only the visible rows plus overscan and the active keyboard option. Import the `SelectVirtualizationOptions` type from the root or /types entry. A local false overrides an enabled provider.
+
+`estimateSize` is the initial row height in pixels, not a fixed height; ResizeObserver measurements support wrapping descriptions and custom presentational renderers. `overscan` is the number of additional rows on either side. Negative values are clamped; non-finite settings use the defaults. With `contentWidth="content"`, the currently mounted rows determine the natural width; an unmounted wider label may grow the popup when scrolled into view.
+
+`CustomSelect` uses Radix for its popup and retains its own form serialization, search, single/multiple value callbacks, complete-list typeahead, disabled-item skipping, Home/End navigation and focus restoration. Virtual mode skips the detached Radix item collection while closed. Rows advertise their full-list positions and count. The active row remains mounted when it is outside the visible range. In `Combobox`, focus remains in the input and its active descendant always refers to a mounted row.
+
+The virtualizer loads when an enabled popup opens; ordinary selects do not load its chunk. The error tooltip also loads only when its icon appears, keeping its associated accessible error message available during loading or a failed tooltip download. Consumers must preserve dynamic import splitting to obtain the loading-size benefit.
+
+```tsx
+import { CustomSelect, SelectProvider } from '@rentnerkev/select'
+
+// State and handlers belong to your existing use...Logic hook.
+;<SelectProvider virtualized={{ estimateSize: 52, overscan: 5 }}>
+    <CustomSelect
+        label="Large local list"
+        options={state.options}
+        value={state.value}
+        onValueChange={handler.handleValueChange}
+    />
+</SelectProvider>
+```
+
+Virtualization reduces mounted UI; it still processes the supplied data for identity, selection and filtering. For remote datasets, keep `Combobox filterMode="external"` and pass a bounded server-side result page. Requests, debounce, cancellation and pagination remain owned by the application. A small result page may be used without virtualization.
 
 ## Optional form adapter
 

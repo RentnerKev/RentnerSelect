@@ -1,3 +1,4 @@
+import { VirtualOptionsFixture } from './Components/VirtualOptionsFixture.tsx'
 import { ExternalComboboxFixture } from './Components/ExternalComboboxFixture.tsx'
 import { createRoot } from 'react-dom/client'
 import { App } from './App.tsx'
@@ -8,9 +9,11 @@ import './styles.css'
 
 function PlaygroundRoot() {
     const {
-        state: { dynamicMode, externalCombobox },
+        state: { dynamicMode, externalCombobox, virtualFixture },
     } = usePlaygroundRootLogic()
-    return externalCombobox ? (
+    return virtualFixture ? (
+        <VirtualOptionsFixture />
+    ) : externalCombobox ? (
         <ExternalComboboxFixture />
     ) : dynamicMode ? (
         <DynamicOptionsFixture mode={dynamicMode} />

@@ -10,6 +10,7 @@ const field = {
 export const control = (
     <Combobox
         {...getSelectFieldProps(field)}
+        virtualized={{ estimateSize: 48, overscan: 4 }}
         options={options}
         getOptionKey={(option) => String(option.id)}
         getOptionLabel={(option) => option.name}

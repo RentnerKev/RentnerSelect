@@ -1,3 +1,4 @@
+import type { ReactVirtualizer, VirtualItem } from '@tanstack/react-virtual'
 import type {
     AriaAttributes,
     ChangeEvent,
@@ -16,6 +17,7 @@ import type {
     SelectCustomizationProps,
     SelectLocale,
     SelectMessages,
+    SelectVirtualizationOptions,
 } from '../../Select/Types/select.types.ts'
 export interface ComboboxProps<T>
     extends AriaAttributes, SelectCustomizationProps {
@@ -66,6 +68,9 @@ export interface ComboboxEntry<T> {
 }
 export interface ComboboxLogicResult<T> {
     state: {
+        virtualOptionsModule:
+            | typeof import('../Components/VirtualComboboxOptions.tsx')
+            | null
         inputId: string
         listId: string
         hasLabel: boolean
@@ -76,6 +81,10 @@ export interface ComboboxLogicResult<T> {
         describedBy: string | undefined
         open: boolean
         activeId: string | undefined
+        activeEntry: ComboboxEntry<T> | undefined
+        activeIndex: number
+        navigationVersion: number
+        virtualization: boolean | SelectVirtualizationOptions
         entries: ReadonlyArray<ComboboxEntry<T>>
         messages: SelectMessages
         classNames: SelectClassNames
@@ -108,4 +117,51 @@ export interface ComboboxLogicResult<T> {
         validation: RefObject<HTMLInputElement | null>
         input: RefCallback<HTMLInputElement>
     }
+}
+
+export interface ComboboxOptionProps<T> {
+    entry: ComboboxEntry<T>
+    state: Pick<
+        ComboboxLogicResult<T>['state'],
+        'activeId' | 'classNames' | 'textOverflow'
+    >
+    handler: Pick<
+        ComboboxLogicResult<T>['handler'],
+        'handleKeepFocus' | 'handleOptionActivate' | 'handleOptionSelect'
+    >
+    renderOption: ComboboxProps<T>['renderOption']
+    index?: number
+    setSize?: number
+    measureElement?: RefCallback<HTMLDivElement>
+    style?: CSSProperties
+}
+
+export interface VirtualComboboxOptionsProps<T> {
+    state: Pick<
+        ComboboxLogicResult<T>['state'],
+        | 'listId'
+        | 'labelledBy'
+        | 'entries'
+        | 'activeId'
+        | 'activeIndex'
+        | 'navigationVersion'
+        | 'virtualization'
+        | 'classNames'
+        | 'textOverflow'
+        | 'popupStyle'
+    >
+    handler: ComboboxOptionProps<T>['handler']
+    renderOption: ComboboxProps<T>['renderOption']
+    loading?: boolean
+    ariaLabel: string
+}
+
+export interface VirtualComboboxOptionsLogicResult<T> {
+    state: {
+        rows: ReadonlyArray<{ item: VirtualItem; entry: ComboboxEntry<T> }>
+        totalSize: number
+        height: number
+    }
+    refs: { viewport: RefObject<HTMLDivElement | null> }
+    virtualizer: ReactVirtualizer<HTMLElement, HTMLElement>
 }

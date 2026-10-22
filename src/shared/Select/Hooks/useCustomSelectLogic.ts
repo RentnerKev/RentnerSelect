@@ -23,9 +23,20 @@ import type {
 import { useSelectDefaults } from './useSelectContext.ts'
 import { mergeAriaIds } from '../../../lib/Field/selectField.ts'
 import { getOptionKey } from '../../../lib/Select/selectOptions.ts'
+import { findTypeaheadEntry } from '../../../lib/Select/selectNavigation.ts'
+import type { SelectVirtualNavigation } from '../Types/select.types.ts'
 import useSelectValues from './useSelectValues.ts'
 import useSelectOptionIdentity from './useSelectOptionIdentity.ts'
 import useComposedRefs from './useComposedRefs.ts'
+import useDeferredModule from '../../VirtualList/Hooks/useDeferredModule.ts'
+
+let virtualOptionsPromise:
+    | Promise<typeof import('../Components/VirtualSelectOptions.tsx')>
+    | undefined
+function loadVirtualOptions() {
+    return (virtualOptionsPromise ??=
+        import('../Components/VirtualSelectOptions.tsx'))
+}
 
 function handleSearchPointerDown(event: PointerEvent<HTMLInputElement>) {
     event.stopPropagation()
@@ -40,6 +51,7 @@ export default function useCustomSelectLogic<TValue>(
 ): CustomSelectLogicResult<TValue> {
     const {
         controlSize: providedControlSize,
+        virtualized: providedVirtualized,
         textOverflow: providedTextOverflow,
         contentWidth: providedContentWidth,
         portalContainer: providedPortalContainer,
@@ -101,6 +113,7 @@ export default function useCustomSelectLogic<TValue>(
     }
     const defaults = useSelectDefaults()
     const controlSize = providedControlSize ?? defaults.controlSize
+    const virtualized = providedVirtualized ?? defaults.virtualized ?? false
     const textOverflow =
         providedTextOverflow ?? defaults.textOverflow ?? 'truncate'
     const contentWidth =
@@ -130,6 +143,12 @@ export default function useCustomSelectLogic<TValue>(
 
     const messages = resolveSelectMessages(locale, mergedMessages)
     const [open, setOpen] = useState(false)
+    const {
+        state: { module: virtualOptionsModule },
+    } = useDeferredModule({
+        enabled: open && Boolean(virtualized),
+        load: loadVirtualOptions,
+    })
     const interactionDisabled = disabled || readOnly
     const [previousInteractionDisabled, setPreviousInteractionDisabled] =
         useState(interactionDisabled)
@@ -138,6 +157,12 @@ export default function useCustomSelectLogic<TValue>(
     const searchInputRef = useRef<HTMLInputElement>(null)
     const rootRef = useRef<HTMLDivElement>(null)
     const contentRef = useRef<HTMLDivElement>(null)
+    const scrollRef = useRef<HTMLDivElement>(null)
+    const virtualNavigationRef = useRef<SelectVirtualNavigation>(null)
+    const pendingVirtualNavigationRef = useRef<
+        Array<KeyboardEvent<HTMLDivElement>>
+    >([])
+    const typeaheadRef = useRef({ search: '', updatedAt: 0 })
     const validationInputRef = useRef<HTMLInputElement>(null)
     const focusedOptionValue = useRef<{ value: TValue } | null>(null)
     const internalTriggerRef = useRef<HTMLButtonElement>(null)
@@ -314,6 +339,8 @@ export default function useCustomSelectLogic<TValue>(
             shouldKeepOpen.current = false
             return
         }
+        pendingVirtualNavigationRef.current = []
+        if (nextOpen) typeaheadRef.current = { search: '', updatedAt: 0 }
         setOpen(nextOpen)
         if (nextOpen) focusSearchInput()
         else setSearchValue('')
@@ -325,7 +352,54 @@ export default function useCustomSelectLogic<TValue>(
         setSearchValue('')
     }, [])
 
+    function handleContentFocusCapture(event: FocusEvent<HTMLDivElement>) {
+        if (virtualized && event.target === event.currentTarget)
+            virtualNavigationRef.current?.handleContentFocus()
+    }
+
+    function handleVirtualClose() {
+        handleOpenChange(false)
+    }
+
     function handleContentKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
+        if (
+            virtualized &&
+            (!virtualNavigationRef.current ||
+                pendingVirtualNavigationRef.current.length > 0) &&
+            !event.ctrlKey &&
+            !event.altKey &&
+            !event.metaKey &&
+            !event.nativeEvent.isComposing &&
+            (event.target === searchInputRef.current &&
+            pendingVirtualNavigationRef.current.length === 0
+                ? ['ArrowDown', 'ArrowUp'].includes(event.key)
+                : [
+                      'ArrowDown',
+                      'ArrowUp',
+                      'Home',
+                      'End',
+                      'Enter',
+                      ' ',
+                  ].includes(event.key) ||
+                  (!searchable && event.key.length === 1))
+        ) {
+            pendingVirtualNavigationRef.current.push({
+                ...event,
+                target:
+                    event.target === searchInputRef.current &&
+                    pendingVirtualNavigationRef.current.length > 0
+                        ? (contentRef.current ?? event.target)
+                        : event.target,
+                defaultPrevented: false,
+                preventDefault: () => undefined,
+                stopPropagation: () => undefined,
+            })
+            event.preventDefault()
+            event.stopPropagation()
+            return
+        }
+        if (virtualized && virtualNavigationRef.current?.handleKeyDown(event))
+            return
         if (!searchable) return
         if (event.target === searchInputRef.current) {
             if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
@@ -365,7 +439,7 @@ export default function useCustomSelectLogic<TValue>(
     }
 
     useLayoutEffect(() => {
-        if (!open || !focusedOptionValue.current) return
+        if (!open || !focusedOptionValue.current || virtualized) return
 
         const activeElement = contentRef.current?.ownerDocument.activeElement
         if (
@@ -398,6 +472,7 @@ export default function useCustomSelectLogic<TValue>(
         }
     }, [
         closeAfterOptionRemoval,
+        virtualized,
         contentRef,
         isOptionEqualToValue,
         open,
@@ -484,11 +559,38 @@ export default function useCustomSelectLogic<TValue>(
         }
     }
     function handleTriggerKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+        if (readOnly) {
+            if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(event.key))
+                event.preventDefault()
+            return
+        }
         if (
-            readOnly &&
-            ['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(event.key)
+            !virtualized ||
+            disabled ||
+            open ||
+            event.ctrlKey ||
+            event.altKey ||
+            event.metaKey ||
+            event.nativeEvent.isComposing ||
+            event.key.length !== 1
         )
-            event.preventDefault()
+            return
+        const now = Date.now()
+        const previous =
+            now - typeaheadRef.current.updatedAt < 1000
+                ? typeaheadRef.current.search
+                : ''
+        if (event.key === ' ' && !previous) return
+        typeaheadRef.current = { search: previous + event.key, updatedAt: now }
+        const entry = findTypeaheadEntry(
+            optionEntries,
+            selectedRadixValue,
+            typeaheadRef.current.search,
+            isOptionDisabled,
+        )
+        event.preventDefault()
+        event.stopPropagation()
+        if (entry) handleSelectValue(entry.option.value)
     }
     function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
         setSearchValue(event.target.value)
@@ -500,8 +602,13 @@ export default function useCustomSelectLogic<TValue>(
             trigger: composedTriggerRef,
             searchInput: searchInputRef,
             validationInput: validationInputRef,
+            scroll: scrollRef,
+            virtualNavigation: virtualNavigationRef,
+            pendingVirtualNavigation: pendingVirtualNavigationRef,
         },
         state: {
+            virtualOptionsModule,
+            virtualized,
             controlSize,
             textOverflow,
             contentWidth,
@@ -555,6 +662,8 @@ export default function useCustomSelectLogic<TValue>(
             isValueSelected,
         },
         handler: {
+            handleContentFocusCapture,
+            handleVirtualClose,
             option: optionHandler,
             handleTriggerPointerDown,
             handleTriggerKeyDown,
