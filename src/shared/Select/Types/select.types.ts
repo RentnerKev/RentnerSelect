@@ -10,6 +10,8 @@ import type {
     PointerEvent,
     ChangeEvent,
     InvalidEvent,
+    MouseEvent,
+    CSSProperties,
 } from 'react'
 import type {
     Option,
@@ -180,8 +182,20 @@ export interface SelectProviderProps extends SelectCustomizationProps {
 export type SelectDefaults = Omit<SelectProviderProps, 'children'>
 
 export interface SelectOptionHandlers<TValue> {
-    handleOptionPointerDown: () => void
-    handleOptionFocus: (value: TValue) => void
+    handleOptionPointerDown: (event?: PointerEvent<HTMLDivElement>) => void
+    handleOptionPointerUp?: (
+        event: PointerEvent<HTMLDivElement>,
+        value: string,
+    ) => void
+    handleOptionPointerMove?: (event: PointerEvent<HTMLDivElement>) => void
+    handleOptionClick?: (
+        event: MouseEvent<HTMLDivElement>,
+        value: string,
+    ) => void
+    handleOptionFocus: (
+        value: TValue,
+        event?: FocusEvent<HTMLDivElement>,
+    ) => void
     handleOptionBlur: (event: FocusEvent<HTMLDivElement>) => void
     handleOptionKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void
 }
@@ -200,6 +214,9 @@ export interface SelectOptionsProps<TValue> {
 
 export interface CustomSelectLogicResult<TValue> {
     state: SelectCustomizationProps & {
+        popupStyle: CSSProperties
+        popupId: string
+        portalTarget: Element | DocumentFragment | null
         virtualOptionsModule:
             | typeof import('../Components/VirtualSelectOptions.tsx')
             | null
@@ -259,6 +276,7 @@ export interface CustomSelectLogicResult<TValue> {
         handleTriggerPointerDown: (
             event: PointerEvent<HTMLButtonElement>,
         ) => void
+        handleTriggerClick: () => void
         handleTriggerKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void
         handleSearchChange: (event: ChangeEvent<HTMLInputElement>) => void
         handleSearchPointerDown: (event: PointerEvent<HTMLInputElement>) => void

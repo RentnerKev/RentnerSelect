@@ -12,7 +12,7 @@ afterEach(cleanup)
 
 const noop = () => undefined
 
-test('retains custom native text without rerendering unchanged closed options', () => {
+test('keeps closed options unmounted without calling their custom renderers', async () => {
     const options = [
         { value: 'north', label: 'North', subOption: 'Canonical detail' },
     ]
@@ -31,11 +31,8 @@ test('retains custom native text without rerendering unchanged closed options', 
             <CustomSelect {...props} aria-label="regions" />
         </form>,
     )
-    expect(renderOption).toHaveBeenCalledTimes(1)
-    const nativeOption = view.container.querySelector(
-        'select option[value="option-0"]',
-    )
-    expect(nativeOption?.textContent).toBe('Custom native label')
+    expect(renderOption).not.toHaveBeenCalled()
+    expect(view.container.querySelector('select')).toBeNull()
     expect(
         new FormData(view.container.querySelector('form')!).getAll('regions'),
     ).toEqual(['north'])
@@ -44,11 +41,12 @@ test('retains custom native text without rerendering unchanged closed options', 
             <CustomSelect {...props} aria-label="updated regions" />
         </form>,
     )
-    expect(renderOption).toHaveBeenCalledTimes(1)
+    expect(renderOption).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('combobox'))
     expect(
-        view.container.querySelector('select option[value="option-0"]')
-            ?.textContent,
-    ).toBe('Custom native label')
+        await screen.findByRole('option', { name: 'Custom native label' }),
+    ).toBeTruthy()
+    expect(renderOption).toHaveBeenCalledTimes(1)
 })
 
 test('keeps closed collection typeahead and disabled-item filtering with custom native text', async () => {

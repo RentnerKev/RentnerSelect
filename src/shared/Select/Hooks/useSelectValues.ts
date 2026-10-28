@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import type {
     Option,
     SelectValueOptions,
@@ -78,25 +78,34 @@ export default function useSelectValues<TValue>({
             options,
         ],
     )
-    function handleSelectValue(nextValue: TValue) {
-        if (multiple) {
-            const nextValues = toggleSelectedValue(
-                selectedValues,
-                nextValue,
-                isOptionEqualToValue,
-                maxSelection,
-            )
+    const handleSelectValue = useCallback(
+        (nextValue: TValue) => {
+            if (multiple) {
+                const nextValues = toggleSelectedValue(
+                    selectedValues,
+                    nextValue,
+                    isOptionEqualToValue,
+                    maxSelection,
+                )
 
-            if (nextValues) {
-                onValueChange(nextValues)
+                if (nextValues) {
+                    onValueChange(nextValues)
+                }
+                return
             }
-            return
-        }
 
-        onValueChange(nextValue)
-    }
+            onValueChange(nextValue)
+        },
+        [
+            multiple,
+            selectedValues,
+            isOptionEqualToValue,
+            maxSelection,
+            onValueChange,
+        ],
+    )
 
-    function handleClearValues() {
+    const handleClearValues = useCallback(() => {
         const legacyOnClear = onClear
         if (legacyOnClear) {
             legacyOnClear()
@@ -111,7 +120,7 @@ export default function useSelectValues<TValue>({
             ) => void
             clearSingleValue(emptyValue ?? null)
         }
-    }
+    }, [onClear, multiple, onValueChange, emptyValue])
 
     return {
         state: { selectedValues, formEntries },

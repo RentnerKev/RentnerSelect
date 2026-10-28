@@ -14,14 +14,14 @@
     --color-muted-foreground: #9ca3af;
 }
 
-/* Radix normally injects these rules. Shipping them here also works with strict CSP. */
-[data-radix-select-viewport] {
+/* The viewport rules also ship here for applications with strict CSP. */
+[data-rentner-select-viewport] {
     scrollbar-width: none;
     -ms-overflow-style: none;
     -webkit-overflow-scrolling: touch;
 }
 
-[data-radix-select-viewport]::-webkit-scrollbar {
+[data-rentner-select-viewport]::-webkit-scrollbar {
     display: none;
 }
 

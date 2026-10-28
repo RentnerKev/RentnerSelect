@@ -8,15 +8,6 @@ export default defineConfig({
     resolve: {
         alias: [
             {
-                find: '@radix-ui/react-select',
-                replacement: fileURLToPath(
-                    new URL(
-                        './node_modules/@radix-ui/react-select/dist/index.mjs',
-                        import.meta.url,
-                    ),
-                ),
-            },
-            {
                 find: 'lucide-react',
                 replacement: fileURLToPath(
                     new URL(
@@ -68,11 +59,6 @@ export default defineConfig({
                 ),
             },
         ],
-        dedupe: [
-            'react',
-            'react-dom',
-            '@radix-ui/react-select',
-            'lucide-react',
-        ],
+        dedupe: ['react', 'react-dom', 'lucide-react'],
     },
 })

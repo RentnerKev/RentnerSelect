@@ -8,7 +8,6 @@
         "preview": "vite preview --host 127.0.0.1"
     },
     "dependencies": {
-        "@radix-ui/react-select": "^2.4.1",
         "@tailwindcss/vite": "^4.3.3",
         "@tanstack/react-form": "^1.33.5",
         "@vitejs/plugin-react": "^6.1.2",

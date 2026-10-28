@@ -236,7 +236,8 @@ export default function useVirtualSelectOptionsLogic<TValue>({
     useLayoutEffect(() => {
         navigationRef.current = { handleKeyDown, handleContentFocus }
         const focused = getActiveElement()
-        if (focused === contentRef.current) handleContentFocus()
+        if (contentRef.current && focused === contentRef.current)
+            handleContentFocus()
         if (focusRequested.current && activeRadixValue) {
             const row = rowRefs.current.get(activeRadixValue)
             if (row) {

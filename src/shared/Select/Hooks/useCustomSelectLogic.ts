@@ -13,6 +13,7 @@ import type {
     PointerEvent,
     InvalidEvent,
     KeyboardEvent,
+    MouseEvent,
 } from 'react'
 import { resolveSelectMessages } from '../../../lib/Messages/i18n.ts'
 import type {
@@ -30,6 +31,13 @@ import useSelectValues from './useSelectValues.ts'
 import useSelectOptionIdentity from './useSelectOptionIdentity.ts'
 import useComposedRefs from './useComposedRefs.ts'
 import useDeferredModule from '../../VirtualList/Hooks/useDeferredModule.ts'
+import useSelectOverlay from './useSelectOverlay.ts'
+import {
+    containsTarget,
+    focusAdjacentControl,
+    getActiveElement,
+    scrollOptionIntoView,
+} from '../../../lib/DOM/selectOverlay.ts'
 
 let virtualOptionsPromise:
     | Promise<typeof import('../Components/VirtualSelectOptions.tsx')>
@@ -44,6 +52,8 @@ function handleSearchPointerDown(event: PointerEvent<HTMLInputElement>) {
 }
 
 function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Enter' && !event.nativeEvent.isComposing)
+        event.preventDefault()
     if (event.key !== 'Escape') event.stopPropagation()
 }
 
@@ -148,6 +158,9 @@ export default function useCustomSelectLogic<TValue>(
 
     const messages = resolveSelectMessages(locale, mergedMessages)
     const [open, setOpen] = useState(false)
+    const [defaultPortalTarget, setDefaultPortalTarget] =
+        useState<HTMLElement | null>(null)
+    const portalTarget = portalContainer ?? defaultPortalTarget
     const {
         state: { module: virtualOptionsModule },
     } = useDeferredModule({
@@ -172,7 +185,10 @@ export default function useCustomSelectLogic<TValue>(
     const validationInputRef = useRef<HTMLInputElement>(null)
     const focusedOptionValue = useRef<{ value: TValue } | null>(null)
     const internalTriggerRef = useRef<HTMLButtonElement>(null)
-    const shouldKeepOpen = useRef(false)
+    const pointerType = useRef('mouse')
+    const initialFocus = useRef<'selected' | 'last'>('selected')
+    const initialFocusDone = useRef(false)
+    const previousPortalTarget = useRef(portalTarget)
     const {
         state: { optionEntries },
     } = useSelectOptionIdentity(options, isOptionEqualToValue)
@@ -260,15 +276,56 @@ export default function useCustomSelectLogic<TValue>(
 
     const composedTriggerRef = useComposedRefs(internalTriggerRef, triggerRef)
 
+    const isOptionDisabled = useCallback(
+        (option: Option<TValue>) =>
+            option.disabled === true ||
+            (multiple &&
+                maxSelection !== undefined &&
+                selectedValues.length >= maxSelection &&
+                !isValueSelected(option.value)),
+        [isValueSelected, maxSelection, multiple, selectedValues.length],
+    )
+
     const focusSearchInput = useCallback(() => {
         if (!searchable) return
-        requestAnimationFrame(() => searchInputRef.current?.focus())
-        window.setTimeout(() => searchInputRef.current?.focus(), 0)
+        searchInputRef.current?.focus({ preventScroll: true })
     }, [searchable])
 
-    useEffect(() => {
-        if (open) focusSearchInput()
-    }, [focusSearchInput, open])
+    useLayoutEffect(() => {
+        const moved = previousPortalTarget.current !== portalTarget
+        previousPortalTarget.current = portalTarget
+        if (!open) {
+            initialFocusDone.current = false
+            return
+        }
+        if (initialFocusDone.current && !moved) return
+        initialFocusDone.current = true
+        if (searchable) focusSearchInput()
+        else if (virtualized) contentRef.current?.focus({ preventScroll: true })
+        else {
+            const rows = Array.from(
+                contentRef.current?.querySelectorAll<HTMLElement>(
+                    '[role="option"]:not([data-disabled])',
+                ) ?? [],
+            )
+            const selected = rows.find(
+                (row) => row.dataset.optionKey === selectedRadixValue,
+            )
+            const row =
+                selected ??
+                (initialFocus.current === 'last' ? rows.at(-1) : rows[0])
+            const target = row ?? contentRef.current
+            target?.focus({ preventScroll: true })
+            if (row) scrollOptionIntoView(row, scrollRef.current)
+        }
+    }, [
+        open,
+        searchable,
+        virtualized,
+        selectedRadixValue,
+        focusSearchInput,
+        portalTarget,
+    ])
 
     if (previousInteractionDisabled !== interactionDisabled) {
         setPreviousInteractionDisabled(interactionDisabled)
@@ -294,8 +351,27 @@ export default function useCustomSelectLogic<TValue>(
             if (currentInput.validity.valid) setIsTouched(false)
         }
 
+        let mounted = true
+        function handleFormReset(event: Event) {
+            queueMicrotask(() => {
+                if (!mounted || event.defaultPrevented) return
+                const active = getActiveElement(currentInput.ownerDocument)
+                if (containsTarget(contentRef.current, active))
+                    internalTriggerRef.current?.focus({ preventScroll: true })
+                setIsTouched(false)
+                setSearchValue('')
+                setOpen(false)
+                pendingVirtualNavigationRef.current = []
+            })
+        }
+
         form.addEventListener('submit', handleFormSubmit)
-        return () => form.removeEventListener('submit', handleFormSubmit)
+        form.addEventListener('reset', handleFormReset)
+        return () => {
+            mounted = false
+            form.removeEventListener('submit', handleFormSubmit)
+            form.removeEventListener('reset', handleFormReset)
+        }
     }, [])
 
     function handleInvalid(event: InvalidEvent<HTMLInputElement>) {
@@ -308,25 +384,82 @@ export default function useCustomSelectLogic<TValue>(
         const nextTarget = event.relatedTarget
 
         if (
-            nextTarget instanceof Node &&
-            (rootRef.current?.contains(nextTarget) ||
-                contentRef.current?.contains(nextTarget))
+            nextTarget &&
+            'nodeType' in nextTarget &&
+            (containsTarget(rootRef.current, nextTarget as Node) ||
+                containsTarget(contentRef.current, nextTarget as Node))
         ) {
             return
         }
 
+        // Focus crossing a ShadowRoot is retargeted to its host. Wait until
+        // that root exposes the new active element before classifying a blur.
+        if (
+            nextTarget &&
+            'nodeType' in nextTarget &&
+            containsTarget(nextTarget as Element, contentRef.current)
+        ) {
+            const document = event.currentTarget.ownerDocument
+            queueMicrotask(() => {
+                const active = getActiveElement(document)
+                if (
+                    containsTarget(rootRef.current, active) ||
+                    containsTarget(contentRef.current, active)
+                )
+                    return
+                closeWithoutFocus()
+                onBlur?.(event)
+            })
+            return
+        }
+
+        closeWithoutFocus()
         onBlur?.(event)
     }
 
-    function handleValueChange(nextRadixValue: string) {
-        if (disabled || readOnly) return
-        const entry = optionEntries.find(
-            ({ radixValue }) => radixValue === nextRadixValue,
-        )
-        if (!entry) return
-        if (!multiple) setSearchValue('')
-        handleSelectValue(entry.option.value)
-    }
+    const handleOpenChange = useCallback(
+        (nextOpen: boolean) => {
+            if (disabled || readOnly) {
+                setOpen(false)
+                return
+            }
+            pendingVirtualNavigationRef.current = []
+            if (nextOpen) typeaheadRef.current = { search: '', updatedAt: 0 }
+            setOpen(nextOpen)
+            if (nextOpen) {
+                setDefaultPortalTarget(
+                    internalTriggerRef.current?.ownerDocument.body ?? null,
+                )
+                focusSearchInput()
+            } else {
+                setSearchValue('')
+                internalTriggerRef.current?.focus({ preventScroll: true })
+            }
+        },
+        [disabled, readOnly, focusSearchInput],
+    )
+
+    const handleValueChange = useCallback(
+        (nextRadixValue: string) => {
+            if (disabled || readOnly) return
+            const entry = optionEntries.find(
+                ({ radixValue }) => radixValue === nextRadixValue,
+            )
+            if (!entry || isOptionDisabled(entry.option)) return
+            if (!multiple) setSearchValue('')
+            handleSelectValue(entry.option.value)
+            if (!multiple) handleOpenChange(false)
+        },
+        [
+            disabled,
+            readOnly,
+            optionEntries,
+            isOptionDisabled,
+            multiple,
+            handleSelectValue,
+            handleOpenChange,
+        ],
+    )
 
     function handleClear() {
         if (disabled || readOnly || selectedValues.length === 0) return
@@ -336,26 +469,55 @@ export default function useCustomSelectLogic<TValue>(
         internalTriggerRef.current?.focus()
     }
 
-    function handleOpenChange(nextOpen: boolean) {
-        if (disabled || readOnly) {
-            setOpen(false)
-            return
-        }
-        if (multiple && !nextOpen && shouldKeepOpen.current) {
-            shouldKeepOpen.current = false
-            return
-        }
+    const closeWithoutFocus = useCallback(() => {
         pendingVirtualNavigationRef.current = []
-        if (nextOpen) typeaheadRef.current = { search: '', updatedAt: 0 }
-        setOpen(nextOpen)
-        if (nextOpen) focusSearchInput()
-        else setSearchValue('')
-    }
-
-    const closeAfterOptionRemoval = useCallback(() => {
-        shouldKeepOpen.current = false
         setOpen(false)
         setSearchValue('')
+    }, [])
+
+    const {
+        state: { popupStyle },
+    } = useSelectOverlay({
+        open: open && !interactionDisabled,
+        contentWidth,
+        portalTarget,
+        rootRef,
+        contentRef,
+        triggerRef: internalTriggerRef,
+        onDismiss: closeWithoutFocus,
+    })
+
+    useLayoutEffect(() => {
+        const popup = contentRef.current
+        if (!open || virtualized || !popup || !popupStyle.position) return
+        function revealFocusedOption() {
+            const active = popup && getActiveElement(popup.ownerDocument)
+            if (
+                active &&
+                containsTarget(popup, active) &&
+                active.getAttribute('role') === 'option' &&
+                filteredOptions.some(
+                    (entry) =>
+                        entry.radixValue ===
+                        active.getAttribute('data-option-key'),
+                )
+            )
+                scrollOptionIntoView(active as HTMLElement, scrollRef.current)
+        }
+        revealFocusedOption()
+        const observer =
+            typeof ResizeObserver === 'undefined'
+                ? undefined
+                : new ResizeObserver(revealFocusedOption)
+        const collection = scrollRef.current?.firstElementChild
+        if (collection) observer?.observe(collection)
+        return () => observer?.disconnect()
+    }, [open, virtualized, popupStyle.position, filteredOptions])
+
+    const closeAfterOptionRemoval = useCallback(() => {
+        setOpen(false)
+        setSearchValue('')
+        internalTriggerRef.current?.focus({ preventScroll: true })
     }, [])
 
     function handleContentFocusCapture(event: FocusEvent<HTMLDivElement>) {
@@ -368,6 +530,25 @@ export default function useCustomSelectLogic<TValue>(
     }
 
     function handleContentKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
+        if (event.nativeEvent.isComposing) return
+        if (event.key === 'Escape') {
+            event.preventDefault()
+            event.stopPropagation()
+            handleOpenChange(false)
+            return
+        }
+        if (event.key === 'Tab') {
+            event.preventDefault()
+            closeWithoutFocus()
+            const trigger = internalTriggerRef.current
+            if (trigger)
+                focusAdjacentControl(
+                    trigger,
+                    contentRef.current,
+                    event.shiftKey,
+                )
+            return
+        }
         if (
             virtualized &&
             (!virtualNavigationRef.current ||
@@ -406,6 +587,70 @@ export default function useCustomSelectLogic<TValue>(
         }
         if (virtualized && virtualNavigationRef.current?.handleKeyDown(event))
             return
+        if (event.ctrlKey || event.altKey || event.metaKey) return
+        if (!virtualized && event.target !== searchInputRef.current) {
+            const rows = Array.from(
+                event.currentTarget.querySelectorAll<HTMLElement>(
+                    '[role="option"]:not([data-disabled])',
+                ),
+            )
+            const active = getActiveElement(event.currentTarget.ownerDocument)
+            const index = rows.findIndex((row) => row === active)
+            const key = event.key
+            if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(key)) {
+                event.preventDefault()
+                event.stopPropagation()
+                const nextIndex =
+                    key === 'Home'
+                        ? 0
+                        : key === 'End'
+                          ? rows.length - 1
+                          : key === 'ArrowDown'
+                            ? Math.min(rows.length - 1, index + 1)
+                            : index < 0
+                              ? rows.length - 1
+                              : Math.max(0, index - 1)
+                rows[nextIndex]?.focus({ preventScroll: true })
+                const row = rows[nextIndex]
+                if (row) scrollOptionIntoView(row, scrollRef.current)
+                return
+            }
+            if (
+                key === 'Enter' ||
+                (key === ' ' &&
+                    (searchable ||
+                        !typeaheadRef.current.search ||
+                        Date.now() - typeaheadRef.current.updatedAt >= 1000))
+            ) {
+                event.preventDefault()
+                event.stopPropagation()
+                const value = rows[index]?.dataset.optionKey
+                if (value) handleValueChange(value)
+                return
+            }
+            if (!searchable && key.length === 1) {
+                const now = Date.now()
+                const search =
+                    (now - typeaheadRef.current.updatedAt < 1000
+                        ? typeaheadRef.current.search
+                        : '') + key
+                typeaheadRef.current = { search, updatedAt: now }
+                const current = rows[index]?.dataset.optionKey
+                const next = findTypeaheadEntry(
+                    filteredOptions,
+                    current,
+                    search,
+                    isOptionDisabled,
+                )
+                if (next)
+                    rows.find(
+                        (row) => row.dataset.optionKey === next.radixValue,
+                    )?.focus({ preventScroll: true })
+                event.preventDefault()
+                event.stopPropagation()
+                return
+            }
+        }
         if (!searchable) return
         if (event.target === searchInputRef.current) {
             if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
@@ -422,7 +667,8 @@ export default function useCustomSelectLogic<TValue>(
                 if (option) {
                     event.preventDefault()
                     event.stopPropagation()
-                    option.focus()
+                    option.focus({ preventScroll: true })
+                    scrollOptionIntoView(option, scrollRef.current)
                 }
             }
             return
@@ -447,7 +693,8 @@ export default function useCustomSelectLogic<TValue>(
     useLayoutEffect(() => {
         if (!open || !focusedOptionValue.current || virtualized) return
 
-        const activeElement = contentRef.current?.ownerDocument.activeElement
+        const document = contentRef.current?.ownerDocument
+        const activeElement = document && getActiveElement(document)
         if (
             activeElement !== contentRef.current &&
             activeElement !== contentRef.current?.ownerDocument.body
@@ -503,18 +750,6 @@ export default function useCustomSelectLogic<TValue>(
     )
 
     const isSelected = isValueSelected
-    const isOptionDisabled = useCallback(
-        (option: Option<TValue>) => {
-            return (
-                option.disabled === true ||
-                (multiple &&
-                    maxSelection !== undefined &&
-                    selectedValues.length >= maxSelection &&
-                    !isSelected(option.value))
-            )
-        },
-        [isSelected, maxSelection, multiple, selectedValues.length],
-    )
 
     useLayoutEffect(() => {
         const nextVirtualized = Boolean(virtualized)
@@ -570,14 +805,58 @@ export default function useCustomSelectLogic<TValue>(
         virtualized,
     ])
 
-    const handleOptionPointerDown = useCallback(() => {
-        if (multiple) shouldKeepOpen.current = true
-    }, [multiple])
-    const handleOptionFocus = useCallback((optionValue: TValue) => {
-        focusedOptionValue.current = { value: optionValue }
-    }, [])
+    const handleOptionPointerDown = useCallback(
+        (event?: PointerEvent<HTMLDivElement>) => {
+            pointerType.current = event?.pointerType ?? 'mouse'
+            if (event?.pointerType === 'mouse') event.preventDefault()
+        },
+        [],
+    )
+    const handleOptionPointerMove = useCallback(
+        (event: PointerEvent<HTMLDivElement>) => {
+            if (
+                event.pointerType !== 'mouse' ||
+                event.currentTarget.hasAttribute('data-disabled')
+            )
+                return
+            event.currentTarget.focus({ preventScroll: true })
+        },
+        [],
+    )
+    const handleOptionPointerUp = useCallback(
+        (event: PointerEvent<HTMLDivElement>, value: string) => {
+            pointerType.current = event.pointerType
+            if (
+                event.pointerType === 'mouse' &&
+                event.button === 0 &&
+                !event.defaultPrevented
+            )
+                handleValueChange(value)
+        },
+        [handleValueChange],
+    )
+    const handleOptionClick = useCallback(
+        (event: MouseEvent<HTMLDivElement>, value: string) => {
+            if (
+                !event.defaultPrevented &&
+                (pointerType.current !== 'mouse' || event.detail === 0)
+            )
+                handleValueChange(value)
+        },
+        [handleValueChange],
+    )
+    const handleOptionFocus = useCallback(
+        (optionValue: TValue, event?: FocusEvent<HTMLDivElement>) => {
+            focusedOptionValue.current = { value: optionValue }
+            event?.currentTarget.setAttribute('data-highlighted', '')
+            if (event)
+                scrollOptionIntoView(event.currentTarget, scrollRef.current)
+        },
+        [],
+    )
     const handleOptionBlur = useCallback(
         (event: FocusEvent<HTMLDivElement>) => {
+            event.currentTarget.removeAttribute('data-highlighted')
             const nextTarget = event.relatedTarget
             if (
                 nextTarget === null ||
@@ -593,20 +872,29 @@ export default function useCustomSelectLogic<TValue>(
     )
     const handleOptionKeyDown = useCallback(
         (event: KeyboardEvent<HTMLDivElement>) => {
-            if (multiple && (event.key === 'Enter' || event.key === ' '))
-                shouldKeepOpen.current = true
+            const key = event.currentTarget.dataset.optionKey
+            if (key && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault()
+                handleValueChange(key)
+            }
         },
-        [multiple],
+        [handleValueChange],
     )
     const optionHandler = useMemo(
         () => ({
             handleOptionPointerDown,
+            handleOptionPointerUp,
+            handleOptionPointerMove,
+            handleOptionClick,
             handleOptionFocus,
             handleOptionBlur,
             handleOptionKeyDown,
         }),
         [
             handleOptionPointerDown,
+            handleOptionPointerUp,
+            handleOptionPointerMove,
+            handleOptionClick,
             handleOptionFocus,
             handleOptionBlur,
             handleOptionKeyDown,
@@ -625,16 +913,28 @@ export default function useCustomSelectLogic<TValue>(
             return
         }
         if (
-            !virtualized ||
             disabled ||
             open ||
             event.ctrlKey ||
             event.altKey ||
             event.metaKey ||
-            event.nativeEvent.isComposing ||
-            event.key.length !== 1
+            event.nativeEvent.isComposing
         )
             return
+        if (
+            ['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(event.key) &&
+            !(
+                event.key === ' ' &&
+                typeaheadRef.current.search &&
+                Date.now() - typeaheadRef.current.updatedAt < 1000
+            )
+        ) {
+            event.preventDefault()
+            initialFocus.current = event.key === 'ArrowUp' ? 'last' : 'selected'
+            handleOpenChange(true)
+            return
+        }
+        if (event.key.length !== 1) return
         const now = Date.now()
         const previous =
             now - typeaheadRef.current.updatedAt < 1000
@@ -655,6 +955,10 @@ export default function useCustomSelectLogic<TValue>(
     function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
         setSearchValue(event.target.value)
     }
+    function handleTriggerClick() {
+        initialFocus.current = 'selected'
+        handleOpenChange(!open)
+    }
     return {
         refs: {
             root: rootRef,
@@ -667,6 +971,9 @@ export default function useCustomSelectLogic<TValue>(
             pendingVirtualNavigation: pendingVirtualNavigationRef,
         },
         state: {
+            popupStyle,
+            popupId: `${triggerId}-popup`,
+            portalTarget,
             virtualOptionsModule,
             virtualized,
             controlSize,
@@ -726,6 +1033,7 @@ export default function useCustomSelectLogic<TValue>(
             handleVirtualClose,
             option: optionHandler,
             handleTriggerPointerDown,
+            handleTriggerClick,
             handleTriggerKeyDown,
             handleSearchChange,
             handleSearchPointerDown,

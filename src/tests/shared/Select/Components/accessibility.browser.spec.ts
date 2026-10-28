@@ -45,8 +45,7 @@ test('keeps capped multiple selection accessible while the menu is open', async 
     await expect(sara).toHaveCSS('opacity', '0.4')
     await expect(max).toBeEnabled()
 
-    // Radix hides the page behind its modal popup while the menu is open.
-    const results = await new AxeBuilder({ page }).exclude('#root').analyze()
+    const results = await new AxeBuilder({ page }).analyze()
     expect(results.violations).toEqual([])
 
     await max.click()

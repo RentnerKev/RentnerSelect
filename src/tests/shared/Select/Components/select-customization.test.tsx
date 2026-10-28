@@ -41,7 +41,7 @@ describe('project customization', () => {
         )
         const viewportStyle = [...document.querySelectorAll('style')].find(
             (style) =>
-                style.textContent?.includes('[data-radix-select-viewport]'),
+                style.textContent?.includes('[data-rentner-select-viewport]'),
         )
         expect(viewportStyle?.getAttribute('nonce')).toBe('project-nonce')
 

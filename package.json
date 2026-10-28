@@ -19,6 +19,7 @@
         "./theme.css"
     ],
     "scripts": {
+        "benchmark": "bun scripts/benchmark.mjs",
         "build": "bun -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true })\" && tsc",
         "typecheck": "tsc --noEmit && tsc --project tsconfig.type-tests.json && bun run typecheck:playground && bun run typecheck:automation",
         "test": "bun test",
@@ -31,8 +32,8 @@
         "e2e": "playwright test",
         "lint": "oxlint --deny-warnings src scripts playground/src playground/vite.config.ts playwright.config.ts .github/scripts",
         "lint:fix": "oxlint --fix --deny-warnings src scripts playground/src playground/vite.config.ts playwright.config.ts .github/scripts",
-        "format": "bun fmt src scripts playground/src .github/scripts docs README.md package.json tsconfig.json tsconfig.type-tests.json playground/tsconfig.json playground/package.json playground/vite.config.ts playwright.config.ts .oxlintrc.json bunfig.toml theme.css tailwind.css",
-        "format:check": "bun fmt --check src scripts playground/src .github/scripts docs README.md package.json tsconfig.json tsconfig.type-tests.json playground/tsconfig.json playground/package.json playground/vite.config.ts playwright.config.ts .oxlintrc.json bunfig.toml theme.css tailwind.css",
+        "format": "bun fmt src scripts playground/src .github/scripts docs README.md package.json tsconfig.json tsconfig.type-tests.json playground/tsconfig.json playground/package.json playground/vite.config.ts playwright.config.ts .oxlintrc.json bunfig.toml theme.css tailwind.css benchmarks",
+        "format:check": "bun fmt --check src scripts playground/src .github/scripts docs README.md package.json tsconfig.json tsconfig.type-tests.json playground/tsconfig.json playground/package.json playground/vite.config.ts playwright.config.ts .oxlintrc.json bunfig.toml theme.css tailwind.css benchmarks",
         "verify": "bun run playground:install && bun run typecheck && bun run lint && bun run format:check && bun run test && bun run build && bun run pack:check && bun run pack:consumer && bun run e2e",
         "typecheck:automation": "tsc --noEmit -p .github/scripts/tsconfig.json",
         "typecheck:playground": "tsc --noEmit -p playground/tsconfig.json"
@@ -70,7 +71,6 @@
         "typescript": "^7.0.2"
     },
     "dependencies": {
-        "@radix-ui/react-select": "^2.4.1",
         "@rentnerkev/tooltips": "^2.2.0",
         "lucide-react": "^1.61.0",
         "@tanstack/react-virtual": "^3.14.23"

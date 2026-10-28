@@ -1,5 +1,6 @@
+/* oxlint-disable jsx-a11y/prefer-tag-over-role -- A select-only combobox uses a native button to open its listbox or search dialog. */
 import type { ReactElement } from 'react'
-import * as SelectPrimitive from '@radix-ui/react-select'
+import { createPortal } from 'react-dom'
 import { SelectErrorTooltip } from './SelectErrorTooltip.tsx'
 import { AlertCircle, ChevronDown, X } from 'lucide-react'
 import SelectOptions from './SelectOptions.tsx'
@@ -43,8 +44,9 @@ export function CustomSelect<TValue = string>(
         virtualized,
         controlSize,
         textOverflow,
-        contentWidth,
-        portalContainer,
+        popupStyle,
+        popupId,
+        portalTarget,
         portalClassName,
         portalZIndex,
         name,
@@ -84,7 +86,6 @@ export function CustomSelect<TValue = string>(
         searchValue,
         filteredOptions,
         selectedEntries,
-        selectedRadixValue,
         hasError,
         resolvedError,
         isValueSelected,
@@ -108,21 +109,16 @@ export function CustomSelect<TValue = string>(
         handleInvalid,
         handleValueChange,
         handleClear,
-        handleOpenChange,
         handleContentKeyDownCapture,
         handleTriggerPointerDown,
+        handleTriggerClick,
         handleTriggerKeyDown,
         handleSearchChange,
         handleSearchPointerDown,
         handleSearchKeyDown,
     } = handler
     return (
-        <SelectPrimitive.Root
-            open={open}
-            onOpenChange={handleOpenChange}
-            value={selectedRadixValue}
-            onValueChange={handleValueChange}
-        >
+        <>
             <div
                 ref={root}
                 onBlurCapture={handleFieldBlur}
@@ -195,9 +191,14 @@ export function CustomSelect<TValue = string>(
                             )}
                         </div>
                     )}
-                    <SelectPrimitive.Trigger
+                    <button
+                        type="button"
+                        role="combobox"
                         ref={trigger}
-                        aria-haspopup={searchable ? 'dialog' : undefined}
+                        aria-haspopup={searchable ? 'dialog' : 'listbox'}
+                        aria-expanded={open}
+                        aria-controls={open ? popupId : undefined}
+                        data-state={open ? 'open' : 'closed'}
                         id={triggerId}
                         disabled={disabled}
                         {...ariaProps}
@@ -222,6 +223,7 @@ export function CustomSelect<TValue = string>(
                             disabled || ariaProps['aria-disabled'] || undefined
                         }
                         onPointerDown={handleTriggerPointerDown}
+                        onClick={handleTriggerClick}
                         onKeyDown={handleTriggerKeyDown}
                         className={`box-border relative flex w-full min-w-0 items-center justify-between gap-2 outline-none disabled:cursor-not-allowed disabled:opacity-50 ${classNames.trigger ?? `cursor-pointer rounded-rentner-control border bg-select-control ${showClear ? 'pr-17' : 'pr-9'} text-left text-sm font-medium tracking-normal normal-case text-select-foreground transition-[border-color,box-shadow,background-color] hover:border-select-border-strong focus-visible:ring-[3px] motion-reduce:transition-none ${hasLeftIcon ? 'pl-9' : 'pl-3'} ${hasError ? 'border-rentner-danger focus-visible:ring-rentner-danger/20 data-[state=open]:border-rentner-danger' : 'border-select-border focus-visible:border-select-accent focus-visible:ring-select-accent/20 data-[state=open]:border-select-accent'}`} ${controlSize === 'sm' ? 'h-rentner-control-sm' : controlSize === 'md' ? 'h-rentner-control-md' : controlSize === 'lg' ? 'h-rentner-control-lg' : textOverflow === 'wrap' ? 'min-h-12 py-2' : 'h-12'} ${className || ''}`}
                     >
@@ -254,17 +256,14 @@ export function CustomSelect<TValue = string>(
                                     )}
                                 </span>
                             ) : (
-                                <SelectPrimitive.Value
-                                    placeholder={placeholder}
-                                />
+                                <span data-placeholder="">{placeholder}</span>
                             )}
                         </span>
-                        <SelectPrimitive.Icon asChild>
-                            <ChevronDown
-                                className={`absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 ${classNames.trailing ?? 'text-select-muted'}`}
-                            />
-                        </SelectPrimitive.Icon>
-                    </SelectPrimitive.Trigger>
+                        <ChevronDown
+                            aria-hidden="true"
+                            className={`absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 ${classNames.trailing ?? 'text-select-muted'}`}
+                        />
+                    </button>
                     {showClear && (
                         <button
                             type="button"
@@ -300,75 +299,120 @@ export function CustomSelect<TValue = string>(
                 </span>
             )}
 
-            <SelectPrimitive.Portal container={portalContainer ?? undefined}>
-                <div className={portalClassName}>
-                    <SelectPrimitive.Content
-                        ref={content}
-                        role={searchable ? 'dialog' : 'listbox'}
-                        aria-label={
-                            searchable
-                                ? resolvedMessages.searchOptions
-                                : ariaLabel
-                        }
-                        aria-labelledby={
-                            searchable ? undefined : (labelledBy ?? triggerId)
-                        }
-                        aria-modal={searchable ? true : undefined}
-                        aria-multiselectable={
-                            !searchable && multiple ? true : undefined
-                        }
-                        onBlurCapture={handleFieldBlur}
-                        position="popper"
-                        sideOffset={4}
-                        onKeyDownCapture={handleContentKeyDownCapture}
-                        onFocusCapture={handleContentFocusCapture}
-                        style={{
-                            zIndex:
-                                portalZIndex ??
-                                'var(--rentner-overlay-z, 9998)',
-                        }}
-                        className={`max-w-(--radix-select-content-available-width) overflow-hidden ${contentWidth === 'trigger' ? 'w-(--radix-select-trigger-width) min-w-45' : 'w-max min-w-(--radix-select-trigger-width)'} ${classNames.content ?? 'rounded-rentner-control border border-select-border bg-select-surface text-select-foreground shadow-xl motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95'}`}
-                    >
-                        {searchable && (
-                            <div className="border-b border-select-border p-2">
-                                <input
-                                    ref={searchInput}
-                                    aria-label={resolvedMessages.searchOptions}
-                                    value={searchValue}
-                                    onChange={handleSearchChange}
-                                    onPointerDownCapture={
-                                        handleSearchPointerDown
-                                    }
-                                    onKeyDownCapture={handleSearchKeyDown}
-                                    onKeyDown={handleSearchKeyDown}
-                                    placeholder={
-                                        resolvedMessages.searchPlaceholder
-                                    }
-                                    className={`w-full outline-none ${classNames.search ?? 'h-10 rounded-lg border border-select-border bg-select-control px-3 text-sm font-normal tracking-normal normal-case text-select-foreground placeholder:text-select-muted focus-visible:border-select-accent focus-visible:ring-2 focus-visible:ring-select-accent/20'}`}
-                                />
-                            </div>
-                        )}
+            {open &&
+                portalTarget &&
+                createPortal(
+                    <div className={portalClassName}>
                         <div
-                            ref={scroll}
-                            className="rentnerselect-scrollbar max-h-[min(var(--radix-select-content-available-height,16rem),16rem)] overflow-y-scroll scrollbar-gutter-stable"
+                            id={popupId}
+                            ref={content}
+                            tabIndex={-1}
+                            data-state="open"
+                            role={searchable ? 'dialog' : 'listbox'}
+                            aria-label={
+                                searchable
+                                    ? resolvedMessages.searchOptions
+                                    : ariaLabel
+                            }
+                            aria-labelledby={
+                                searchable
+                                    ? undefined
+                                    : (labelledBy ?? triggerId)
+                            }
+                            aria-multiselectable={
+                                !searchable && multiple ? true : undefined
+                            }
+                            onBlurCapture={handleFieldBlur}
+                            onKeyDownCapture={handleContentKeyDownCapture}
+                            onFocusCapture={handleContentFocusCapture}
+                            style={{
+                                ...popupStyle,
+                                zIndex:
+                                    portalZIndex ??
+                                    'var(--rentner-overlay-z, 9998)',
+                            }}
+                            className={`flex flex-col overflow-hidden outline-none ${classNames.content ?? 'rounded-rentner-control border border-select-border bg-select-surface text-select-foreground shadow-xl motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95'}`}
                         >
-                            <SelectPrimitive.Viewport
-                                role={searchable ? 'listbox' : 'presentation'}
-                                aria-label={
-                                    searchable
-                                        ? resolvedMessages.searchOptions
-                                        : undefined
-                                }
-                                aria-multiselectable={
-                                    searchable && multiple ? true : undefined
-                                }
-                                nonce={nonce}
-                                className={classNames.viewport ?? 'p-1.5'}
+                            {searchable && (
+                                <div className="shrink-0 border-b border-select-border p-2">
+                                    <input
+                                        ref={searchInput}
+                                        aria-label={
+                                            resolvedMessages.searchOptions
+                                        }
+                                        value={searchValue}
+                                        onChange={handleSearchChange}
+                                        onPointerDownCapture={
+                                            handleSearchPointerDown
+                                        }
+                                        onKeyDownCapture={handleSearchKeyDown}
+                                        onKeyDown={handleSearchKeyDown}
+                                        placeholder={
+                                            resolvedMessages.searchPlaceholder
+                                        }
+                                        className={`w-full outline-none ${classNames.search ?? 'h-10 rounded-lg border border-select-border bg-select-control px-3 text-sm font-normal tracking-normal normal-case text-select-foreground placeholder:text-select-muted focus-visible:border-select-accent focus-visible:ring-2 focus-visible:ring-select-accent/20'}`}
+                                    />
+                                </div>
+                            )}
+                            <div
+                                ref={scroll}
+                                className="rentnerselect-scrollbar min-h-0 max-h-64 overflow-y-auto overscroll-contain scrollbar-gutter-stable"
                             >
-                                {virtualized ? (
-                                    open &&
-                                    (VirtualSelectOptions ? (
-                                        <VirtualSelectOptions
+                                <div
+                                    data-rentner-select-viewport=""
+                                    role={
+                                        searchable ? 'listbox' : 'presentation'
+                                    }
+                                    aria-label={
+                                        searchable
+                                            ? resolvedMessages.searchOptions
+                                            : undefined
+                                    }
+                                    aria-multiselectable={
+                                        searchable && multiple
+                                            ? true
+                                            : undefined
+                                    }
+                                    className={classNames.viewport ?? 'p-1.5'}
+                                >
+                                    {virtualized ? (
+                                        open &&
+                                        (VirtualSelectOptions ? (
+                                            <VirtualSelectOptions
+                                                entries={filteredOptions}
+                                                isSelected={isValueSelected}
+                                                isOptionDisabled={
+                                                    isOptionDisabled
+                                                }
+                                                multiple={multiple}
+                                                renderOption={renderOption}
+                                                className={classNames.option}
+                                                classNames={classNames}
+                                                textOverflow={textOverflow}
+                                                handler={optionHandler}
+                                                searchable={searchable}
+                                                virtualization={virtualized}
+                                                navigationRef={
+                                                    virtualNavigation
+                                                }
+                                                pendingNavigationRef={
+                                                    pendingVirtualNavigation
+                                                }
+                                                scrollRef={scroll}
+                                                contentRef={content}
+                                                searchInputRef={searchInput}
+                                                onValueChange={
+                                                    handleValueChange
+                                                }
+                                                onClose={handleVirtualClose}
+                                            />
+                                        ) : (
+                                            <output className="p-3 text-sm text-select-muted">
+                                                {resolvedMessages.loading}
+                                            </output>
+                                        ))
+                                    ) : filteredOptions.length > 0 ? (
+                                        <SelectOptions
                                             entries={filteredOptions}
                                             isSelected={isValueSelected}
                                             isOptionDisabled={isOptionDisabled}
@@ -378,51 +422,29 @@ export function CustomSelect<TValue = string>(
                                             classNames={classNames}
                                             textOverflow={textOverflow}
                                             handler={optionHandler}
-                                            searchable={searchable}
-                                            virtualization={virtualized}
-                                            navigationRef={virtualNavigation}
-                                            pendingNavigationRef={
-                                                pendingVirtualNavigation
-                                            }
-                                            scrollRef={scroll}
-                                            contentRef={content}
-                                            searchInputRef={searchInput}
-                                            onValueChange={handleValueChange}
-                                            onClose={handleVirtualClose}
                                         />
-                                    ) : (
-                                        <output className="p-3 text-sm text-select-muted">
-                                            {resolvedMessages.loading}
-                                        </output>
-                                    ))
-                                ) : filteredOptions.length > 0 ? (
-                                    <SelectOptions
-                                        entries={filteredOptions}
-                                        isSelected={isValueSelected}
-                                        isOptionDisabled={isOptionDisabled}
-                                        multiple={multiple}
-                                        renderOption={renderOption}
-                                        className={classNames.option}
-                                        classNames={classNames}
-                                        textOverflow={textOverflow}
-                                        handler={optionHandler}
-                                    />
-                                ) : null}
-                                {filteredOptions.length === 0 && (
-                                    <div
-                                        className={`relative flex w-full select-none items-center ${classNames.empty ?? 'rounded-lg py-2 pl-9 pr-3 text-sm text-select-muted'}`}
-                                    >
-                                        {searchable && searchValue.trim()
-                                            ? resolvedMessages.noResults
-                                            : fallbackOption ||
-                                              resolvedMessages.noOptions}
-                                    </div>
-                                )}
-                            </SelectPrimitive.Viewport>
+                                    ) : null}
+                                    {filteredOptions.length === 0 && (
+                                        <div
+                                            className={`relative flex w-full select-none items-center ${classNames.empty ?? 'rounded-lg py-2 pl-9 pr-3 text-sm text-select-muted'}`}
+                                        >
+                                            {searchable && searchValue.trim()
+                                                ? resolvedMessages.noResults
+                                                : fallbackOption ||
+                                                  resolvedMessages.noOptions}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                    </SelectPrimitive.Content>
-                </div>
-            </SelectPrimitive.Portal>
-        </SelectPrimitive.Root>
+                        <style nonce={nonce}>
+                            {
+                                '[data-rentner-select-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}[data-rentner-select-viewport]::-webkit-scrollbar{display:none}'
+                            }
+                        </style>
+                    </div>,
+                    portalTarget,
+                )}
+        </>
     )
 }
