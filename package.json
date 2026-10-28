@@ -71,7 +71,7 @@
         "typescript": "^7.0.2"
     },
     "dependencies": {
-        "@rentnerkev/tooltips": "^2.2.0",
+        "@rentnerkev/tooltips": "^2.3.0",
         "lucide-react": "^1.61.0",
         "@tanstack/react-virtual": "^3.14.23"
     },
