@@ -112,9 +112,17 @@ test('select keeps tooltip and virtualizer code outside its initial browser grap
     const bundle = await inspectBrowserBundle('CustomSelect')
     expect(bundle.initialSources.some(isTooltip)).toBe(false)
     expect(bundle.initialSources.some(isVirtualizer)).toBe(false)
+    expect(
+        bundle.initialSources.some((source) => /@radix-ui[+/]/.test(source)),
+    ).toBe(false)
+    expect(
+        bundle.allSources.some((source) =>
+            /@radix-ui[+/]react-select/.test(source),
+        ),
+    ).toBe(false)
     expect(bundle.allSources.some(isTooltip)).toBe(true)
     expect(bundle.allSources.some(isVirtualizer)).toBe(true)
-    expect(bundle.initialGzipBytes).toBeLessThan(48000)
+    expect(bundle.initialGzipBytes).toBeLessThan(16000)
 })
 
 test('combobox root import stays independent of Radix and lazy virtualizer code', async () => {

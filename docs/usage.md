@@ -284,7 +284,7 @@ export function App({ cspNonce }: { cspNonce?: string }) {
 }
 ```
 
-The nonce is forwarded to Radix's viewport style tag. The package CSS also contains the viewport scrollbar rules, so the scrollbar remains styled under strict CSP. Search is enabled by default for compatibility; set `searchable={false}` globally or per select for short menus.
+The nonce is forwarded to the select's viewport style tag. The package CSS also contains the viewport scrollbar rules, so the scrollbar remains styled under strict CSP. Search is enabled by default for compatibility; set `searchable={false}` globally or per select for short menus.
 
 ## Custom option content
 
@@ -327,7 +327,7 @@ The nonce is forwarded to Radix's viewport style tag. The package CSS also conta
 | `onClear`              | `() => void`                                                                                 | Optional legacy clearing callback; when provided, it handles clearing instead of `onValueChange`.                         |
 | `emptyValue`           | `TValue`                                                                                     | Single clearable mode only: value reported when cleared. Defaults to `null` when omitted.                                 |
 | `searchable`           | `boolean`                                                                                    | Show the search field. Defaults to `true`.                                                                                |
-| `nonce`                | `string`                                                                                     | CSP nonce for Radix's generated viewport style.                                                                           |
+| `nonce`                | `string`                                                                                     | CSP nonce for the select's generated viewport style.                                                                      |
 | `onBlur`               | `FocusEventHandler<HTMLDivElement>`                                                          | Fires when focus leaves the entire field, including portaled content.                                                     |
 | `renderOption`         | `(option, state) => ReactNode`                                                               | Custom content for each menu item; `state` includes selected/disabled.                                                    |
 | `renderValue`          | `(selectedOptions) => ReactNode`                                                             | Custom content for the closed trigger.                                                                                    |
@@ -418,7 +418,7 @@ Reusable select UI lives in `src/shared/Select/Components`, with its focused hoo
 
 Public npm root, subpath, and type entry points retain their existing import paths; package exports resolve directly to their defining modules. Internal code imports defining modules directly. No application routes, server stack, or additional dependencies are needed for these libraries.
 
-Below the automatic virtualization threshold (or with `virtualized={false}`), closed options retain Radix Collection, ItemText, typeahead, and native BubbleSelect registration, including custom rendered native text. A memoized presentation list avoids repeating unchanged option renderers; it does not remove this required DOM. The default Object.is index preserves duplicate FIFO identities, NaN, object references, and signed zero. Custom comparators retain the compatibility scan path.
+Closed options remain unmounted; typeahead uses the option labels without rendering hidden items. Open menus below the automatic virtualization threshold (or with `virtualized={false}`) render the complete option collection. The default Object.is index preserves duplicate FIFO identities, NaN, object references, and signed zero. Custom comparators retain the compatibility scan path.
 
 ## AI and read-only MCP access
 
@@ -512,7 +512,7 @@ The conservative thresholds reflect local production measurements: at 250 entrie
 
 `estimateSize` is the initial row height in pixels, not a fixed height; ResizeObserver measurements support wrapping descriptions and custom presentational renderers. `overscan` is the number of additional rows on either side. Negative values are clamped; non-finite settings use the defaults. With `contentWidth="content"`, the currently mounted rows determine the natural width; an unmounted wider label may grow the popup when scrolled into view.
 
-`CustomSelect` uses Radix for its popup and retains its own form serialization, search, single/multiple value callbacks, complete-list typeahead, disabled-item skipping, Home/End navigation and focus restoration. Virtual mode skips the detached Radix item collection while closed. Rows advertise their full-list positions and count. The active row remains mounted when it is outside the visible range. In `Combobox`, focus remains in the input and its active descendant always refers to a mounted row.
+`CustomSelect` uses its own React/DOM popup, form serialization, search, single/multiple value callbacks, complete-list typeahead, disabled-item skipping, Home/End navigation and focus restoration. Options remain unmounted while closed. The popup is nonmodal: Tab leaves it in the surrounding field order, and outside interaction closes it. Virtual rows advertise their full-list positions and count. The active row remains mounted when it is outside the visible range. In `Combobox`, focus remains in the input and its active descendant always refers to a mounted row.
 
 The virtualizer loads when a virtualized popup opens; small automatic lists and explicitly disabled lists do not load its chunk. The error tooltip also loads only when its icon appears, keeping its associated accessible error message available during loading or a failed tooltip download. Consumers must preserve dynamic import splitting to obtain the loading-size benefit.
 
