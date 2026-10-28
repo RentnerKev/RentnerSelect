@@ -1,0 +1,197 @@
+{
+    "schemaVersion": 1,
+    "phase": "after",
+    "baselineCommit": "6a4b066d4a418d1926151fa2b3c2240977f99d97",
+    "comparison": "Compare isolated to isolated and integrated to integrated to hold tooltip implementation constant; before.isolated to after.integrated represents the future combined migration. Integrated mode is an explicit source alias, not the published dependency lock.",
+    "reports": {
+        "isolated": {
+            "schemaVersion": 2,
+            "package": "@rentnerkev/select",
+            "packageVersion": "5.3.0",
+            "revision": "b13a0839ea0a47dcfb8dbad7ca91b98ee3eb4b42",
+            "baselineCommit": "6a4b066d4a418d1926151fa2b3c2240977f99d97",
+            "sourceKind": "working-tree",
+            "sourceTree": {
+                "sha256": "b2d57181153379befc13e55c49b4fce5b7e3aee0bf7cff2653b81918286d768c",
+                "files": 75,
+                "includes": "src/**, package.json, bun.lock, tailwind.css and theme.css when present"
+            },
+            "harnessSha256": "6a76cba6ff3120e4c49244125143516c22ddc1228757356bb243f67ec171aa40",
+            "measuredAt": "2026-10-28T00:01:20.088Z",
+            "environment": {
+                "bun": "1.4.4",
+                "nodeCompatibility": "v26.3.0",
+                "platform": "win32",
+                "release": "10.0.26300",
+                "arch": "x64",
+                "cpu": "AMD Ryzen 9 9900X 12-Core Processor",
+                "logicalCpus": 24,
+                "totalMemoryBytes": 33493741568,
+                "mode": "production",
+                "timezone": "Europe/Berlin"
+            },
+            "scenario": "closed controlled select with 100 options",
+            "methodology": {
+                "scheduling": "Run serially on the same host after test/build processes finish. No timing assertions.",
+                "timing": "performance.now; one sample is 100 synchronous renderToStaticMarkup calls divided by 100; samples retain original order; nearest-rank p95.",
+                "bundle": "Bun production browser bundle of representative named exports, minified; gzip level 9; shared consumer peers external; tooltip dependency is bundled.",
+                "ssr": "Bun production SSR bundle; all React/ReactDOM imports resolve to this package root to prevent duplicate React instances; tree constructed before timing.",
+                "limitations": [
+                    "Closed-widget SSR measures server rendering, not interaction latency, layout, accessibility or browser memory.",
+                    "Bundle byte counts exclude shared React/ReactDOM, icon and Motion peers and CSS.",
+                    "Single-machine observations can vary; no performance pass/fail threshold is inferred."
+                ]
+            },
+            "dependencyMode": "isolated-installed-dependencies",
+            "dependencies": {
+                "declaredTooltipRange": "^2.2.0",
+                "installedPublishedTooltip": {
+                    "version": "2.2.0",
+                    "entrySha256": "3183229e94876d32cb4175efe9fc11b4ca12538747969eb8d583008355c8877e",
+                    "resolvedEntry": "C:\\Repositorys\\@rentnerkev\\RentnerSelect\\node_modules\\.bun\\@rentnerkev+tooltips@2.2.0+b146eb580f4286be\\node_modules\\@rentnerkev\\tooltips\\dist\\index.js"
+                },
+                "nativeTooltipOverride": null,
+                "releasePrerequisite": "Publish the native Tooltips release first, then resolve consumer dependencies normally. The current published Tooltip 2.2.0 dependency can still contain Radix; an integrated source override is evidence only."
+            },
+            "bundle": {
+                "exports": ["CustomSelect", "SelectProvider"],
+                "external": [
+                    "react",
+                    "react/*",
+                    "react-dom",
+                    "react-dom/*",
+                    "lucide-react",
+                    "motion",
+                    "motion/*"
+                ],
+                "minifiedBytes": 142728,
+                "gzipBytes": 46844
+            },
+            "ssr": {
+                "warmupRenders": 100,
+                "samples": 31,
+                "rendersPerSample": 100,
+                "rawSampleMsPerRender": [
+                    0.06709899999999976, 0.03156099999999981,
+                    0.03679000000000002, 0.049416999999999975,
+                    0.026807000000000015, 0.03498500000000007,
+                    0.040087000000000046, 0.03629199999999997,
+                    0.018896000000000013, 0.028217999999999962,
+                    0.0245799999999997, 0.035048999999999636,
+                    0.025861000000000446, 0.025045999999999822,
+                    0.022905000000000085, 0.016843000000000073,
+                    0.042206999999999655, 0.021976999999999976,
+                    0.028362000000000193, 0.01706799999999987,
+                    0.044026000000000065, 0.034440999999999916,
+                    0.029904999999999973, 0.013376999999999839,
+                    0.023009999999999878, 0.03801600000000008,
+                    0.015459000000000174, 0.028781999999999926,
+                    0.05204400000000021, 0.04068300000000022,
+                    0.025149000000000116
+                ],
+                "medianMs": 0.028781999999999926,
+                "p95Ms": 0.05204400000000021,
+                "htmlBytes": 1553,
+                "htmlSha256": "fa4ae2737a276cf923d5eddcb7809f5227b6fbbe2413d87f7f92b631a63f5f16"
+            }
+        },
+        "integrated": {
+            "schemaVersion": 2,
+            "package": "@rentnerkev/select",
+            "packageVersion": "5.3.0",
+            "revision": "b13a0839ea0a47dcfb8dbad7ca91b98ee3eb4b42",
+            "baselineCommit": "6a4b066d4a418d1926151fa2b3c2240977f99d97",
+            "sourceKind": "working-tree",
+            "sourceTree": {
+                "sha256": "b2d57181153379befc13e55c49b4fce5b7e3aee0bf7cff2653b81918286d768c",
+                "files": 75,
+                "includes": "src/**, package.json, bun.lock, tailwind.css and theme.css when present"
+            },
+            "harnessSha256": "6a76cba6ff3120e4c49244125143516c22ddc1228757356bb243f67ec171aa40",
+            "measuredAt": "2026-10-28T00:01:20.881Z",
+            "environment": {
+                "bun": "1.4.4",
+                "nodeCompatibility": "v26.3.0",
+                "platform": "win32",
+                "release": "10.0.26300",
+                "arch": "x64",
+                "cpu": "AMD Ryzen 9 9900X 12-Core Processor",
+                "logicalCpus": 24,
+                "totalMemoryBytes": 33493741568,
+                "mode": "production",
+                "timezone": "Europe/Berlin"
+            },
+            "scenario": "closed controlled select with 100 options",
+            "methodology": {
+                "scheduling": "Run serially on the same host after test/build processes finish. No timing assertions.",
+                "timing": "performance.now; one sample is 100 synchronous renderToStaticMarkup calls divided by 100; samples retain original order; nearest-rank p95.",
+                "bundle": "Bun production browser bundle of representative named exports, minified; gzip level 9; shared consumer peers external; tooltip dependency is bundled.",
+                "ssr": "Bun production SSR bundle; all React/ReactDOM imports resolve to this package root to prevent duplicate React instances; tree constructed before timing.",
+                "limitations": [
+                    "Closed-widget SSR measures server rendering, not interaction latency, layout, accessibility or browser memory.",
+                    "Bundle byte counts exclude shared React/ReactDOM, icon and Motion peers and CSS.",
+                    "Single-machine observations can vary; no performance pass/fail threshold is inferred."
+                ]
+            },
+            "dependencyMode": "integrated-native-tooltip-source",
+            "dependencies": {
+                "declaredTooltipRange": "^2.2.0",
+                "installedPublishedTooltip": {
+                    "version": "2.2.0",
+                    "entrySha256": "3183229e94876d32cb4175efe9fc11b4ca12538747969eb8d583008355c8877e",
+                    "resolvedEntry": "C:\\Repositorys\\@rentnerkev\\RentnerSelect\\node_modules\\.bun\\@rentnerkev+tooltips@2.2.0+b146eb580f4286be\\node_modules\\@rentnerkev\\tooltips\\dist\\index.js"
+                },
+                "nativeTooltipOverride": {
+                    "package": "@rentnerkev/tooltips",
+                    "sourceTree": {
+                        "sha256": "88eeb2cbe2772830a24a3a6e9d781592074e4dec068a0d12cc4337178838ca71",
+                        "files": 49,
+                        "includes": "src/**, package.json, bun.lock, tailwind.css and theme.css when present"
+                    },
+                    "resolution": "Explicit Bun build plugin aliases only the package root import to the sibling PR source. Package manifests and locks remain unchanged."
+                },
+                "releasePrerequisite": "Publish the native Tooltips release first, then resolve consumer dependencies normally. The current published Tooltip 2.2.0 dependency can still contain Radix; an integrated source override is evidence only."
+            },
+            "bundle": {
+                "exports": ["CustomSelect", "SelectProvider"],
+                "external": [
+                    "react",
+                    "react/*",
+                    "react-dom",
+                    "react-dom/*",
+                    "lucide-react",
+                    "motion",
+                    "motion/*"
+                ],
+                "minifiedBytes": 96647,
+                "gzipBytes": 30962
+            },
+            "ssr": {
+                "warmupRenders": 100,
+                "samples": 31,
+                "rendersPerSample": 100,
+                "rawSampleMsPerRender": [
+                    0.07256200000000007, 0.05522499999999994,
+                    0.04057999999999993, 0.03872900000000015, 0.025762,
+                    0.04050699999999978, 0.04530900000000002,
+                    0.037190999999999974, 0.017936000000000264,
+                    0.02699300000000022, 0.021875, 0.027539000000000157,
+                    0.017731000000000278, 0.02060600000000022,
+                    0.026118000000000165, 0.013956000000000017,
+                    0.0408329999999998, 0.02470499999999987,
+                    0.025877999999999873, 0.014927999999999884,
+                    0.02933899999999994, 0.033178000000000055,
+                    0.036273999999999945, 0.015001000000000033,
+                    0.030415999999999884, 0.04745000000000005,
+                    0.014054000000000145, 0.023463999999999884,
+                    0.046347000000000096, 0.025938999999999907,
+                    0.013536000000000001
+                ],
+                "medianMs": 0.02699300000000022,
+                "p95Ms": 0.05522499999999994,
+                "htmlBytes": 1553,
+                "htmlSha256": "fa4ae2737a276cf923d5eddcb7809f5227b6fbbe2413d87f7f92b631a63f5f16"
+            }
+        }
+    }
+}
