@@ -1,6 +1,10 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent, PointerEvent, MouseEvent } from 'react'
 import { findTypeaheadEntry } from '../../../lib/Select/selectNavigation.ts'
+import {
+    indexSelectNavigation,
+    findEnabledSelectEntry,
+} from '../../../lib/Select/selectNavigationIndex.ts'
 import useVirtualOptions from '../../VirtualList/Hooks/useVirtualOptions.ts'
 import type {
     VirtualSelectOptionsProps,
@@ -23,6 +27,9 @@ export default function useVirtualSelectOptionsLogic<TValue>({
     onClose,
     handler: optionHandler,
 }: VirtualSelectOptionsProps<TValue>): VirtualSelectOptionsLogicResult {
+    // Only internal ID positions are stable. Caller-owned options can change
+    // availability between commits, so focus and navigation check them live.
+    const navigation = useMemo(() => indexSelectNavigation(entries), [entries])
     const [storedActiveRadixValue, setActiveRadixValue] = useState<
         string | null
     >(() => {
@@ -30,18 +37,22 @@ export default function useVirtualSelectOptionsLogic<TValue>({
             entries.find(
                 ({ option }) =>
                     isSelected(option.value) && !isOptionDisabled(option),
-            ) ?? entries.find(({ option }) => !isOptionDisabled(option))
+            ) ?? findEnabledSelectEntry(entries, isOptionDisabled, 0, 1)
         return entry?.radixValue ?? null
     })
-    const validActiveEntry = entries.find(
-        ({ radixValue, option }) =>
-            radixValue === storedActiveRadixValue && !isOptionDisabled(option),
-    )
+    const activePosition =
+        storedActiveRadixValue === null
+            ? undefined
+            : navigation.positions.get(storedActiveRadixValue)
+    const validActiveEntry =
+        activePosition && !isOptionDisabled(activePosition.entry.option)
+            ? activePosition.entry
+            : undefined
     const activeRadixValue =
         validActiveEntry?.radixValue ??
         (searchable
             ? null
-            : (entries.find(({ option }) => !isOptionDisabled(option))
+            : (findEnabledSelectEntry(entries, isOptionDisabled, 0, 1)
                   ?.radixValue ?? null))
     if (storedActiveRadixValue !== activeRadixValue)
         setActiveRadixValue(activeRadixValue)
@@ -51,9 +62,10 @@ export default function useVirtualSelectOptionsLogic<TValue>({
     const focusRequested = useRef(false)
     const typeahead = useRef({ search: '', time: 0 })
     const pointerType = useRef('mouse')
-    const activeIndex = entries.findIndex(
-        ({ radixValue }) => radixValue === activeRadixValue,
-    )
+    const activeIndex =
+        activeRadixValue === null
+            ? -1
+            : (navigation.positions.get(activeRadixValue)?.index ?? -1)
     const getItemKey = useCallback(
         (index: number) => entries[index]!.radixValue,
         [entries],
@@ -72,9 +84,7 @@ export default function useVirtualSelectOptionsLogic<TValue>({
     }
 
     function focusRow(radixValue: string) {
-        const index = entries.findIndex(
-            (entry) => entry.radixValue === radixValue,
-        )
+        const index = navigation.positions.get(radixValue)?.index ?? -1
         if (index >= 0) virtualizer.scrollToIndex(index, { align: 'auto' })
         focusRequested.current = true
         setActiveRadixValue(radixValue)
@@ -90,25 +100,23 @@ export default function useVirtualSelectOptionsLogic<TValue>({
             searchInputRef.current?.focus({ preventScroll: true })
             return
         }
+        const active =
+            activeRadixValue === null
+                ? undefined
+                : navigation.positions.get(activeRadixValue)?.entry
         const entry =
-            entries.find(
-                ({ radixValue, option }) =>
-                    radixValue === activeRadixValue &&
-                    !isOptionDisabled(option),
-            ) ??
+            (active && !isOptionDisabled(active.option) ? active : undefined) ??
             entries.find(
                 ({ option }) =>
                     isSelected(option.value) && !isOptionDisabled(option),
             ) ??
-            entries.find(({ option }) => !isOptionDisabled(option))
+            findEnabledSelectEntry(entries, isOptionDisabled, 0, 1)
         if (entry) focusRow(entry.radixValue)
         else if (entries.length === 0) onClose()
     }
 
     function handleSelect(radixValue: string) {
-        const entry = entries.find(
-            (candidate) => candidate.radixValue === radixValue,
-        )
+        const entry = navigation.positions.get(radixValue)?.entry
         if (!entry || isOptionDisabled(entry.option)) return
         onValueChange(radixValue)
         if (!multiple) onClose()
@@ -124,33 +132,43 @@ export default function useVirtualSelectOptionsLogic<TValue>({
         )
             return false
         const fromSearch = event.target === searchInputRef.current
-        const enabled = entries.filter(
-            ({ option }) => !isOptionDisabled(option),
-        )
         let next: (typeof entries)[number] | undefined
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             const direction = event.key === 'ArrowDown' ? 1 : -1
-            if (fromSearch) next = direction > 0 ? enabled[0] : enabled.at(-1)
-            else {
-                const current = enabled.findIndex(
-                    ({ radixValue }) => radixValue === activeRadixValue,
+            const current =
+                activeRadixValue === null
+                    ? undefined
+                    : navigation.positions.get(activeRadixValue)
+            if (
+                fromSearch ||
+                !current ||
+                isOptionDisabled(current.entry.option)
+            )
+                next = findEnabledSelectEntry(
+                    entries,
+                    isOptionDisabled,
+                    direction > 0 ? 0 : entries.length - 1,
+                    direction,
                 )
-                const index =
-                    current < 0
-                        ? direction > 0
-                            ? 0
-                            : enabled.length - 1
-                        : Math.max(
-                              0,
-                              Math.min(enabled.length - 1, current + direction),
-                          )
-                next = enabled[index]
-            }
+            else
+                next =
+                    findEnabledSelectEntry(
+                        entries,
+                        isOptionDisabled,
+                        current.index + direction,
+                        direction,
+                    ) ?? current.entry
         } else if (
             !fromSearch &&
             (event.key === 'Home' || event.key === 'End')
         ) {
-            next = event.key === 'Home' ? enabled[0] : enabled.at(-1)
+            const direction = event.key === 'Home' ? 1 : -1
+            next = findEnabledSelectEntry(
+                entries,
+                isOptionDisabled,
+                direction > 0 ? 0 : entries.length - 1,
+                direction,
+            )
         } else if (
             !fromSearch &&
             (event.key === 'Enter' ||
@@ -183,9 +201,7 @@ export default function useVirtualSelectOptionsLogic<TValue>({
     }
 
     function handleRowFocus(radixValue: string) {
-        const entry = entries.find(
-            (candidate) => candidate.radixValue === radixValue,
-        )
+        const entry = navigation.positions.get(radixValue)?.entry
         if (!entry || isOptionDisabled(entry.option)) return
         setActiveRadixValue(radixValue)
         optionHandler.handleOptionFocus(entry.option.value)
@@ -214,9 +230,7 @@ export default function useVirtualSelectOptionsLogic<TValue>({
         radixValue: string,
     ) {
         if (event.pointerType !== 'mouse' || event.defaultPrevented) return
-        const entry = entries.find(
-            (candidate) => candidate.radixValue === radixValue,
-        )
+        const entry = navigation.positions.get(radixValue)?.entry
         if (entry && !isOptionDisabled(entry.option))
             event.currentTarget.focus({ preventScroll: true })
     }
@@ -278,10 +292,10 @@ export default function useVirtualSelectOptionsLogic<TValue>({
         previousActiveRadixValue.current = activeRadixValue
         if (
             previous === null ||
-            entries.some(
-                ({ radixValue, option }) =>
-                    radixValue === previous && !isOptionDisabled(option),
-            )
+            (navigation.positions.has(previous) &&
+                !isOptionDisabled(
+                    navigation.positions.get(previous)!.entry.option,
+                ))
         )
             return
         if (searchable) searchInputRef.current?.focus({ preventScroll: true })

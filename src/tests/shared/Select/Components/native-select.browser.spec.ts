@@ -1,5 +1,85 @@
 import { expect, test } from '@playwright/test'
 
+test('static keyboard focus performs one reveal per interaction and repeated Home still reveals the current row', async ({
+    page,
+}) => {
+    await page.goto('/?virtual-list=select&full-list&count=249&no-search')
+    await page.getByRole('combobox').press('Enter')
+    await expect(
+        page.getByRole('option', { name: /^Option 00000/ }),
+    ).toBeFocused()
+    await page.evaluate(async () => {
+        await new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        )
+        const counts = { rows: 0, viewport: 0 }
+        ;(
+            window as Window & { selectScrollReads?: typeof counts }
+        ).selectScrollReads = counts
+        for (const row of document.querySelectorAll<HTMLElement>(
+            '[role="option"]',
+        )) {
+            const original = row.getBoundingClientRect.bind(row)
+            row.getBoundingClientRect = () => {
+                counts.rows++
+                return original()
+            }
+        }
+        const viewport = document.querySelector<HTMLElement>(
+            '.rentnerselect-scrollbar',
+        )!
+        const original = viewport.getBoundingClientRect.bind(viewport)
+        viewport.getBoundingClientRect = () => {
+            counts.viewport++
+            return original()
+        }
+    })
+    // Each key must observe the focus destination committed by the previous key.
+    // oxlint-disable-next-line no-await-in-loop
+    for (let step = 0; step < 20; step++) await page.keyboard.press('ArrowDown')
+    expect(
+        await page.evaluate(
+            () =>
+                (
+                    window as Window & {
+                        selectScrollReads: { rows: number; viewport: number }
+                    }
+                ).selectScrollReads,
+        ),
+    ).toEqual({ rows: 20, viewport: 20 })
+    await page.keyboard.press('Home')
+    const viewport = page.locator('.rentnerselect-scrollbar')
+    const firstHomePosition = await viewport.evaluate(
+        (element) => element.scrollTop,
+    )
+    await viewport.evaluate((element) => {
+        element.scrollTop = 1000
+    })
+    await page.evaluate(() => {
+        const counts = (
+            window as Window & {
+                selectScrollReads: { rows: number; viewport: number }
+            }
+        ).selectScrollReads
+        counts.rows = 0
+        counts.viewport = 0
+    })
+    await page.keyboard.press('Home')
+    expect(await viewport.evaluate((element) => element.scrollTop)).toBe(
+        firstHomePosition,
+    )
+    expect(
+        await page.evaluate(
+            () =>
+                (
+                    window as Window & {
+                        selectScrollReads: { rows: number; viewport: number }
+                    }
+                ).selectScrollReads,
+        ),
+    ).toEqual({ rows: 1, viewport: 1 })
+})
+
 test('reveals distant selected options in a static popup without scrolling the page', async ({
     page,
 }) => {

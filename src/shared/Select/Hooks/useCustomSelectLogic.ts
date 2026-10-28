@@ -35,6 +35,7 @@ import useSelectOverlay from './useSelectOverlay.ts'
 import {
     containsTarget,
     focusAdjacentControl,
+    focusSelectOption,
     getActiveElement,
     scrollOptionIntoView,
 } from '../../../lib/DOM/selectOverlay.ts'
@@ -314,9 +315,8 @@ export default function useCustomSelectLogic<TValue>(
             const row =
                 selected ??
                 (initialFocus.current === 'last' ? rows.at(-1) : rows[0])
-            const target = row ?? contentRef.current
-            target?.focus({ preventScroll: true })
-            if (row) scrollOptionIntoView(row, scrollRef.current)
+            if (row) focusSelectOption(row, scrollRef.current)
+            else contentRef.current?.focus({ preventScroll: true })
         }
     }, [
         open,
@@ -610,9 +610,8 @@ export default function useCustomSelectLogic<TValue>(
                             : index < 0
                               ? rows.length - 1
                               : Math.max(0, index - 1)
-                rows[nextIndex]?.focus({ preventScroll: true })
                 const row = rows[nextIndex]
-                if (row) scrollOptionIntoView(row, scrollRef.current)
+                if (row) focusSelectOption(row, scrollRef.current)
                 return
             }
             if (
@@ -667,8 +666,7 @@ export default function useCustomSelectLogic<TValue>(
                 if (option) {
                     event.preventDefault()
                     event.stopPropagation()
-                    option.focus({ preventScroll: true })
-                    scrollOptionIntoView(option, scrollRef.current)
+                    focusSelectOption(option, scrollRef.current)
                 }
             }
             return

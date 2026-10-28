@@ -142,6 +142,153 @@ function prepareMeasurements() {
     }
 }
 
+test('10k-option keyboard navigation reuses collection indexes instead of rescanning all entries per step', async () => {
+    prepareMeasurements()
+    const largeEntries = Array.from({ length: 10000 }, (_, index) => ({
+        radixValue: `key-${index}`,
+        option: {
+            value: index,
+            label: `Large ${index}`,
+            disabled: index === 9999,
+        },
+    }))
+    const disabled = mock(
+        (option: (typeof largeEntries)[number]['option']) => option.disabled,
+    )
+    const selected = mock((value: number) => value === 5000)
+    const change = mock()
+    const view = render(
+        <Harness
+            entries={largeEntries}
+            isOptionDisabled={disabled}
+            isSelected={selected}
+            onValueChange={change}
+        />,
+    )
+    fireEvent.focus(screen.getByRole('listbox'))
+    await waitFor(() =>
+        expect(document.activeElement).toBe(
+            screen.getByRole('option', { name: 'Large 5000' }),
+        ),
+    )
+    disabled.mockClear()
+    selected.mockClear()
+    for (let step = 0; step < 50; step++)
+        fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' })
+    await waitFor(() =>
+        expect(document.activeElement).toBe(
+            screen.getByRole('option', { name: 'Large 5050' }),
+        ),
+    )
+    expect(disabled.mock.calls.length).toBeLessThan(5000)
+    expect(selected.mock.calls.length).toBeLessThan(5000)
+    fireEvent.keyDown(document.activeElement!, { key: 'End' })
+    await waitFor(() =>
+        expect(document.activeElement).toBe(
+            screen.getByRole('option', { name: 'Large 9998' }),
+        ),
+    )
+    largeEntries[9998]!.option.disabled = true
+    fireEvent.keyDown(document.activeElement!, { key: 'End' })
+    await waitFor(() =>
+        expect(document.activeElement).toBe(
+            screen.getByRole('option', { name: 'Large 9997' }),
+        ),
+    )
+    view.rerender(
+        <Harness
+            entries={largeEntries}
+            isOptionDisabled={disabled}
+            isSelected={selected}
+            onValueChange={change}
+        />,
+    )
+    fireEvent.keyDown(document.activeElement!, { key: 'End' })
+    await waitFor(() =>
+        expect(document.activeElement).toBe(
+            screen.getByRole('option', { name: 'Large 9997' }),
+        ),
+    )
+    fireEvent.keyDown(document.activeElement!, { key: 'Enter' })
+    expect(change).toHaveBeenLastCalledWith('key-9997')
+})
+
+async function expectOptionFocus(label: string) {
+    await waitFor(() =>
+        expect(document.activeElement).toBe(
+            screen.getByRole('option', { name: label }),
+        ),
+    )
+}
+
+test('keyboard neighbors, edges and content focus use live availability without a parent commit', async () => {
+    prepareMeasurements()
+    const mutableEntries = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Echo'].map(
+        (label, index) => ({
+            radixValue: String(index),
+            option: { value: index, label, disabled: false },
+        }),
+    )
+    const disabled = (option: (typeof mutableEntries)[number]['option']) =>
+        option.disabled
+    render(
+        <Harness
+            entries={mutableEntries}
+            isSelected={(value) => value === 0}
+            isOptionDisabled={disabled}
+        />,
+    )
+    fireEvent.focus(screen.getByRole('listbox'))
+    await expectOptionFocus('Alpha')
+    mutableEntries[1]!.option.disabled = true
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' })
+    await expectOptionFocus('Gamma')
+    mutableEntries[1]!.option.disabled = false
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowUp' })
+    await expectOptionFocus('Beta')
+    mutableEntries[0]!.option.disabled = true
+    fireEvent.keyDown(document.activeElement!, { key: 'Home' })
+    await expectOptionFocus('Beta')
+    mutableEntries[4]!.option.disabled = true
+    fireEvent.keyDown(document.activeElement!, { key: 'End' })
+    await expectOptionFocus('Delta')
+    mutableEntries[3]!.option.disabled = true
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowUp' })
+    await expectOptionFocus('Gamma')
+    mutableEntries[2]!.option.disabled = true
+    fireEvent.focus(screen.getByRole('listbox'))
+    await expectOptionFocus('Beta')
+})
+
+test('virtual navigation preserves memoized contents while moving focus between mounted rows', async () => {
+    prepareMeasurements()
+    const renderOption = mock((option: { value: number; label: string }) => (
+        <span>{option.label}</span>
+    ))
+    render(<Harness renderOption={renderOption} />)
+    fireEvent.focus(screen.getByRole('listbox'))
+    await waitFor(() =>
+        expect(document.activeElement).toBe(
+            screen.getByRole('option', { name: 'Item 500' }),
+        ),
+    )
+    const previouslyRendered = new Set(
+        renderOption.mock.calls.map(([option]) => option.value),
+    )
+    renderOption.mockClear()
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' })
+    await waitFor(() =>
+        expect(document.activeElement).toBe(
+            screen.getByRole('option', { name: 'Item 501' }),
+        ),
+    )
+    expect(
+        renderOption.mock.calls.filter(([option]) =>
+            previouslyRendered.has(option.value),
+        ),
+    ).toHaveLength(0)
+})
+
 test('keeps distant selected and keyboard destinations mounted with logical positions', async () => {
     prepareMeasurements()
     const change = mock(() => undefined)

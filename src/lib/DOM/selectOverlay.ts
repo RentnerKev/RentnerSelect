@@ -76,6 +76,17 @@ export function scrollOptionIntoView(
         viewport.scrollTop += (row.bottom - bottom) / scale
 }
 
+export function focusSelectOption(
+    option: HTMLElement,
+    viewport: HTMLElement | null,
+) {
+    const alreadyFocused = getActiveElement(option.ownerDocument) === option
+    option.focus({ preventScroll: true })
+    // New focus synchronously reaches the option's onFocus scroll owner. Home
+    // on the current row still needs an explicit reveal after manual scrolling.
+    if (alreadyFocused) scrollOptionIntoView(option, viewport)
+}
+
 export function focusAdjacentControl(
     trigger: HTMLButtonElement,
     popup: HTMLDivElement | null,
