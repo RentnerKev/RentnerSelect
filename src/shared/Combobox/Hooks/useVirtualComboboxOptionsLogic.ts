@@ -30,7 +30,7 @@ export default function useVirtualComboboxOptionsLogic<T>({
             })),
             totalSize: virtualState.totalSize,
             height: Math.min(
-                virtualState.totalSize,
+                virtualState.totalSize + (state.canCreate ? 40 : 0),
                 Number(state.popupStyle.maxHeight) || 256,
             ),
         },

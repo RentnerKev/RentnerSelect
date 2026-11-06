@@ -261,3 +261,16 @@ export const automaticSelect = (
         />
     </SelectProvider>
 )
+
+export const groupedOptions: Array<
+    import('../../shared/Select/Types/select.types.ts').Option<string>
+> = [
+    { value: 'north', label: 'North', group: 'Regions' },
+    { value: 'plain', label: 'Plain' },
+    {
+        value: 'invalid',
+        label: 'Invalid',
+        // @ts-expect-error Group labels must be strings.
+        group: 123,
+    },
+]

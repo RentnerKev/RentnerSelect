@@ -61,19 +61,19 @@
         "@testing-library/react": "^16.3.3",
         "@testing-library/user-event": "^14.6.8",
         "@types/bun": "^1.4.4",
-        "@types/node": "^26.6.5",
+        "@types/node": "^26.6.6",
         "@types/react": "^19.3.0",
         "@types/react-dom": "^19.3.0",
         "happy-dom": "^21.0.4",
-        "oxlint": "^1.89.0",
+        "oxlint": "^1.91.0",
         "react": "^19.3.1",
         "react-dom": "^19.3.1",
         "typescript": "^7.0.2"
     },
     "dependencies": {
         "@rentnerkev/tooltips": "^2.3.0",
-        "lucide-react": "^1.61.0",
-        "@tanstack/react-virtual": "^3.14.23"
+        "lucide-react": "^1.69.0",
+        "@tanstack/react-virtual": "^3.14.26"
     },
     "exports": {
         ".": {

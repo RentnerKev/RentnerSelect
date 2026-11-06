@@ -15,6 +15,9 @@ export function usePlaygroundRootLogic(): PlaygroundRootLogicResult {
             : null
     return {
         state: {
+            groupedFixture: new URLSearchParams(window.location.search).has(
+                'grouped-options',
+            ),
             virtualFixture: new URLSearchParams(window.location.search).has(
                 'virtual-list',
             ),

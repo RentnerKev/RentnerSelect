@@ -252,9 +252,9 @@ export default function useVirtualSelectOptionsLogic<TValue>({
 
     useLayoutEffect(() => {
         if (pendingNavigationRef.current.length === 0) return
-        let cancelled = false
+        const lifecycle = { cancelled: false }
         queueMicrotask(() => {
-            if (cancelled) return
+            if (lifecycle.cancelled) return
             const event = pendingNavigationRef.current.shift()
             if (!event) return
             const focused = getActiveElement()
@@ -269,7 +269,7 @@ export default function useVirtualSelectOptionsLogic<TValue>({
                 requestReplay((revision) => revision + 1)
         })
         return () => {
-            cancelled = true
+            lifecycle.cancelled = true
         }
     })
 

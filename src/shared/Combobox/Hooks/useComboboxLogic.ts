@@ -28,6 +28,7 @@ function loadVirtualOptions() {
 import { resolveSelectMessages } from '../../../lib/Messages/i18n.ts'
 import { mergeAriaIds } from '../../../lib/Field/selectField.ts'
 import { resolveSelectVirtualization } from '../../../lib/Select/selectVirtualization.ts'
+import { groupSelectEntries } from '../../../lib/Select/selectGroups.ts'
 import type {
     ComboboxEntry,
     ComboboxLogicResult,
@@ -60,6 +61,7 @@ export default function useComboboxLogic<T>(
     const inputRef = useComposedRefs(input, props.inputRef)
     const [requestedOpen, setOpen] = useState(false)
     const [activeKey, setActiveKey] = useState<string | null>(null)
+    const [requestedCreateActive, setCreateActive] = useState(false)
     const [navigationVersion, setNavigationVersion] = useState(0)
     const [touched, setTouched] = useState(false)
     const [position, setPosition] = useState<CSSProperties>({})
@@ -113,6 +115,7 @@ export default function useComboboxLogic<T>(
         options,
         filterMode,
         getOptionLabel,
+        getOptionGroup,
         searchValue,
         getOptionKey,
         getOptionDescription,
@@ -122,21 +125,29 @@ export default function useComboboxLogic<T>(
     } = props
     const entries = useMemo(
         () =>
-            options
+            groupSelectEntries(options, (option) => getOptionGroup?.(option))
+                .flatMap((group) => group.entries)
                 .filter(
                     (option) =>
                         filterMode !== 'local' ||
                         getOptionLabel(option)
                             .toLocaleLowerCase()
-                            .includes(searchValue.toLocaleLowerCase()),
+                            .includes(searchValue.toLocaleLowerCase()) ||
+                        Boolean(
+                            getOptionGroup?.(option)
+                                ?.toLocaleLowerCase()
+                                .includes(searchValue.toLocaleLowerCase()),
+                        ),
                 )
-                .map((option) => {
+                .map((option, index) => {
                     const key = getOptionKey(option)
                     return {
                         option,
                         key,
                         id: listId + '-' + encodeURIComponent(key),
                         label: getOptionLabel(option),
+                        group: getOptionGroup?.(option) || undefined,
+                        position: index + 1,
                         description: getOptionDescription?.(option),
                         disabled: isOptionDisabled?.(option) ?? false,
                         selected:
@@ -150,6 +161,7 @@ export default function useComboboxLogic<T>(
             options,
             filterMode,
             getOptionLabel,
+            getOptionGroup,
             searchValue,
             getOptionKey,
             getOptionDescription,
@@ -162,9 +174,28 @@ export default function useComboboxLogic<T>(
     const enabledEntries = props.loading
         ? []
         : entries.filter((entry) => !entry.disabled)
-    const activeEntry = open
-        ? enabledEntries.find((entry) => entry.key === activeKey)
-        : undefined
+    const createQuery = props.searchValue.trim()
+    const canCreate = Boolean(
+        props.onCreateOption &&
+        createQuery &&
+        !interactionDisabled &&
+        !props.loading &&
+        !props.options.some(
+            (option) =>
+                props.getOptionLabel(option).trim().toLocaleLowerCase() ===
+                createQuery.toLocaleLowerCase(),
+        ),
+    )
+    const createActive = open && canCreate && requestedCreateActive
+    const createId = inputId + '-create-option'
+    const createLabel =
+        props.createOptionLabel?.(createQuery) ??
+        messages.createOption?.(createQuery) ??
+        createQuery
+    const activeEntry =
+        open && !createActive
+            ? enabledEntries.find((entry) => entry.key === activeKey)
+            : undefined
 
     const validationMessage =
         props.disabled || props.readOnly
@@ -248,15 +279,15 @@ export default function useComboboxLogic<T>(
         }
     }, [open, contentWidth])
 
-    const activeId = activeEntry?.id
+    const activeId = createActive ? createId : activeEntry?.id
     useEffect(() => {
-        if (!activeId || virtualization) return
+        if (!activeId || (virtualization && !createActive)) return
         const activeOption = Array.from(
             content.current?.querySelectorAll<HTMLElement>('[role="option"]') ??
                 [],
         ).find((option) => option.id === activeId)
         activeOption?.scrollIntoView?.({ block: 'nearest' })
-    }, [activeId, virtualization])
+    }, [activeId, virtualization, createActive])
 
     function handleFocus() {
         if (!props.disabled && !props.readOnly) setOpen(true)
@@ -265,6 +296,7 @@ export default function useComboboxLogic<T>(
         if (props.disabled || props.readOnly) return
         props.onSearchValueChange(event.target.value)
         setActiveKey(null)
+        setCreateActive(false)
         setOpen(true)
     }
     function handleOptionSelect(entry: ComboboxEntry<T>) {
@@ -273,7 +305,21 @@ export default function useComboboxLogic<T>(
         props.onValueChange(entry.option)
         setOpen(false)
         setActiveKey(null)
+        setCreateActive(false)
         input.current?.focus()
+    }
+    function handleCreateOption() {
+        if (!canCreate) return
+        props.onCreateOption?.(createQuery)
+        setOpen(false)
+        setActiveKey(null)
+        setCreateActive(false)
+        input.current?.focus()
+    }
+    function handleCreateActivate() {
+        if (!canCreate) return
+        setActiveKey(null)
+        setCreateActive(true)
     }
     function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
         if (props.disabled || props.readOnly || event.nativeEvent.isComposing)
@@ -283,6 +329,7 @@ export default function useComboboxLogic<T>(
                 event.preventDefault()
                 setOpen(false)
                 setActiveKey(null)
+                setCreateActive(false)
             }
             return
         }
@@ -294,6 +341,13 @@ export default function useComboboxLogic<T>(
             if (open && activeEntry) {
                 event.preventDefault()
                 handleOptionSelect(activeEntry)
+            } else if (
+                open &&
+                canCreate &&
+                (createActive || enabledEntries.length === 0)
+            ) {
+                event.preventDefault()
+                handleCreateOption()
             }
             return
         }
@@ -304,22 +358,26 @@ export default function useComboboxLogic<T>(
             return
         event.preventDefault()
         setOpen(true)
-        if (!enabledEntries.length) return
-        const index = enabledEntries.findIndex(
-            (entry) => entry.key === activeEntry?.key,
-        )
+        const count = enabledEntries.length + (canCreate ? 1 : 0)
+        if (!count) return
+        const index = createActive
+            ? enabledEntries.length
+            : enabledEntries.findIndex(
+                  (entry) => entry.key === activeEntry?.key,
+              )
         const nextIndex =
             event.key === 'Home'
                 ? 0
                 : event.key === 'End'
-                  ? enabledEntries.length - 1
+                  ? count - 1
                   : event.key === 'ArrowDown'
-                    ? Math.min(index + 1, enabledEntries.length - 1)
+                    ? Math.min(index + 1, count - 1)
                     : index < 0
-                      ? enabledEntries.length - 1
+                      ? count - 1
                       : Math.max(0, index - 1)
         setNavigationVersion((version) => version + 1)
-        setActiveKey(enabledEntries[nextIndex]!.key)
+        setCreateActive(nextIndex === enabledEntries.length)
+        setActiveKey(enabledEntries[nextIndex]?.key ?? null)
     }
     function handleFieldBlur(event: FocusEvent<HTMLDivElement>) {
         const target = event.relatedTarget
@@ -332,6 +390,7 @@ export default function useComboboxLogic<T>(
         setTouched(true)
         setOpen(false)
         setActiveKey(null)
+        setCreateActive(false)
         props.onBlur?.(event)
     }
     function handleClear() {
@@ -339,6 +398,7 @@ export default function useComboboxLogic<T>(
         props.onValueChange(null)
         props.onSearchValueChange('')
         setActiveKey(null)
+        setCreateActive(false)
         input.current?.focus()
         setOpen(false)
     }
@@ -348,6 +408,7 @@ export default function useComboboxLogic<T>(
         input.current?.focus()
     }
     function handleOptionActivate(key: string) {
+        setCreateActive(false)
         setActiveKey(key)
     }
     return {
@@ -371,7 +432,7 @@ export default function useComboboxLogic<T>(
                 hasError ? errorId : undefined,
             ),
             open,
-            activeId: activeEntry?.id,
+            activeId,
             activeEntry,
             activeIndex: activeEntry ? entries.indexOf(activeEntry) : -1,
             virtualization,
@@ -404,6 +465,10 @@ export default function useComboboxLogic<T>(
                 !props.readOnly &&
                 (props.value !== null || props.searchValue),
             ),
+            canCreate,
+            createLabel,
+            createId,
+            createActive,
         },
         handler: {
             handleChange,
@@ -415,6 +480,8 @@ export default function useComboboxLogic<T>(
             handleKeepFocus,
             handleClear,
             handleInvalid,
+            handleCreateOption,
+            handleCreateActivate,
         },
         refs: { root, content, validation, input: inputRef },
     }

@@ -26,3 +26,26 @@ export const invalid: import('../../shared/Combobox/Types/combobox.types.ts').Co
 export const automaticVirtualization: import('../../shared/Combobox/Types/combobox.types.ts').ComboboxProps<
     (typeof options)[number]
 >['virtualized'] = 'auto'
+
+export const groupedCreatable = (
+    <Combobox
+        options={options}
+        value={null}
+        onValueChange={() => undefined}
+        searchValue=""
+        onSearchValueChange={() => undefined}
+        getOptionKey={(item) => String(item.id)}
+        getOptionLabel={(item) => item.name}
+        getOptionGroup={(item) => item.name.slice(0, 1)}
+        onCreateOption={(query) => {
+            const trimmedQuery: string = query
+            void trimmedQuery
+        }}
+        createOptionLabel={(query) => `Create ${query}`}
+    />
+)
+type Item = (typeof options)[number]
+type CreateOption =
+    import('../../shared/Combobox/Types/combobox.types.ts').ComboboxProps<Item>['onCreateOption']
+// @ts-expect-error Creation receives a query string, never a selected option.
+export const invalidCreate: CreateOption = (_option: Item) => undefined

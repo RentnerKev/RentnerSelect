@@ -28,6 +28,10 @@ export interface ComboboxProps<T>
     onSearchValueChange: (value: string) => void
     getOptionKey: (option: T) => string
     getOptionLabel: (option: T) => string
+    getOptionGroup?: (option: T) => string | undefined
+    /** Receives a trimmed query; the application owns creating and selecting the new option. */
+    onCreateOption?: (searchValue: string) => void
+    createOptionLabel?: (searchValue: string) => string
     getOptionDescription?: (option: T) => ReactNode
     isOptionDisabled?: (option: T) => boolean
     isOptionEqualToValue?: (option: T, value: T) => boolean
@@ -62,6 +66,8 @@ export interface ComboboxEntry<T> {
     key: string
     id: string
     label: string
+    group: string | undefined
+    position: number
     description: ReactNode
     disabled: boolean
     selected: boolean
@@ -99,6 +105,10 @@ export interface ComboboxLogicResult<T> {
         loadingText: ReactNode
         emptyText: ReactNode
         showClear: boolean
+        canCreate: boolean
+        createLabel: string
+        createId: string
+        createActive: boolean
     }
     handler: {
         handleChange: (event: ChangeEvent<HTMLInputElement>) => void
@@ -110,6 +120,8 @@ export interface ComboboxLogicResult<T> {
         handleKeepFocus: (event: MouseEvent<HTMLElement>) => void
         handleClear: () => void
         handleInvalid: (event: InvalidEvent<HTMLInputElement>) => void
+        handleCreateOption: () => void
+        handleCreateActivate: () => void
     }
     refs: {
         root: RefObject<HTMLDivElement | null>
@@ -149,11 +161,30 @@ export interface VirtualComboboxOptionsProps<T> {
         | 'classNames'
         | 'textOverflow'
         | 'popupStyle'
+        | 'canCreate'
+        | 'createId'
+        | 'createLabel'
+        | 'createActive'
     >
-    handler: ComboboxOptionProps<T>['handler']
+    handler: ComboboxOptionProps<T>['handler'] &
+        Pick<
+            ComboboxLogicResult<T>['handler'],
+            'handleCreateOption' | 'handleCreateActivate'
+        >
     renderOption: ComboboxProps<T>['renderOption']
     loading?: boolean
     ariaLabel: string
+}
+
+export interface ComboboxCreateOptionProps {
+    state: Pick<
+        ComboboxLogicResult<unknown>['state'],
+        'createId' | 'createLabel' | 'createActive' | 'classNames' | 'entries'
+    >
+    handler: Pick<
+        ComboboxLogicResult<unknown>['handler'],
+        'handleCreateOption' | 'handleCreateActivate' | 'handleKeepFocus'
+    >
 }
 
 export interface VirtualComboboxOptionsLogicResult<T> {

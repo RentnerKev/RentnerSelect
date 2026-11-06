@@ -63,17 +63,17 @@ export default function useSelectOverlay({
         const popup = contentRef.current
         const view = trigger?.ownerDocument.defaultView
         if (!trigger || !popup || !view) return
-        let frame = 0
-        let disposed = false
-        let moveObserver: IntersectionObserver | undefined
-        let observedAnchor:
-            | { left: number; top: number; width: number; height: number }
-            | undefined
+        const scheduled: {
+            frame: number
+            disposed: boolean
+            moveObserver?: IntersectionObserver
+            observedAnchor?: Pick<DOMRect, 'left' | 'top' | 'width' | 'height'>
+        } = { frame: 0, disposed: false }
 
         function schedulePosition() {
-            if (disposed || frame || !view) return
-            frame = view.requestAnimationFrame(() => {
-                frame = 0
+            if (scheduled.disposed || scheduled.frame || !view) return
+            scheduled.frame = view.requestAnimationFrame(() => {
+                scheduled.frame = 0
                 updatePosition()
             })
         }
@@ -88,7 +88,7 @@ export default function useSelectOverlay({
             schedulePosition()
         }
         function updatePosition() {
-            if (disposed || !trigger || !popup || !view) return
+            if (scheduled.disposed || !trigger || !popup || !view) return
             const rect = trigger.getBoundingClientRect()
             const viewport = view.visualViewport
             const viewportLeft = viewport?.offsetLeft ?? 0
@@ -178,14 +178,14 @@ export default function useSelectOverlay({
             )
             if (
                 view.IntersectionObserver &&
-                (!observedAnchor ||
-                    observedAnchor.left !== rect.left ||
-                    observedAnchor.top !== rect.top ||
-                    observedAnchor.width !== rect.width ||
-                    observedAnchor.height !== rect.height)
+                (!scheduled.observedAnchor ||
+                    scheduled.observedAnchor.left !== rect.left ||
+                    scheduled.observedAnchor.top !== rect.top ||
+                    scheduled.observedAnchor.width !== rect.width ||
+                    scheduled.observedAnchor.height !== rect.height)
             ) {
-                moveObserver?.disconnect()
-                observedAnchor = {
+                scheduled.moveObserver?.disconnect()
+                scheduled.observedAnchor = {
                     left: rect.left,
                     top: rect.top,
                     width: rect.width,
@@ -195,7 +195,7 @@ export default function useSelectOverlay({
                     const root = trigger.ownerDocument.documentElement
                     // A tight observer root detects anchor movement even when
                     // neither the trigger nor the popup changes dimensions.
-                    moveObserver = new view.IntersectionObserver(
+                    scheduled.moveObserver = new view.IntersectionObserver(
                         (entries) => {
                             if (entries[0]?.intersectionRatio !== 1)
                                 schedulePosition()
@@ -212,7 +212,7 @@ export default function useSelectOverlay({
                             threshold: 1,
                         },
                     )
-                    moveObserver.observe(trigger)
+                    scheduled.moveObserver.observe(trigger)
                 }
             }
         }
@@ -234,8 +234,8 @@ export default function useSelectOverlay({
         observer?.observe(trigger)
         observer?.observe(popup)
         return () => {
-            disposed = true
-            view.cancelAnimationFrame(frame)
+            scheduled.disposed = true
+            view.cancelAnimationFrame(scheduled.frame)
             view.removeEventListener('resize', schedulePosition)
             view.removeEventListener('scroll', handleScroll, true)
             view.visualViewport?.removeEventListener('resize', schedulePosition)
@@ -243,7 +243,7 @@ export default function useSelectOverlay({
             for (const root of shadowRoots)
                 root.removeEventListener('scroll', handleScroll, true)
             observer?.disconnect()
-            moveObserver?.disconnect()
+            scheduled.moveObserver?.disconnect()
         }
     }, [open, contentWidth, contentRef, triggerRef, portalTarget])
 

@@ -30,6 +30,9 @@ export interface SelectClassNames {
     search?: string
     viewport?: string
     option?: string
+    group?: string
+    groupLabel?: string
+    createOption?: string
     empty?: string
     label?: string
     description?: string

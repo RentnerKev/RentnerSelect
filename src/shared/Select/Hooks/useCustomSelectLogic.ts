@@ -24,6 +24,7 @@ import type {
 import { useSelectDefaults } from './useSelectContext.ts'
 import { mergeAriaIds } from '../../../lib/Field/selectField.ts'
 import { getOptionKey } from '../../../lib/Select/selectOptions.ts'
+import { groupSelectEntries } from '../../../lib/Select/selectGroups.ts'
 import { findTypeaheadEntry } from '../../../lib/Select/selectNavigation.ts'
 import { resolveSelectVirtualization } from '../../../lib/Select/selectVirtualization.ts'
 import type { SelectVirtualNavigation } from '../Types/select.types.ts'
@@ -213,9 +214,15 @@ export default function useCustomSelectLogic<TValue>(
             .trim()
             .toLowerCase()
 
-        if (!normalizedSearch) return optionEntries
+        const entries = optionEntries.some(({ option }) => option.group)
+            ? groupSelectEntries(
+                  optionEntries,
+                  ({ option }) => option.group,
+              ).flatMap((group) => group.entries)
+            : optionEntries
+        if (!normalizedSearch) return entries
 
-        return optionEntries.filter(({ option }) => {
+        return entries.filter(({ option }) => {
             const optionLabel = option.label.toLowerCase()
             const optionValue = String(option.value).toLowerCase()
             const subOption = option.subOption?.toLowerCase() || ''
@@ -223,7 +230,8 @@ export default function useCustomSelectLogic<TValue>(
             return (
                 optionLabel.includes(normalizedSearch) ||
                 optionValue.includes(normalizedSearch) ||
-                subOption.includes(normalizedSearch)
+                subOption.includes(normalizedSearch) ||
+                Boolean(option.group?.toLowerCase().includes(normalizedSearch))
             )
         })
     }, [optionEntries, searchValue, searchable])
@@ -351,10 +359,10 @@ export default function useCustomSelectLogic<TValue>(
             if (currentInput.validity.valid) setIsTouched(false)
         }
 
-        let mounted = true
+        const lifecycle = { mounted: true }
         function handleFormReset(event: Event) {
             queueMicrotask(() => {
-                if (!mounted || event.defaultPrevented) return
+                if (!lifecycle.mounted || event.defaultPrevented) return
                 const active = getActiveElement(currentInput.ownerDocument)
                 if (containsTarget(contentRef.current, active))
                     internalTriggerRef.current?.focus({ preventScroll: true })
@@ -368,7 +376,7 @@ export default function useCustomSelectLogic<TValue>(
         form.addEventListener('submit', handleFormSubmit)
         form.addEventListener('reset', handleFormReset)
         return () => {
-            mounted = false
+            lifecycle.mounted = false
             form.removeEventListener('submit', handleFormSubmit)
             form.removeEventListener('reset', handleFormReset)
         }

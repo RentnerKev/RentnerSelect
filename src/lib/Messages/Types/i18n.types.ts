@@ -2,6 +2,7 @@ export type SelectLocale = 'de' | 'en' | 'es' | 'fr'
 
 export interface SelectMessages {
     loading?: string
+    createOption?: (value: string) => string
     required: string
     minSelection: (count: number) => string
     maxSelection: (count: number) => string

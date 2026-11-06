@@ -1,6 +1,8 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role, jsx-a11y/click-events-have-key-events -- APG editable combobox uses a custom listbox; keyboard navigation remains on the input through aria-activedescendant. */
 import { createPortal } from 'react-dom'
 import ComboboxOption from './ComboboxOption.tsx'
+import ComboboxCreateOption from './ComboboxCreateOption.tsx'
+import { groupSelectEntries } from '../../../lib/Select/selectGroups.ts'
 
 export type { ComboboxProps } from '../Types/combobox.types.ts'
 import type { ComboboxProps } from '../Types/combobox.types.ts'
@@ -196,7 +198,16 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                                                     props.renderOption
                                                 }
                                                 index={state.activeIndex}
-                                                setSize={state.entries.length}
+                                                setSize={
+                                                    state.entries.length +
+                                                    (state.canCreate ? 1 : 0)
+                                                }
+                                            />
+                                        )}
+                                        {state.canCreate && (
+                                            <ComboboxCreateOption
+                                                state={state}
+                                                handler={handler}
                                             />
                                         )}
                                     </div>
@@ -214,20 +225,74 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                                     className={state.classNames.viewport}
                                 >
                                     {!props.loading &&
-                                        state.entries.map((entry) => (
-                                            <ComboboxOption
-                                                key={entry.key}
-                                                entry={entry}
-                                                state={state}
-                                                handler={handler}
-                                                renderOption={
-                                                    props.renderOption
+                                        groupSelectEntries(
+                                            state.entries,
+                                            (entry) => entry.group,
+                                        ).map((group) => (
+                                            <div
+                                                key={
+                                                    group.label === undefined
+                                                        ? 'ungrouped'
+                                                        : 'group:' + group.label
                                                 }
-                                            />
+                                                role={
+                                                    group.label
+                                                        ? 'group'
+                                                        : 'presentation'
+                                                }
+                                                aria-label={group.label}
+                                                className={
+                                                    group.label
+                                                        ? state.classNames.group
+                                                        : undefined
+                                                }
+                                            >
+                                                {group.label && (
+                                                    <div
+                                                        aria-hidden="true"
+                                                        className={
+                                                            state.classNames
+                                                                .groupLabel ??
+                                                            'px-3 py-2 text-xs font-semibold text-select-muted'
+                                                        }
+                                                    >
+                                                        {group.label}
+                                                    </div>
+                                                )}
+                                                {group.entries.map((entry) => (
+                                                    <ComboboxOption
+                                                        key={entry.key}
+                                                        entry={entry}
+                                                        state={state}
+                                                        handler={handler}
+                                                        index={
+                                                            entry.position - 1
+                                                        }
+                                                        setSize={
+                                                            state.entries
+                                                                .length +
+                                                            (state.canCreate
+                                                                ? 1
+                                                                : 0)
+                                                        }
+                                                        renderOption={
+                                                            props.renderOption
+                                                        }
+                                                    />
+                                                ))}
+                                            </div>
                                         ))}
+                                    {state.canCreate && (
+                                        <ComboboxCreateOption
+                                            state={state}
+                                            handler={handler}
+                                        />
+                                    )}
                                 </div>
                             )}
-                            {(props.loading || state.entries.length === 0) && (
+                            {(props.loading ||
+                                (state.entries.length === 0 &&
+                                    !state.canCreate)) && (
                                 <output
                                     className={
                                         state.classNames.empty ??

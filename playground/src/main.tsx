@@ -1,3 +1,4 @@
+import { GroupedOptionsFixture } from './Components/GroupedOptionsFixture.tsx'
 import { VirtualOptionsFixture } from './Components/VirtualOptionsFixture.tsx'
 import { ExternalComboboxFixture } from './Components/ExternalComboboxFixture.tsx'
 import { createRoot } from 'react-dom/client'
@@ -9,9 +10,16 @@ import './styles.css'
 
 function PlaygroundRoot() {
     const {
-        state: { dynamicMode, externalCombobox, virtualFixture },
+        state: {
+            dynamicMode,
+            externalCombobox,
+            virtualFixture,
+            groupedFixture,
+        },
     } = usePlaygroundRootLogic()
-    return virtualFixture ? (
+    return groupedFixture ? (
+        <GroupedOptionsFixture />
+    ) : virtualFixture ? (
         <VirtualOptionsFixture />
     ) : externalCombobox ? (
         <ExternalComboboxFixture />

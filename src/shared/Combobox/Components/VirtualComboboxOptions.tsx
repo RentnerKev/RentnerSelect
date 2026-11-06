@@ -3,6 +3,7 @@
 import useVirtualComboboxOptionsLogic from '../Hooks/useVirtualComboboxOptionsLogic.ts'
 import type { VirtualComboboxOptionsProps } from '../Types/combobox.types.ts'
 import ComboboxOption from './ComboboxOption.tsx'
+import ComboboxCreateOption from './ComboboxCreateOption.tsx'
 
 export default function VirtualComboboxOptions<T>(
     props: VirtualComboboxOptionsProps<T>,
@@ -28,19 +29,51 @@ export default function VirtualComboboxOptions<T>(
                 style={{ height: state.totalSize }}
             >
                 {state.rows.map(({ item, entry }) => (
-                    <ComboboxOption
+                    <div
                         key={entry.key}
-                        entry={entry}
-                        state={props.state}
-                        handler={props.handler}
-                        renderOption={props.renderOption}
-                        index={item.index}
-                        setSize={props.state.entries.length}
-                        measureElement={virtualizer.measureElement}
+                        role={entry.group ? 'group' : 'presentation'}
+                        aria-label={entry.group}
+                        ref={virtualizer.measureElement}
+                        data-index={item.index}
+                        className={
+                            'relative col-start-1 row-start-1 w-full self-start ' +
+                            (props.state.classNames.group ?? '')
+                        }
                         style={{ transform: `translateY(${item.start}px)` }}
-                    />
+                    >
+                        {entry.group &&
+                            entry.group !==
+                                props.state.entries[item.index - 1]?.group && (
+                                <div
+                                    aria-hidden="true"
+                                    className={
+                                        props.state.classNames.groupLabel ??
+                                        'px-3 py-2 text-xs font-semibold text-select-muted'
+                                    }
+                                >
+                                    {entry.group}
+                                </div>
+                            )}
+                        <ComboboxOption
+                            entry={entry}
+                            state={props.state}
+                            handler={props.handler}
+                            renderOption={props.renderOption}
+                            index={item.index}
+                            setSize={
+                                props.state.entries.length +
+                                (props.state.canCreate ? 1 : 0)
+                            }
+                        />
+                    </div>
                 ))}
             </div>
+            {props.state.canCreate && (
+                <ComboboxCreateOption
+                    state={props.state}
+                    handler={props.handler}
+                />
+            )}
         </div>
     )
 }

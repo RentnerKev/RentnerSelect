@@ -31,6 +31,7 @@ export interface PlaygroundRootLogicResult {
     state: {
         dynamicMode: DynamicOptionsMode | null
         externalCombobox: boolean
+        groupedFixture: boolean
         virtualFixture: boolean
     }
 }
