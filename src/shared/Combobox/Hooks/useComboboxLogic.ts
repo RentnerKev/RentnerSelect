@@ -31,7 +31,7 @@ import { resolveSelectVirtualization } from '../../../lib/Select/selectVirtualiz
 import { groupSelectEntries } from '../../../lib/Select/selectGroups.ts'
 import type {
     ComboboxEntry,
-    ComboboxLogicResult,
+    InternalComboboxLogicResult,
     ComboboxProps,
 } from '../Types/combobox.types.ts'
 
@@ -41,15 +41,14 @@ function handleKeepFocus(event: MouseEvent<HTMLElement>) {
 
 export default function useComboboxLogic<T>(
     props: ComboboxProps<T>,
-): ComboboxLogicResult<T> {
+): InternalComboboxLogicResult<T> {
     const defaults = useSelectDefaults()
     const generatedId = useId()
     const inputId = props.id ?? 'combobox-' + generatedId
     const listId = inputId + '-listbox'
     const labelId = inputId + '-label'
     const hasLabel =
-        props.label !== undefined &&
-        props.label !== null &&
+        props.label != null &&
         typeof props.label !== 'boolean' &&
         props.label !== ''
     const descriptionId = inputId + '-description'
@@ -197,14 +196,13 @@ export default function useComboboxLogic<T>(
             ? enabledEntries.find((entry) => entry.key === activeKey)
             : undefined
 
-    const validationMessage =
-        props.disabled || props.readOnly
-            ? ''
-            : props.error !== undefined
-              ? (props.error ?? '')
-              : props.required && props.value === null
-                ? messages.required
-                : ''
+    const validationMessage = interactionDisabled
+        ? ''
+        : props.error !== undefined
+          ? (props.error ?? '')
+          : props.required && props.value === null
+            ? messages.required
+            : ''
     useEffect(() => {
         validation.current?.setCustomValidity(validationMessage)
     }, [validationMessage])
@@ -290,18 +288,17 @@ export default function useComboboxLogic<T>(
     }, [activeId, virtualization, createActive])
 
     function handleFocus() {
-        if (!props.disabled && !props.readOnly) setOpen(true)
+        if (!interactionDisabled) setOpen(true)
     }
     function handleChange(event: ChangeEvent<HTMLInputElement>) {
-        if (props.disabled || props.readOnly) return
+        if (interactionDisabled) return
         props.onSearchValueChange(event.target.value)
         setActiveKey(null)
         setCreateActive(false)
         setOpen(true)
     }
     function handleOptionSelect(entry: ComboboxEntry<T>) {
-        if (props.disabled || props.readOnly || props.loading || entry.disabled)
-            return
+        if (interactionDisabled || props.loading || entry.disabled) return
         props.onValueChange(entry.option)
         setOpen(false)
         setActiveKey(null)
@@ -322,8 +319,7 @@ export default function useComboboxLogic<T>(
         setCreateActive(true)
     }
     function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-        if (props.disabled || props.readOnly || event.nativeEvent.isComposing)
-            return
+        if (interactionDisabled || event.nativeEvent.isComposing) return
         if (event.key === 'Escape') {
             if (open) {
                 event.preventDefault()
@@ -394,7 +390,7 @@ export default function useComboboxLogic<T>(
         props.onBlur?.(event)
     }
     function handleClear() {
-        if (props.disabled || props.readOnly) return
+        if (interactionDisabled) return
         props.onValueChange(null)
         props.onSearchValueChange('')
         setActiveKey(null)
@@ -426,9 +422,7 @@ export default function useComboboxLogic<T>(
             ),
             describedBy: mergeAriaIds(
                 props['aria-describedby'],
-                props.description !== undefined && props.description !== null
-                    ? descriptionId
-                    : undefined,
+                props.description != null ? descriptionId : undefined,
                 hasError ? errorId : undefined,
             ),
             open,
@@ -461,8 +455,7 @@ export default function useComboboxLogic<T>(
                 (props.searchValue ? messages.noResults : messages.noOptions),
             showClear: Boolean(
                 props.clearable &&
-                !props.disabled &&
-                !props.readOnly &&
+                !interactionDisabled &&
                 (props.value !== null || props.searchValue),
             ),
             canCreate,

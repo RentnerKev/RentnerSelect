@@ -19,7 +19,7 @@ import { resolveSelectMessages } from '../../../lib/Messages/i18n.ts'
 import type {
     Option,
     CustomSelectProps,
-    CustomSelectLogicResult,
+    InternalCustomSelectLogicResult,
 } from '../Types/select.types.ts'
 import { useSelectDefaults } from './useSelectContext.ts'
 import { mergeAriaIds } from '../../../lib/Field/selectField.ts'
@@ -60,7 +60,7 @@ function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
 
 export default function useCustomSelectLogic<TValue>(
     props: CustomSelectProps<TValue>,
-): CustomSelectLogicResult<TValue> {
+): InternalCustomSelectLogicResult<TValue> {
     const {
         controlSize: providedControlSize,
         virtualized: providedVirtualized,

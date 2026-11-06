@@ -257,7 +257,7 @@ export interface CustomSelectLogicResult<TValue> {
         describedBy: string | undefined
         labelledBy: string | undefined
         showClear: boolean
-        showRemovableSelectedItems: boolean
+        showRemovableSelectedItems?: boolean
         isOptionDisabled: (option: Option<TValue>) => boolean
         selectedOptions: ReadonlyArray<Option<TValue>>
         selectedLabel: string
@@ -294,7 +294,7 @@ export interface CustomSelectLogicResult<TValue> {
         handleInvalid: (event: InvalidEvent<HTMLInputElement>) => void
         handleValueChange: (value: string) => void
         handleClear: () => void
-        handleRemoveSelectedItem: (optionKey: string) => void
+        handleRemoveSelectedItem?: (optionKey: string) => void
         handleOpenChange: (open: boolean) => void
         closeAfterOptionRemoval: () => void
         handleContentKeyDownCapture: (
@@ -314,6 +314,11 @@ export interface CustomSelectLogicResult<TValue> {
         >
     }
 }
+
+export type InternalCustomSelectLogicResult<TValue> =
+    CustomSelectLogicResult<TValue> & {
+        handler: { handleRemoveSelectedItem: (optionKey: string) => void }
+    }
 
 export interface SelectProviderLogicResult {
     state: { contextValue: SelectDefaults }

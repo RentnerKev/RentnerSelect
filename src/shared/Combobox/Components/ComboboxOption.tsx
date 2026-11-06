@@ -57,20 +57,19 @@ export default function ComboboxOption<T>({
                     >
                         {entry.label}
                     </div>
-                    {entry.description !== undefined &&
-                        entry.description !== null && (
-                            <div
-                                className={
-                                    (state.textOverflow === 'wrap'
-                                        ? 'whitespace-normal break-words '
-                                        : 'truncate ') +
-                                    (state.classNames.optionDescription ??
-                                        'text-xs text-select-muted')
-                                }
-                            >
-                                {entry.description}
-                            </div>
-                        )}
+                    {entry.description != null && (
+                        <div
+                            className={
+                                (state.textOverflow === 'wrap'
+                                    ? 'whitespace-normal break-words '
+                                    : 'truncate ') +
+                                (state.classNames.optionDescription ??
+                                    'text-xs text-select-muted')
+                            }
+                        >
+                            {entry.description}
+                        </div>
+                    )}
                 </div>
             )}
         </div>

@@ -40,7 +40,6 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                     ref={input}
                     id={state.inputId}
                     role="combobox"
-                    type="text"
                     autoComplete="off"
                     aria-autocomplete="list"
                     aria-haspopup="listbox"
@@ -122,14 +121,14 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                     >
                         <span
                             aria-hidden="true"
-                            className="motion-safe:transition-transform motion-safe:duration-150 motion-safe:group-hover/delete:rotate-90 motion-safe:group-active/delete:scale-90"
+                            className="motion-safe:transition-transform motion-safe:group-hover/delete:rotate-90"
                         >
                             ×
                         </span>
                     </button>
                 )}
             </div>
-            {props.description !== undefined && props.description !== null && (
+            {props.description != null && (
                 <div
                     id={state.descriptionId}
                     className={
@@ -238,11 +237,7 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                                             (entry) => entry.group,
                                         ).map((group) => (
                                             <div
-                                                key={
-                                                    group.label === undefined
-                                                        ? 'ungrouped'
-                                                        : 'group:' + group.label
-                                                }
+                                                key={group.label ?? ''}
                                                 role={
                                                     group.label
                                                         ? 'group'

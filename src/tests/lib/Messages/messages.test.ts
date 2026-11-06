@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import { resolveComboboxMessages } from '../../../lib/Messages/comboboxMessages.ts'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { CustomSelect } from '../../../shared/Select/Components/CustomSelect.tsx'
@@ -139,4 +140,21 @@ describe('select locale messages', () => {
         expect(markup).toContain('aria-errormessage=')
         expect(markup).toContain('readOnly=""')
     })
+})
+
+test('preserves the full v6 combobox message contract in every locale and through overrides', () => {
+    for (const locale of ['de', 'en', 'es', 'fr'] as const) {
+        const messages = resolveComboboxMessages(locale)
+        expect(messages.minSelection(2)).toBe(
+            selectMessageCatalog[locale].minSelection(2),
+        )
+        expect(messages.maxSelection(4)).toBe(
+            selectMessageCatalog[locale].maxSelection(4),
+        )
+    }
+    const messages = resolveComboboxMessages('en', {
+        minSelection: (count) => `At least ${count}`,
+    })
+    expect(messages.minSelection(2)).toBe('At least 2')
+    expect(messages.maxSelection(4)).toBe('Select at most 4 options')
 })

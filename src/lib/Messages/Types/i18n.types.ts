@@ -17,5 +17,5 @@ export interface SelectMessages {
 
 export type ComboboxMessages = Omit<
     SelectMessages,
-    'minSelection' | 'maxSelection' | 'clickToRemove' | 'removeSelectedItem'
+    'clickToRemove' | 'removeSelectedItem'
 >

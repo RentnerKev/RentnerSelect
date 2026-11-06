@@ -19,7 +19,6 @@ import type {
     SelectMessages,
     SelectVirtualizationOptions,
 } from '../../Select/Types/select.types.ts'
-import type { ComboboxMessages } from '../../../lib/Messages/Types/i18n.types.ts'
 export interface ComboboxProps<T>
     extends AriaAttributes, SelectCustomizationProps {
     options: ReadonlyArray<T>
@@ -67,8 +66,8 @@ export interface ComboboxEntry<T> {
     key: string
     id: string
     label: string
-    group: string | undefined
-    position: number
+    group?: string
+    position?: number
     description: ReactNode
     disabled: boolean
     selected: boolean
@@ -93,7 +92,7 @@ export interface ComboboxLogicResult<T> {
         navigationVersion: number
         virtualization: boolean | SelectVirtualizationOptions
         entries: ReadonlyArray<ComboboxEntry<T>>
-        messages: ComboboxMessages
+        messages: SelectMessages
         classNames: SelectClassNames
         controlSize: SelectCustomizationProps['controlSize']
         textOverflow: 'truncate' | 'wrap'
@@ -106,10 +105,10 @@ export interface ComboboxLogicResult<T> {
         loadingText: ReactNode
         emptyText: ReactNode
         showClear: boolean
-        canCreate: boolean
-        createLabel: string
-        createId: string
-        createActive: boolean
+        canCreate?: boolean
+        createLabel?: string
+        createId?: string
+        createActive?: boolean
     }
     handler: {
         handleChange: (event: ChangeEvent<HTMLInputElement>) => void
@@ -121,8 +120,8 @@ export interface ComboboxLogicResult<T> {
         handleKeepFocus: (event: MouseEvent<HTMLElement>) => void
         handleClear: () => void
         handleInvalid: (event: InvalidEvent<HTMLInputElement>) => void
-        handleCreateOption: () => void
-        handleCreateActivate: () => void
+        handleCreateOption?: () => void
+        handleCreateActivate?: () => void
     }
     refs: {
         root: RefObject<HTMLDivElement | null>
@@ -130,6 +129,11 @@ export interface ComboboxLogicResult<T> {
         validation: RefObject<HTMLInputElement | null>
         input: RefCallback<HTMLInputElement>
     }
+}
+
+/** Normalized entries always carry the list position used by the built-in renderer. */
+export type InternalComboboxLogicResult<T> = ComboboxLogicResult<T> & {
+    state: { entries: ReadonlyArray<ComboboxEntry<T> & { position: number }> }
 }
 
 export interface ComboboxOptionProps<T> {
