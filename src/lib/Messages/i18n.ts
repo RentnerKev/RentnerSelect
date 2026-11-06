@@ -1,63 +1,37 @@
 import type { SelectLocale, SelectMessages } from './Types/i18n.types.ts'
+import { baseMessageCatalog } from './comboboxMessages.ts'
 export type { SelectLocale, SelectMessages } from './Types/i18n.types.ts'
-const germanMessages: SelectMessages = {
-    loading: 'Wird geladen…',
-    createOption: (value) => `„${value}“ anlegen`,
-    required: 'Dieses Feld ist erforderlich',
-    minSelection: (count) => `Mindestens ${count} Optionen auswählen`,
-    maxSelection: (count) => `Maximal ${count} Optionen auswählen`,
-    searchOptions: 'Optionen suchen',
-    searchPlaceholder: 'Suchen…',
-    noResults: 'Keine Ergebnisse',
-    noOptions: 'Keine Optionen',
-    clearSelection: 'Auswahl löschen',
-}
-
-const englishMessages: SelectMessages = {
-    loading: 'Loading…',
-    createOption: (value) => `Create “${value}”`,
-    required: 'This field is required',
-    minSelection: (count) => `Select at least ${count} options`,
-    maxSelection: (count) => `Select at most ${count} options`,
-    searchOptions: 'Search options',
-    searchPlaceholder: 'Search…',
-    noResults: 'No results',
-    noOptions: 'No options',
-    clearSelection: 'Clear selection',
-}
-
-const spanishMessages: SelectMessages = {
-    loading: 'Cargando…',
-    createOption: (value) => `Crear «${value}»`,
-    required: 'Este campo es obligatorio',
-    minSelection: (count) => `Selecciona al menos ${count} opciones`,
-    maxSelection: (count) => `Selecciona como máximo ${count} opciones`,
-    searchOptions: 'Buscar opciones',
-    searchPlaceholder: 'Buscar…',
-    noResults: 'Sin resultados',
-    noOptions: 'No hay opciones',
-    clearSelection: 'Borrar selección',
-}
-
-const frenchMessages: SelectMessages = {
-    loading: 'Chargement…',
-    createOption: (value) => `Créer «${value}»`,
-    required: 'Ce champ est obligatoire',
-    minSelection: (count) => `Sélectionnez au moins ${count} options`,
-    maxSelection: (count) => `Sélectionnez au maximum ${count} options`,
-    searchOptions: 'Rechercher des options',
-    searchPlaceholder: 'Rechercher…',
-    noResults: 'Aucun résultat',
-    noOptions: 'Aucune option',
-    clearSelection: 'Effacer la sélection',
-}
-
-export const selectMessageCatalog: Record<SelectLocale, SelectMessages> = {
-    de: germanMessages,
-    en: englishMessages,
-    es: spanishMessages,
-    fr: frenchMessages,
-}
+export const selectMessageCatalog: Record<SelectLocale, SelectMessages> =
+    /* @__PURE__ */ (() => ({
+        de: {
+            ...baseMessageCatalog.de,
+            minSelection: (count) => `Mindestens ${count} Optionen auswählen`,
+            maxSelection: (count) => `Maximal ${count} Optionen auswählen`,
+            clickToRemove: 'Zum Entfernen klicken',
+            removeSelectedItem: (label) => `${label} entfernen`,
+        },
+        en: {
+            ...baseMessageCatalog.en,
+            minSelection: (count) => `Select at least ${count} options`,
+            maxSelection: (count) => `Select at most ${count} options`,
+            clickToRemove: 'Click to remove',
+            removeSelectedItem: (label) => `Remove ${label}`,
+        },
+        es: {
+            ...baseMessageCatalog.es,
+            minSelection: (count) => `Selecciona al menos ${count} opciones`,
+            maxSelection: (count) => `Selecciona como máximo ${count} opciones`,
+            clickToRemove: 'Haz clic para eliminar',
+            removeSelectedItem: (label) => `Eliminar ${label}`,
+        },
+        fr: {
+            ...baseMessageCatalog.fr,
+            minSelection: (count) => `Sélectionnez au moins ${count} options`,
+            maxSelection: (count) => `Sélectionnez au maximum ${count} options`,
+            clickToRemove: 'Cliquez pour supprimer',
+            removeSelectedItem: (label) => `Supprimer ${label}`,
+        },
+    }))()
 
 export function resolveSelectMessages(
     locale: SelectLocale = 'de',

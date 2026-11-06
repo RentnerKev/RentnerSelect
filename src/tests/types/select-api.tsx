@@ -274,3 +274,22 @@ export const groupedOptions: Array<
         group: 123,
     },
 ]
+
+export const removableMultiple = (
+    <CustomSelect
+        multiple
+        options={statusOptions}
+        value={['todo']}
+        onValueChange={() => undefined}
+        removableSelectedItems
+    />
+)
+export const invalidSingleRemoval = (
+    // @ts-expect-error Individual removal is only available for multiple selection.
+    <CustomSelect
+        options={statusOptions}
+        value="todo"
+        onValueChange={() => undefined}
+        removableSelectedItems
+    />
+)

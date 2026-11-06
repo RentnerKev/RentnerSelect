@@ -25,7 +25,7 @@ function loadVirtualOptions() {
     return (virtualOptionsPromise ??=
         import('../Components/VirtualComboboxOptions.tsx'))
 }
-import { resolveSelectMessages } from '../../../lib/Messages/i18n.ts'
+import { resolveComboboxMessages } from '../../../lib/Messages/comboboxMessages.ts'
 import { mergeAriaIds } from '../../../lib/Field/selectField.ts'
 import { resolveSelectVirtualization } from '../../../lib/Select/selectVirtualization.ts'
 import { groupSelectEntries } from '../../../lib/Select/selectGroups.ts'
@@ -76,7 +76,7 @@ export default function useComboboxLogic<T>(
         }
     }
     const open = requestedOpen && !interactionDisabled
-    const messages = resolveSelectMessages(props.locale ?? defaults.locale, {
+    const messages = resolveComboboxMessages(props.locale ?? defaults.locale, {
         ...defaults.messages,
         ...props.messages,
     })

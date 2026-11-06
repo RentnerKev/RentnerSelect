@@ -338,12 +338,12 @@ test('explicit Home navigation scrolls back after user scrolling with the same a
         ),
     )
     const viewport = screen.getByTestId('viewport')
-    viewport.scrollTop = 22000
+    viewport.scrollTop = 23000
     fireEvent.scroll(viewport)
     await waitFor(() =>
         expect(screen.getByRole('option', { name: 'Item 500' })).toBeTruthy(),
     )
-    expect(viewport.scrollTop).toBe(22000)
+    expect(viewport.scrollTop).toBe(23000)
     const scroll = mock(() => undefined)
     viewport.scrollTo = scroll
     fireEvent.keyDown(document.activeElement!, { key: 'Home' })

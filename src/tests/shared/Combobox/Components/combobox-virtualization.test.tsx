@@ -158,7 +158,7 @@ test('keeps the active option mounted when the viewport scrolls independently', 
     )
     fireEvent.keyDown(input, { key: 'Home' })
     const viewport = screen.getByRole('listbox')
-    viewport.scrollTop = 22000
+    viewport.scrollTop = 23000
     fireEvent.scroll(viewport)
     await waitFor(() =>
         expect(screen.getByRole('option', { name: 'Item 500' })).toBeTruthy(),
@@ -168,7 +168,7 @@ test('keeps the active option mounted when the viewport scrolls independently', 
     )
     expect(screen.getAllByRole('option').length).toBeLessThan(30)
     rerender(<Combobox {...base} description="Updated description" />)
-    expect(viewport.scrollTop).toBe(22000)
+    expect(viewport.scrollTop).toBe(23000)
 })
 
 test.each([
@@ -250,15 +250,15 @@ test('repeated Home navigation scrolls back after manual scrolling with the same
     const viewport = screen.getByRole('listbox')
     Object.defineProperty(viewport, 'scrollHeight', {
         configurable: true,
-        value: 44000,
+        value: 46000,
     })
     fireEvent.keyDown(input, { key: 'Home' })
-    viewport.scrollTop = 22000
+    viewport.scrollTop = 23000
     fireEvent.scroll(viewport)
     await waitFor(() =>
         expect(screen.getByRole('option', { name: 'Item 500' })).toBeTruthy(),
     )
-    expect(viewport.scrollTop).toBe(22000)
+    expect(viewport.scrollTop).toBe(23000)
     fireEvent.keyDown(input, { key: 'Home' })
     await waitFor(() => expect(viewport.scrollTop).toBe(0))
     expect(screen.getByRole('option', { name: 'Item 0' }).id).toBe(

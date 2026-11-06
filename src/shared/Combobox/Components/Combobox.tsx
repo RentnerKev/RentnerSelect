@@ -115,12 +115,17 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                         onMouseDown={handler.handleKeepFocus}
                         onClick={handler.handleClear}
                         className={
-                            'absolute right-2 top-1/2 -translate-y-1/2 ' +
+                            'group/delete absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer ' +
                             (state.classNames.clear ??
-                                'flex h-8 w-8 items-center justify-center rounded text-select-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-select-accent')
+                                'flex h-8 w-8 items-center justify-center rounded-md bg-rentner-danger/50 text-select-foreground transition-colors hover:bg-rentner-danger/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-select-accent motion-reduce:transition-none')
                         }
                     >
-                        <span aria-hidden="true">×</span>
+                        <span
+                            aria-hidden="true"
+                            className="motion-safe:transition-transform motion-safe:duration-150 motion-safe:group-hover/delete:rotate-90 motion-safe:group-active/delete:scale-90"
+                        >
+                            ×
+                        </span>
                     </button>
                 )}
             </div>
@@ -222,7 +227,10 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                                     }
                                     aria-labelledby={state.labelledBy}
                                     aria-busy={props.loading || undefined}
-                                    className={state.classNames.viewport}
+                                    className={
+                                        'space-y-0.5 ' +
+                                        (state.classNames.viewport ?? '')
+                                    }
                                 >
                                     {!props.loading &&
                                         groupSelectEntries(
@@ -259,27 +267,35 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                                                         {group.label}
                                                     </div>
                                                 )}
-                                                {group.entries.map((entry) => (
-                                                    <ComboboxOption
-                                                        key={entry.key}
-                                                        entry={entry}
-                                                        state={state}
-                                                        handler={handler}
-                                                        index={
-                                                            entry.position - 1
-                                                        }
-                                                        setSize={
-                                                            state.entries
-                                                                .length +
-                                                            (state.canCreate
-                                                                ? 1
-                                                                : 0)
-                                                        }
-                                                        renderOption={
-                                                            props.renderOption
-                                                        }
-                                                    />
-                                                ))}
+                                                <div className="space-y-0.5">
+                                                    {group.entries.map(
+                                                        (entry) => (
+                                                            <ComboboxOption
+                                                                key={entry.key}
+                                                                entry={entry}
+                                                                state={state}
+                                                                handler={
+                                                                    handler
+                                                                }
+                                                                index={
+                                                                    entry.position -
+                                                                    1
+                                                                }
+                                                                setSize={
+                                                                    state
+                                                                        .entries
+                                                                        .length +
+                                                                    (state.canCreate
+                                                                        ? 1
+                                                                        : 0)
+                                                                }
+                                                                renderOption={
+                                                                    props.renderOption
+                                                                }
+                                                            />
+                                                        ),
+                                                    )}
+                                                </div>
                                             </div>
                                         ))}
                                     {state.canCreate && (

@@ -3,6 +3,8 @@ export type SelectLocale = 'de' | 'en' | 'es' | 'fr'
 export interface SelectMessages {
     loading?: string
     createOption?: (value: string) => string
+    clickToRemove?: string
+    removeSelectedItem?: (label: string) => string
     required: string
     minSelection: (count: number) => string
     maxSelection: (count: number) => string
@@ -12,3 +14,8 @@ export interface SelectMessages {
     noOptions: string
     clearSelection: string
 }
+
+export type ComboboxMessages = Omit<
+    SelectMessages,
+    'minSelection' | 'maxSelection' | 'clickToRemove' | 'removeSelectedItem'
+>

@@ -43,6 +43,7 @@ export default function useVirtualOptions({
         getScrollElement: () => scrollRef.current,
         getItemKey,
         estimateSize: () => estimateSize,
+        gap: 2,
         overscan,
         rangeExtractor,
         initialRect: { width: 0, height: 256 },

@@ -1,3 +1,4 @@
+import { RemovableItemsFixture } from './Components/RemovableItemsFixture.tsx'
 import { GroupedOptionsFixture } from './Components/GroupedOptionsFixture.tsx'
 import { VirtualOptionsFixture } from './Components/VirtualOptionsFixture.tsx'
 import { ExternalComboboxFixture } from './Components/ExternalComboboxFixture.tsx'
@@ -15,9 +16,12 @@ function PlaygroundRoot() {
             externalCombobox,
             virtualFixture,
             groupedFixture,
+            removableFixture,
         },
     } = usePlaygroundRootLogic()
-    return groupedFixture ? (
+    return removableFixture ? (
+        <RemovableItemsFixture />
+    ) : groupedFixture ? (
         <GroupedOptionsFixture />
     ) : virtualFixture ? (
         <VirtualOptionsFixture />

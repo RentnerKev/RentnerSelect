@@ -46,6 +46,8 @@ export interface SelectClassNames {
     optionIndicator?: string
     selectedLabel?: string
     selectedDescription?: string
+    selectedItems?: string
+    selectedItem?: string
 }
 
 export interface SelectVirtualizationOptions {
@@ -108,6 +110,7 @@ interface SharedCustomSelectProps<TValue>
 type SingleSelectPropsBase<TValue> = SharedCustomSelectProps<TValue> & {
     value: TValue | null | undefined
     multiple?: false
+    removableSelectedItems?: never
 }
 
 type ClearableSelectProps =
@@ -158,6 +161,8 @@ export type MultipleSelectProps<TValue = string> =
             value: ReadonlyArray<TValue>
             onValueChange: (value: Array<TValue>) => void
             multiple: true
+            /** Enable removal from the built-in closed selection labels. Defaults to false; renderValue takes precedence. */
+            removableSelectedItems?: boolean
             emptyValue?: never
             omitEmptyFormValue?: boolean
             minSelection?: number
@@ -252,6 +257,7 @@ export interface CustomSelectLogicResult<TValue> {
         describedBy: string | undefined
         labelledBy: string | undefined
         showClear: boolean
+        showRemovableSelectedItems: boolean
         isOptionDisabled: (option: Option<TValue>) => boolean
         selectedOptions: ReadonlyArray<Option<TValue>>
         selectedLabel: string
@@ -288,6 +294,7 @@ export interface CustomSelectLogicResult<TValue> {
         handleInvalid: (event: InvalidEvent<HTMLInputElement>) => void
         handleValueChange: (value: string) => void
         handleClear: () => void
+        handleRemoveSelectedItem: (optionKey: string) => void
         handleOpenChange: (open: boolean) => void
         closeAfterOptionRemoval: () => void
         handleContentKeyDownCapture: (

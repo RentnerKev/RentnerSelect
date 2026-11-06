@@ -1,9 +1,13 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- A select-only combobox uses a native button to open its listbox or search dialog. */
-import type { ReactElement } from 'react'
+import { Fragment, type ReactElement } from 'react'
 import { createPortal } from 'react-dom'
 import { SelectErrorTooltip } from './SelectErrorTooltip.tsx'
 import { AlertCircle, ChevronDown, X } from 'lucide-react'
 import SelectOptions from './SelectOptions.tsx'
+import {
+    SelectedItemRemove,
+    getSelectedItemClassName,
+} from './SelectedItemRemove.tsx'
 
 import type {
     CustomSelectProps,
@@ -74,6 +78,7 @@ export function CustomSelect<TValue = string>(
         describedBy,
         labelledBy,
         showClear,
+        showRemovableSelectedItems,
         isOptionDisabled,
         selectedOptions,
         selectedLabel,
@@ -109,6 +114,7 @@ export function CustomSelect<TValue = string>(
         handleInvalid,
         handleValueChange,
         handleClear,
+        handleRemoveSelectedItem,
         handleContentKeyDownCapture,
         handleTriggerPointerDown,
         handleTriggerClick,
@@ -227,7 +233,9 @@ export function CustomSelect<TValue = string>(
                         onKeyDown={handleTriggerKeyDown}
                         className={`box-border relative flex w-full min-w-0 items-center justify-between gap-2 outline-none disabled:cursor-not-allowed disabled:opacity-50 ${classNames.trigger ?? `cursor-pointer rounded-rentner-control border bg-select-control ${showClear ? 'pr-17' : 'pr-9'} text-left text-sm font-medium tracking-normal normal-case text-select-foreground transition-[border-color,box-shadow,background-color] hover:border-select-border-strong focus-visible:ring-[3px] motion-reduce:transition-none ${hasLeftIcon ? 'pl-9' : 'pl-3'} ${hasError ? 'border-rentner-danger focus-visible:ring-rentner-danger/20 data-[state=open]:border-rentner-danger' : 'border-select-border focus-visible:border-select-accent focus-visible:ring-select-accent/20 data-[state=open]:border-select-accent'}`} ${controlSize === 'sm' ? 'h-rentner-control-sm' : controlSize === 'md' ? 'h-rentner-control-md' : controlSize === 'lg' ? 'h-rentner-control-lg' : textOverflow === 'wrap' ? 'min-h-12 py-2' : 'h-12'} ${className || ''}`}
                     >
-                        <span className="min-w-0 flex-1 text-left">
+                        <span
+                            className={`min-w-0 flex-1 text-left ${showRemovableSelectedItems ? 'opacity-0' : ''}`}
+                        >
                             {selectedEntries.length > 0 ? (
                                 <span className="flex min-w-0 flex-col gap-0.5">
                                     {renderValue ? (
@@ -237,7 +245,41 @@ export function CustomSelect<TValue = string>(
                                             <span
                                                 className={`${textOverflow === 'wrap' ? 'whitespace-normal break-words' : 'truncate'} ${classNames.selectedLabel ?? 'leading-5'}`}
                                             >
-                                                {selectedLabel}
+                                                {showRemovableSelectedItems
+                                                    ? selectedEntries.map(
+                                                          (
+                                                              {
+                                                                  option,
+                                                                  radixValue,
+                                                              },
+                                                              index,
+                                                          ) => (
+                                                              <Fragment
+                                                                  key={
+                                                                      radixValue
+                                                                  }
+                                                              >
+                                                                  <span
+                                                                      className={getSelectedItemClassName(
+                                                                          classNames.selectedItem,
+                                                                          option.disabled,
+                                                                      )}
+                                                                  >
+                                                                      {
+                                                                          option.label
+                                                                      }
+                                                                  </span>
+                                                                  {index <
+                                                                      selectedEntries.length -
+                                                                          1 && (
+                                                                      <span>
+                                                                          ,{' '}
+                                                                      </span>
+                                                                  )}
+                                                              </Fragment>
+                                                          ),
+                                                      )
+                                                    : selectedLabel}
                                             </span>
                                             {selectedEntries.length === 1 &&
                                                 selectedEntries[0].option
@@ -264,14 +306,83 @@ export function CustomSelect<TValue = string>(
                             className={`absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 ${classNames.trailing ?? 'text-select-muted'}`}
                         />
                     </button>
+                    {showRemovableSelectedItems && (
+                        <div
+                            className={`pointer-events-none absolute inset-px z-10 flex min-w-0 items-center ${classNames.selectedItems ?? `text-sm font-medium tracking-normal normal-case text-select-foreground ${hasLeftIcon ? 'pl-9' : 'pl-3'} ${showClear ? 'pr-17' : 'pr-9'}`}`}
+                        >
+                            <span className="flex min-w-0 flex-1 flex-col gap-0.5 text-left">
+                                <span
+                                    className={`${textOverflow === 'wrap' ? 'whitespace-normal break-words' : 'truncate'} ${classNames.selectedLabel ?? 'leading-5'}`}
+                                >
+                                    {selectedEntries.map(
+                                        ({ option, radixValue }, index) => (
+                                            <Fragment key={radixValue}>
+                                                {option.disabled ? (
+                                                    <span
+                                                        className={getSelectedItemClassName(
+                                                            classNames.selectedItem,
+                                                            true,
+                                                        )}
+                                                    >
+                                                        {option.label}
+                                                    </span>
+                                                ) : (
+                                                    <SelectedItemRemove
+                                                        optionKey={radixValue}
+                                                        label={option.label}
+                                                        removeLabel={
+                                                            resolvedMessages.removeSelectedItem?.(
+                                                                option.label,
+                                                            ) ?? option.label
+                                                        }
+                                                        tooltipText={
+                                                            resolvedMessages.clickToRemove ??
+                                                            resolvedMessages.clearSelection
+                                                        }
+                                                        className={
+                                                            classNames.selectedItem
+                                                        }
+                                                        onRemove={
+                                                            handleRemoveSelectedItem
+                                                        }
+                                                    />
+                                                )}
+                                                {index <
+                                                    selectedEntries.length -
+                                                        1 && (
+                                                    <span aria-hidden="true">
+                                                        ,{' '}
+                                                    </span>
+                                                )}
+                                            </Fragment>
+                                        ),
+                                    )}
+                                </span>
+                                {selectedEntries.length === 1 &&
+                                    selectedEntries[0].option.subOption && (
+                                        <span
+                                            className={`${textOverflow === 'wrap' ? 'whitespace-normal break-words' : 'truncate'} ${classNames.selectedDescription ?? 'text-xs leading-4 text-select-muted'}`}
+                                        >
+                                            {
+                                                selectedEntries[0].option
+                                                    .subOption
+                                            }
+                                        </span>
+                                    )}
+                            </span>
+                        </div>
+                    )}
                     {showClear && (
                         <button
                             type="button"
                             aria-label={resolvedMessages.clearSelection}
                             onClick={handleClear}
-                            className={`absolute right-8 top-1/2 z-10 flex -translate-y-1/2 items-center justify-center ${classNames.clear ?? 'h-8 w-8 rounded-md text-select-muted transition-colors hover:text-select-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-select-accent motion-reduce:transition-none'}`}
+                            className={`group/delete absolute right-8 top-1/2 z-10 flex -translate-y-1/2 cursor-pointer items-center justify-center ${classNames.clear ?? 'h-8 w-8 rounded-md bg-rentner-danger/50 text-select-foreground transition-colors hover:bg-rentner-danger/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-select-accent motion-reduce:transition-none'}`}
                         >
-                            <X aria-hidden="true" className="h-4 w-4" />
+                            <X
+                                aria-hidden="true"
+                                className="h-4 w-4 motion-safe:transition-transform motion-safe:duration-150 motion-safe:group-hover/delete:rotate-90 motion-safe:group-active/delete:scale-90"
+                            />
                         </button>
                     )}
                 </div>

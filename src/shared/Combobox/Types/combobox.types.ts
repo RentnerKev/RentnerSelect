@@ -19,6 +19,7 @@ import type {
     SelectMessages,
     SelectVirtualizationOptions,
 } from '../../Select/Types/select.types.ts'
+import type { ComboboxMessages } from '../../../lib/Messages/Types/i18n.types.ts'
 export interface ComboboxProps<T>
     extends AriaAttributes, SelectCustomizationProps {
     options: ReadonlyArray<T>
@@ -92,7 +93,7 @@ export interface ComboboxLogicResult<T> {
         navigationVersion: number
         virtualization: boolean | SelectVirtualizationOptions
         entries: ReadonlyArray<ComboboxEntry<T>>
-        messages: SelectMessages
+        messages: ComboboxMessages
         classNames: SelectClassNames
         controlSize: SelectCustomizationProps['controlSize']
         textOverflow: 'truncate' | 'wrap'

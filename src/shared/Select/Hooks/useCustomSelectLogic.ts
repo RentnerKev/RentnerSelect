@@ -100,6 +100,10 @@ export default function useCustomSelectLogic<TValue>(
         ...rest
     } = props
     const multiple = providedMultiple === true
+    const removableSelectedItems =
+        multiple &&
+        'removableSelectedItems' in props &&
+        props.removableSelectedItems === true
     const minSelection =
         'minSelection' in props ? props.minSelection : undefined
     const maxSelection =
@@ -117,11 +121,13 @@ export default function useCustomSelectLogic<TValue>(
         minSelection: _min,
         maxSelection: _max,
         omitEmptyFormValue: _omit,
+        removableSelectedItems: _removable,
         ...ariaProps
     } = rest as typeof rest & {
         minSelection?: number
         maxSelection?: number
         omitEmptyFormValue?: boolean
+        removableSelectedItems?: boolean
     }
     const defaults = useSelectDefaults()
     const controlSize = providedControlSize ?? defaults.controlSize
@@ -239,6 +245,14 @@ export default function useCustomSelectLogic<TValue>(
         () =>
             optionEntries.filter(({ option }) => isValueSelected(option.value)),
         [isValueSelected, optionEntries],
+    )
+    const showRemovableSelectedItems = Boolean(
+        removableSelectedItems &&
+        !disabled &&
+        !readOnly &&
+        !open &&
+        !renderValue &&
+        selectedEntries.length > 0,
     )
     const renderedSelection = useMemo(
         () => ({
@@ -475,6 +489,21 @@ export default function useCustomSelectLogic<TValue>(
         setSearchValue('')
         setOpen(false)
         internalTriggerRef.current?.focus()
+    }
+
+    function handleRemoveSelectedItem(optionKey: string) {
+        if (!showRemovableSelectedItems) return
+        const entry = selectedEntries.find(
+            (item) => item.radixValue === optionKey,
+        )
+        if (
+            !entry ||
+            entry.option.disabled ||
+            !isValueSelected(entry.option.value)
+        )
+            return
+        internalTriggerRef.current?.focus({ preventScroll: true })
+        handleSelectValue(entry.option.value)
     }
 
     const closeWithoutFocus = useCallback(() => {
@@ -1016,6 +1045,7 @@ export default function useCustomSelectLogic<TValue>(
             describedBy,
             labelledBy,
             showClear,
+            showRemovableSelectedItems,
             isOptionDisabled,
             selectedOptions: renderedSelection.options,
             selectedLabel: renderedSelection.label,
@@ -1050,6 +1080,7 @@ export default function useCustomSelectLogic<TValue>(
             handleInvalid,
             handleValueChange,
             handleClear,
+            handleRemoveSelectedItem,
             handleOpenChange,
             closeAfterOptionRemoval,
             handleContentKeyDownCapture,

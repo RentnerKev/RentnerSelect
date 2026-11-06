@@ -15,6 +15,9 @@ export function usePlaygroundRootLogic(): PlaygroundRootLogicResult {
             : null
     return {
         state: {
+            removableFixture: new URLSearchParams(window.location.search).has(
+                'removable-items',
+            ),
             groupedFixture: new URLSearchParams(window.location.search).has(
                 'grouped-options',
             ),

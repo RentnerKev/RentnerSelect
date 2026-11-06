@@ -69,10 +69,12 @@ export default function VirtualComboboxOptions<T>(
                 ))}
             </div>
             {props.state.canCreate && (
-                <ComboboxCreateOption
-                    state={props.state}
-                    handler={props.handler}
-                />
+                <div className={state.rows.length > 0 ? 'mt-0.5' : undefined}>
+                    <ComboboxCreateOption
+                        state={props.state}
+                        handler={props.handler}
+                    />
+                </div>
             )}
         </div>
     )
