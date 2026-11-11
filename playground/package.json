@@ -10,13 +10,13 @@
     "dependencies": {
         "@tailwindcss/vite": "^4.3.5",
         "@tanstack/react-form": "^1.33.5",
-        "@vitejs/plugin-react": "^6.2.1",
+        "@vitejs/plugin-react": "^6.3.0",
         "lucide-react": "^1.70.0",
         "react": "^19.3.1",
         "react-dom": "^19.3.1",
         "tailwindcss": "^4.3.5",
         "typescript": "^7.0.2",
-        "vite": "^8.3.6"
+        "vite": "^8.3.7"
     },
     "devDependencies": {
         "@types/react": "^19.3.0",
