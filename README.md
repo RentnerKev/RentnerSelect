@@ -5,6 +5,7 @@
 <p align="center">
     <a href="https://github.com/RentnerKev/RentnerSelect/actions/workflows/ci.yml"><img src="https://github.com/RentnerKev/RentnerSelect/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
     <a href="https://github.com/RentnerKev/RentnerSelect/actions/workflows/codeql.yml"><img src="https://github.com/RentnerKev/RentnerSelect/actions/workflows/codeql.yml/badge.svg?branch=main" alt="CodeQL"></a>
+    <a href="https://scorecard.dev/viewer/?uri=github.com/RentnerKev/RentnerSelect"><img src="https://api.scorecard.dev/projects/github.com/RentnerKev/RentnerSelect/badge" alt="OpenSSF Scorecard"></a>
     <a href="https://www.npmjs.com/package/@rentnerkev/select"><img src="https://img.shields.io/npm/v/@rentnerkev/select" alt="npm version"></a>
     <a href="https://www.npmjs.com/package/@rentnerkev/select"><img src="https://img.shields.io/npm/dm/@rentnerkev/select" alt="npm downloads"></a>
     <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
@@ -115,3 +116,7 @@ accounts, write operations, or access to private project files. The installed
 declarations for the version installed in your project.
 
 CustomSelect supports replaceable text slots, `textOverflow`, popup width, shared themes and control sizes. A separate generic `Combobox<T>` accepts external search results, with independent selected value and search text. Optional pure form adapters are available from `@rentnerkev/select/form`. See [usage](docs/usage.md) for contracts and examples.
+
+## Community
+
+See [Contributing](.github/CONTRIBUTING.md), the [Code of Conduct](.github/CODE_OF_CONDUCT.md), [Support](.github/SUPPORT.md), and the [Security Policy](SECURITY.md).
