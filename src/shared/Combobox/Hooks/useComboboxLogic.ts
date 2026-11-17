@@ -1,14 +1,6 @@
-import {
-    useEffect,
-    useId,
-    useLayoutEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type {
     ChangeEvent,
-    CSSProperties,
     FocusEvent,
     KeyboardEvent,
     InvalidEvent,
@@ -25,7 +17,8 @@ function loadVirtualOptions() {
     return (virtualOptionsPromise ??=
         import('../Components/VirtualComboboxOptions.tsx'))
 }
-import { resolveComboboxMessages } from '../../../lib/Messages/comboboxMessages.ts'
+import { resolveSelectMessages } from '../../../lib/Messages/i18n.ts'
+import useSelectOverlay from '../../Select/Hooks/useSelectOverlay.ts'
 import { mergeAriaIds } from '../../../lib/Field/selectField.ts'
 import { resolveSelectVirtualization } from '../../../lib/Select/selectVirtualization.ts'
 import { groupSelectEntries } from '../../../lib/Select/selectGroups.ts'
@@ -63,7 +56,26 @@ export default function useComboboxLogic<T>(
     const [requestedCreateActive, setCreateActive] = useState(false)
     const [navigationVersion, setNavigationVersion] = useState(0)
     const [touched, setTouched] = useState(false)
-    const [position, setPosition] = useState<CSSProperties>({})
+    const {
+        multiple,
+        value: controlledValue,
+        getOptionKey: selectedKey,
+    } = props
+    const selectedValues = useMemo(() => {
+        const values = multiple
+            ? controlledValue
+            : controlledValue === null
+              ? []
+              : [controlledValue]
+        const keys = new Set<string>()
+        return values.filter((item) => {
+            const key = selectedKey(item)
+            if (keys.has(key)) return false
+            keys.add(key)
+            return true
+        })
+    }, [multiple, controlledValue, selectedKey])
+    const emptySelection = selectedValues.length === 0
     const interactionDisabled = Boolean(props.disabled || props.readOnly)
     const [previousInteractionDisabled, setPreviousInteractionDisabled] =
         useState(interactionDisabled)
@@ -75,7 +87,7 @@ export default function useComboboxLogic<T>(
         }
     }
     const open = requestedOpen && !interactionDisabled
-    const messages = resolveComboboxMessages(props.locale ?? defaults.locale, {
+    const messages = resolveSelectMessages(props.locale ?? defaults.locale, {
         ...defaults.messages,
         ...props.messages,
     })
@@ -103,10 +115,7 @@ export default function useComboboxLogic<T>(
     const portalClassName = props.portalClassName ?? defaults.portalClassName
     const portalZIndex = props.portalZIndex ?? defaults.portalZIndex
     const error =
-        props.error === undefined &&
-        touched &&
-        props.required &&
-        props.value === null
+        props.error === undefined && touched && props.required && emptySelection
             ? messages.required
             : props.error
     const hasError = Boolean(error) && !props.disabled
@@ -119,12 +128,18 @@ export default function useComboboxLogic<T>(
         getOptionKey,
         getOptionDescription,
         isOptionDisabled,
-        value,
         isOptionEqualToValue,
     } = props
     const entries = useMemo(
         () =>
-            groupSelectEntries(options, (option) => getOptionGroup?.(option))
+            groupSelectEntries(
+                Array.from(
+                    new Map(
+                        options.map((option) => [getOptionKey(option), option]),
+                    ).values(),
+                ),
+                (option) => getOptionGroup?.(option),
+            )
                 .flatMap((group) => group.entries)
                 .filter(
                     (option) =>
@@ -149,11 +164,11 @@ export default function useComboboxLogic<T>(
                         position: index + 1,
                         description: getOptionDescription?.(option),
                         disabled: isOptionDisabled?.(option) ?? false,
-                        selected:
-                            value !== null &&
-                            (isOptionEqualToValue
+                        selected: selectedValues.some((value) =>
+                            isOptionEqualToValue
                                 ? isOptionEqualToValue(option, value)
-                                : getOptionKey(option) === getOptionKey(value)),
+                                : getOptionKey(option) === getOptionKey(value),
+                        ),
                     }
                 }),
         [
@@ -165,8 +180,8 @@ export default function useComboboxLogic<T>(
             getOptionKey,
             getOptionDescription,
             isOptionDisabled,
-            value,
             isOptionEqualToValue,
+            selectedValues,
             listId,
         ],
     )
@@ -200,82 +215,29 @@ export default function useComboboxLogic<T>(
         ? ''
         : props.error !== undefined
           ? (props.error ?? '')
-          : props.required && props.value === null
+          : props.required && emptySelection
             ? messages.required
             : ''
     useEffect(() => {
         validation.current?.setCustomValidity(validationMessage)
     }, [validationMessage])
 
-    useEffect(() => {
-        if (!open) return
-        const document = input.current?.ownerDocument
-        function handleOutside(event: globalThis.PointerEvent) {
-            const target = event.target
-            const path = event.composedPath()
-            if (
-                target instanceof Node &&
-                !path.some(
-                    (node) => node === root.current || node === content.current,
-                ) &&
-                !root.current?.contains(target) &&
-                !content.current?.contains(target)
-            )
-                setOpen(false)
-        }
-        document?.addEventListener('pointerdown', handleOutside)
-        return () => document?.removeEventListener('pointerdown', handleOutside)
-    }, [open])
-
-    useLayoutEffect(() => {
-        if (!open) return
-        const element = root.current
-        const view = element?.ownerDocument.defaultView
-        function updatePosition() {
-            if (!element || !view) return
-            const rect =
-                input.current?.getBoundingClientRect() ??
-                element.getBoundingClientRect()
-            const availableBelow = view.innerHeight - rect.bottom - 8
-            const above = availableBelow < 160 && rect.top > availableBelow
-            const available = Math.max(
-                48,
-                above ? rect.top - 8 : availableBelow,
-            )
-            const left = Math.max(
-                4,
-                Math.min(rect.left, view.innerWidth - rect.width - 4),
-            )
-            const availableWidth = Math.max(0, view.innerWidth - left - 4)
-            setPosition({
-                position: 'fixed',
-                left,
-                ...(above
-                    ? { bottom: view.innerHeight - rect.top + 4 }
-                    : { top: rect.bottom + 4 }),
-                width:
-                    contentWidth === 'trigger'
-                        ? Math.min(rect.width, availableWidth)
-                        : 'max-content',
-                minWidth: Math.min(rect.width, availableWidth),
-                maxWidth: availableWidth,
-                maxHeight: Math.min(256, available),
-            })
-        }
-        updatePosition()
-        view?.addEventListener('resize', updatePosition)
-        view?.addEventListener('scroll', updatePosition, true)
-        const observer =
-            typeof ResizeObserver === 'undefined'
-                ? undefined
-                : new ResizeObserver(updatePosition)
-        if (element) observer?.observe(element)
-        return () => {
-            view?.removeEventListener('resize', updatePosition)
-            view?.removeEventListener('scroll', updatePosition, true)
-            observer?.disconnect()
-        }
-    }, [open, contentWidth])
+    const {
+        state: { popupStyle },
+        refs: { content: overlayContent },
+    } = useSelectOverlay({
+        layoutVersion: virtualOptionsModule,
+        maxHeight: 256,
+        open,
+        contentWidth,
+        portalTarget:
+            portalContainer ??
+            (typeof document === 'undefined' ? null : document.body),
+        rootRef: root,
+        contentRef: content,
+        triggerRef: input,
+        onDismiss: () => setOpen(false),
+    })
 
     const activeId = createActive ? createId : activeEntry?.id
     useEffect(() => {
@@ -299,9 +261,23 @@ export default function useComboboxLogic<T>(
     }
     function handleOptionSelect(entry: ComboboxEntry<T>) {
         if (interactionDisabled || props.loading || entry.disabled) return
-        props.onValueChange(entry.option)
-        setOpen(false)
-        setActiveKey(null)
+        if (props.multiple) {
+            props.onValueChange(
+                entry.selected
+                    ? selectedValues.filter(
+                          (value) =>
+                              !(props.isOptionEqualToValue
+                                  ? props.isOptionEqualToValue(
+                                        entry.option,
+                                        value,
+                                    )
+                                  : props.getOptionKey(value) === entry.key),
+                      )
+                    : [...selectedValues, entry.option],
+            )
+        } else props.onValueChange(entry.option)
+        setOpen(Boolean(props.multiple))
+        if (!props.multiple) setActiveKey(null)
         setCreateActive(false)
         input.current?.focus()
     }
@@ -320,6 +296,21 @@ export default function useComboboxLogic<T>(
     }
     function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
         if (interactionDisabled || event.nativeEvent.isComposing) return
+        if (
+            event.key === 'Backspace' &&
+            props.multiple &&
+            !props.searchValue &&
+            input.current?.selectionStart === 0
+        ) {
+            const last = selectedValues.findLast(
+                (item) => !props.isOptionDisabled?.(item),
+            )
+            if (last !== undefined && !props.isOptionDisabled?.(last)) {
+                event.preventDefault()
+                handleRemoveSelectedItem(props.getOptionKey(last))
+            }
+            return
+        }
         if (event.key === 'Escape') {
             if (open) {
                 event.preventDefault()
@@ -391,12 +382,24 @@ export default function useComboboxLogic<T>(
     }
     function handleClear() {
         if (interactionDisabled) return
-        props.onValueChange(null)
+        if (props.multiple) props.onValueChange([])
+        else props.onValueChange(null)
         props.onSearchValueChange('')
         setActiveKey(null)
         setCreateActive(false)
         input.current?.focus()
         setOpen(false)
+    }
+    function handleRemoveSelectedItem(key: string) {
+        if (!props.multiple || interactionDisabled) return
+        const item = selectedValues.find(
+            (value) => props.getOptionKey(value) === key,
+        )
+        if (item === undefined || props.isOptionDisabled?.(item)) return
+        props.onValueChange(
+            selectedValues.filter((value) => props.getOptionKey(value) !== key),
+        )
+        input.current?.focus({ preventScroll: true })
     }
     function handleInvalid(event: InvalidEvent<HTMLInputElement>) {
         event.preventDefault()
@@ -439,14 +442,30 @@ export default function useComboboxLogic<T>(
             portalContainer,
             portalClassName,
             popupStyle: {
-                ...position,
+                ...popupStyle,
                 zIndex: portalZIndex ?? 'var(--rentner-overlay-z, 9998)',
             },
-            formValue:
-                props.value === null
-                    ? ''
-                    : (props.getFormValue?.(props.value) ??
-                      props.getOptionKey(props.value)),
+            multiple: Boolean(props.multiple),
+            selectedItems: selectedValues.map((value) => ({
+                key: props.getOptionKey(value),
+                label: props.getOptionLabel(value),
+                disabled:
+                    interactionDisabled ||
+                    Boolean(props.isOptionDisabled?.(value)),
+                removeLabel:
+                    messages.removeSelectedItem?.(
+                        props.getOptionLabel(value),
+                    ) ?? props.getOptionLabel(value),
+            })),
+            formValues: selectedValues.map((value) => ({
+                key: props.getOptionKey(value),
+                value: props.getFormValue?.(value) ?? props.getOptionKey(value),
+            })),
+            emptySelection,
+            formValue: selectedValues.length
+                ? (props.getFormValue?.(selectedValues[0]!) ??
+                  props.getOptionKey(selectedValues[0]!))
+                : '',
             hasError,
             error,
             loadingText: props.loadingText ?? messages.loading,
@@ -456,7 +475,7 @@ export default function useComboboxLogic<T>(
             showClear: Boolean(
                 props.clearable &&
                 !interactionDisabled &&
-                (props.value !== null || props.searchValue),
+                (!emptySelection || props.searchValue),
             ),
             canCreate,
             createLabel,
@@ -472,10 +491,17 @@ export default function useComboboxLogic<T>(
             handleOptionActivate,
             handleKeepFocus,
             handleClear,
+            handleRemoveSelectedItem,
             handleInvalid,
             handleCreateOption,
             handleCreateActivate,
         },
-        refs: { root, content, validation, input: inputRef },
+        refs: {
+            root,
+            content,
+            popupContent: overlayContent,
+            validation,
+            input: inputRef,
+        },
     }
 }

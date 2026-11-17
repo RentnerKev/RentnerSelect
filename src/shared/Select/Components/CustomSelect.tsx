@@ -99,6 +99,7 @@ export function CustomSelect<TValue = string>(
     const {
         root,
         content,
+        overlayContent,
         trigger,
         validationInput,
         searchInput,
@@ -416,7 +417,7 @@ export function CustomSelect<TValue = string>(
                     <div className={portalClassName}>
                         <div
                             id={popupId}
-                            ref={content}
+                            ref={overlayContent}
                             tabIndex={-1}
                             data-state="open"
                             role={searchable ? 'dialog' : 'listbox'}

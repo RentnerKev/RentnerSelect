@@ -1,17 +1,26 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role, jsx-a11y/click-events-have-key-events -- APG editable combobox uses a custom listbox; keyboard navigation remains on the input through aria-activedescendant. */
 import { createPortal } from 'react-dom'
+import type { ReactElement } from 'react'
+import { SelectedItemRemove } from '../../Select/Components/SelectedItemRemove.tsx'
 import ComboboxOption from './ComboboxOption.tsx'
 import ComboboxCreateOption from './ComboboxCreateOption.tsx'
 import { groupSelectEntries } from '../../../lib/Select/selectGroups.ts'
 
 export type { ComboboxProps } from '../Types/combobox.types.ts'
-import type { ComboboxProps } from '../Types/combobox.types.ts'
+import type {
+    ComboboxProps,
+    SingleComboboxProps,
+    MultipleComboboxProps,
+} from '../Types/combobox.types.ts'
 import useComboboxLogic from '../Hooks/useComboboxLogic.ts'
 
+export function Combobox<T>(props: SingleComboboxProps<T>): ReactElement
+export function Combobox<T>(props: MultipleComboboxProps<T>): ReactElement
+export function Combobox<T>(props: ComboboxProps<T>): ReactElement
 export function Combobox<T>(props: ComboboxProps<T>) {
     const { state, handler, refs } = useComboboxLogic(props)
     const VirtualComboboxOptions = state.virtualOptionsModule?.default
-    const { root, content, input, validation } = refs
+    const { root, popupContent, input, validation } = refs
     return (
         <div
             ref={root}
@@ -36,6 +45,44 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                 </label>
             )}
             <div className={'relative ' + (state.classNames.control ?? '')}>
+                {state.multiple && state.selectedItems.length > 0 && (
+                    <ul
+                        className={
+                            state.classNames.selectedItems ??
+                            'mb-1 flex flex-wrap gap-2'
+                        }
+                    >
+                        {state.selectedItems.map((item) => (
+                            <li key={item.key}>
+                                {item.disabled ? (
+                                    <span
+                                        className={
+                                            state.classNames.selectedItem
+                                        }
+                                    >
+                                        {item.label}
+                                    </span>
+                                ) : (
+                                    <SelectedItemRemove
+                                        optionKey={item.key}
+                                        label={item.label}
+                                        removeLabel={item.removeLabel}
+                                        tooltipText={
+                                            state.messages.clickToRemove ??
+                                            item.removeLabel
+                                        }
+                                        className={
+                                            state.classNames.selectedItem
+                                        }
+                                        onRemove={
+                                            handler.handleRemoveSelectedItem
+                                        }
+                                    />
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                )}
                 <input
                     ref={input}
                     id={state.inputId}
@@ -93,20 +140,34 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                     ref={validation}
                     tabIndex={-1}
                     aria-hidden="true"
-                    name={props.name}
+                    name={
+                        state.multiple && state.emptySelection
+                            ? undefined
+                            : props.name
+                    }
                     value={state.formValue}
                     onChange={() => undefined}
                     required={
                         props.required &&
-                        props.value === null &&
+                        state.emptySelection &&
                         !props.disabled &&
                         !props.readOnly &&
                         props.error === undefined
                     }
                     disabled={props.disabled}
+                    readOnly={props.readOnly}
                     onInvalid={handler.handleInvalid}
                     className="pointer-events-none absolute left-0 top-1/2 h-px w-px opacity-0"
                 />
+                {state.formValues.slice(1).map((entry) => (
+                    <input
+                        key={entry.key}
+                        type="hidden"
+                        name={props.name}
+                        value={entry.value}
+                        disabled={props.disabled}
+                    />
+                ))}
                 {state.showClear && (
                     <button
                         type="button"
@@ -160,7 +221,7 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                         className={state.portalClassName}
                     >
                         <div
-                            ref={content}
+                            ref={popupContent}
                             style={state.popupStyle}
                             className={
                                 (state.virtualization
@@ -186,6 +247,9 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                                     <div
                                         id={state.listId}
                                         role="listbox"
+                                        aria-multiselectable={
+                                            state.multiple || undefined
+                                        }
                                         aria-label={
                                             props['aria-label'] ??
                                             state.messages.searchOptions
@@ -220,6 +284,9 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                                 <div
                                     id={state.listId}
                                     role="listbox"
+                                    aria-multiselectable={
+                                        state.multiple || undefined
+                                    }
                                     aria-label={
                                         props['aria-label'] ??
                                         state.messages.searchOptions

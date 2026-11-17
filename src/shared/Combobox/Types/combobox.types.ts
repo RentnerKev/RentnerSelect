@@ -19,11 +19,9 @@ import type {
     SelectMessages,
     SelectVirtualizationOptions,
 } from '../../Select/Types/select.types.ts'
-export interface ComboboxProps<T>
+export interface ComboboxBaseProps<T>
     extends AriaAttributes, SelectCustomizationProps {
     options: ReadonlyArray<T>
-    value: T | null
-    onValueChange: (value: T | null) => void
     searchValue: string
     onSearchValueChange: (value: string) => void
     getOptionKey: (option: T) => string
@@ -61,6 +59,17 @@ export interface ComboboxProps<T>
     locale?: SelectLocale
     messages?: Partial<SelectMessages>
 }
+export interface SingleComboboxProps<T> extends ComboboxBaseProps<T> {
+    multiple?: false
+    value: T | null
+    onValueChange: (value: T | null) => void
+}
+export interface MultipleComboboxProps<T> extends ComboboxBaseProps<T> {
+    multiple: true
+    value: ReadonlyArray<T>
+    onValueChange: (value: T[]) => void
+}
+export type ComboboxProps<T> = SingleComboboxProps<T> | MultipleComboboxProps<T>
 export interface ComboboxEntry<T> {
     option: T
     key: string
@@ -99,6 +108,15 @@ export interface ComboboxLogicResult<T> {
         portalContainer: Element | DocumentFragment | null | undefined
         portalClassName: string | undefined
         popupStyle: CSSProperties
+        multiple: boolean
+        selectedItems: ReadonlyArray<{
+            key: string
+            label: string
+            disabled: boolean
+            removeLabel: string
+        }>
+        formValues: ReadonlyArray<{ key: string; value: string }>
+        emptySelection: boolean
         formValue: string
         hasError: boolean
         error: string | null | undefined
@@ -119,6 +137,7 @@ export interface ComboboxLogicResult<T> {
         handleOptionActivate: (key: string) => void
         handleKeepFocus: (event: MouseEvent<HTMLElement>) => void
         handleClear: () => void
+        handleRemoveSelectedItem: (key: string) => void
         handleInvalid: (event: InvalidEvent<HTMLInputElement>) => void
         handleCreateOption?: () => void
         handleCreateActivate?: () => void
@@ -126,6 +145,7 @@ export interface ComboboxLogicResult<T> {
     refs: {
         root: RefObject<HTMLDivElement | null>
         content: RefObject<HTMLDivElement | null>
+        popupContent: RefCallback<HTMLDivElement>
         validation: RefObject<HTMLInputElement | null>
         input: RefCallback<HTMLInputElement>
     }
@@ -156,6 +176,7 @@ export interface ComboboxOptionProps<T> {
 export interface VirtualComboboxOptionsProps<T> {
     state: Pick<
         ComboboxLogicResult<T>['state'],
+        | 'multiple'
         | 'listId'
         | 'labelledBy'
         | 'entries'
