@@ -106,7 +106,9 @@ export function useVirtualOptionsFixtureLogic(): VirtualOptionsFixtureLogicResul
             contentWidth,
             options,
             selectedValues,
-            selectedOptions: options.filter((option) => selectedValues.includes(option.value)),
+            selectedOptions: options.filter((option) =>
+                selectedValues.includes(option.value),
+            ),
             selectedOption:
                 options.find((option) => option.value === selectedValues[0]) ??
                 null,

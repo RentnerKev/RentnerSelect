@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import {
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+    useState,
+} from 'react'
 import type { CSSProperties } from 'react'
 import {
     ancestorShadowRoots,
@@ -23,19 +29,34 @@ export default function useSelectOverlay({
     onDismiss,
 }: SelectOverlayOptions): SelectOverlayResult {
     const [popup, setPopup] = useState<HTMLDivElement | null>(null)
-    const [measurement, setMeasurement] = useState<{ popup: HTMLDivElement; style: CSSProperties; ready: boolean } | null>(null)
-    const content = useCallback((node: HTMLDivElement | null) => {
-        contentRef.current = node
-        setPopup(node)
-        if (!node) setMeasurement(null)
-    }, [contentRef])
+    const [measurement, setMeasurement] = useState<{
+        popup: HTMLDivElement
+        style: CSSProperties
+        ready: boolean
+    } | null>(null)
+    const content = useCallback(
+        (node: HTMLDivElement | null) => {
+            contentRef.current = node
+            setPopup(node)
+            if (!node) setMeasurement(null)
+        },
+        [contentRef],
+    )
     // Apply fixed constraints while hidden, then measure again before revealing.
     // The first intrinsic measurement can change once max-height adds a scrollbar.
-    const positioned = open && popup !== null && measurement?.popup === popup && measurement.ready
+    const positioned =
+        open &&
+        popup !== null &&
+        measurement?.popup === popup &&
+        measurement.ready
     const popupStyle: CSSProperties = positioned
         ? measurement.style
-        : { ...(measurement?.popup === popup ? measurement?.style : { position: 'fixed', left: 0, top: 0 }), visibility: 'hidden' }
-
+        : {
+              ...(measurement?.popup === popup
+                  ? measurement?.style
+                  : { position: 'fixed', left: 0, top: 0 }),
+              visibility: 'hidden',
+          }
 
     const measure = useRef<(() => void) | null>(null)
 
@@ -137,7 +158,8 @@ export default function useSelectOverlay({
                 rect.top - viewportTop - gutter * 2,
             )
             const above =
-                availableBelow < Math.min(popup.scrollHeight || 320, maxHeight ?? 320) &&
+                availableBelow <
+                    Math.min(popup.scrollHeight || 320, maxHeight ?? 320) &&
                 availableAbove > availableBelow
             const availableHeight = above ? availableAbove : availableBelow
             const left = Math.max(
@@ -185,11 +207,15 @@ export default function useSelectOverlay({
                     contentWidth === 'trigger' ? width / scaleX : 'max-content',
                 minWidth: triggerWidth / scaleX,
                 maxWidth: Math.max(0, viewportWidth - gutter * 2) / scaleX,
-                maxHeight: Math.min(availableHeight, maxHeight ?? availableHeight) / scaleY,
+                maxHeight:
+                    Math.min(availableHeight, maxHeight ?? availableHeight) /
+                    scaleY,
             }
             setMeasurement((previous) =>
-                previous?.ready && previous.popup === popup &&
-                Object.keys(next).length === Object.keys(previous.style).length &&
+                previous?.ready &&
+                previous.popup === popup &&
+                Object.keys(next).length ===
+                    Object.keys(previous.style).length &&
                 Object.entries(next).every(
                     ([key, value]) =>
                         previous.style[key as keyof CSSProperties] === value,

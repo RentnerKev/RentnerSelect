@@ -32,14 +32,18 @@ export function VirtualOptionsFixture() {
                             isOptionDisabled={(option) =>
                                 Boolean(option.disabled)
                             }
-                            {...(state.multiple ? {
-                                multiple: true,
-                                value: state.selectedOptions,
-                                onValueChange: handler.handleMultipleComboboxChange,
-                            } : {
-                                value: state.selectedOption,
-                                onValueChange: handler.handleComboboxChange,
-                            })}
+                            {...(state.multiple
+                                ? {
+                                      multiple: true,
+                                      value: state.selectedOptions,
+                                      onValueChange:
+                                          handler.handleMultipleComboboxChange,
+                                  }
+                                : {
+                                      value: state.selectedOption,
+                                      onValueChange:
+                                          handler.handleComboboxChange,
+                                  })}
                             searchValue={state.searchValue}
                             onSearchValueChange={handler.handleSearchChange}
                             portalContainer={state.portalContainer}

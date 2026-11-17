@@ -313,7 +313,6 @@ export default function useCustomSelectLogic<TValue>(
         searchInputRef.current?.focus({ preventScroll: true })
     }, [searchable])
 
-
     if (previousInteractionDisabled !== interactionDisabled) {
         setPreviousInteractionDisabled(interactionDisabled)
 

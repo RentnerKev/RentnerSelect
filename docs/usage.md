@@ -555,7 +555,6 @@ import { getSelectFieldProps } from '@rentnerkev/select/form'
 </form.Field>
 ```
 
-
 ### Multiple external combobox selections
 
 Use `multiple` to select objects while keeping the search query controlled separately:
