@@ -554,3 +554,27 @@ import { getSelectFieldProps } from '@rentnerkev/select/form'
     )}
 </form.Field>
 ```
+
+
+### Multiple external combobox selections
+
+Use `multiple` to select objects while keeping the search query controlled separately:
+
+```tsx
+const [selected, setSelected] = useState<Customer[]>([])
+const [query, setQuery] = useState('')
+
+<Combobox
+    multiple
+    name="customers"
+    options={results}
+    value={selected}
+    onValueChange={setSelected}
+    searchValue={query}
+    onSearchValueChange={setQuery}
+    getOptionKey={(customer) => customer.id}
+    getOptionLabel={(customer) => customer.name}
+/>
+```
+
+The application owns fetching, loading, query updates, and creation. Selected objects remain visible when asynchronous results change; keys must identify an item consistently across pages. Duplicate keys produce one selection. Enter toggles the active option and keeps the popup open. With an empty query, Backspace removes the last editable tag; each editable tag also has a keyboard-accessible removal button. Disabled selected options cannot be individually toggled or removed. When `clearable` is enabled, Clear selection removes the entire selection, including disabled values. Disabled and read-only controls prevent selection and removal. Native forms submit repeated `name` entries using `getFormValue` or the option key; an empty multiple selection submits no entries. The existing single-selection `T | null` contract remains unchanged.

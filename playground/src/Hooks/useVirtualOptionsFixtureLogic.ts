@@ -93,6 +93,9 @@ export function useVirtualOptionsFixtureLogic(): VirtualOptionsFixtureLogicResul
         handleMultipleChange(value ? [value.value] : [])
         setSearchValue(value?.label ?? '')
     }
+    function handleMultipleComboboxChange(values: Option<string>[]) {
+        handleMultipleChange(values.map((value) => value.value))
+    }
     return {
         state: {
             kind,
@@ -103,6 +106,7 @@ export function useVirtualOptionsFixtureLogic(): VirtualOptionsFixtureLogicResul
             contentWidth,
             options,
             selectedValues,
+            selectedOptions: options.filter((option) => selectedValues.includes(option.value)),
             selectedOption:
                 options.find((option) => option.value === selectedValues[0]) ??
                 null,
@@ -114,6 +118,7 @@ export function useVirtualOptionsFixtureLogic(): VirtualOptionsFixtureLogicResul
             handleSingleChange,
             handleMultipleChange,
             handleComboboxChange,
+            handleMultipleComboboxChange,
             handleSearchChange: setSearchValue,
             handleSubmit: (event) => event.preventDefault(),
         },

@@ -13,6 +13,7 @@ export interface VirtualOptionsFixtureLogicResult {
         contentWidth: 'trigger' | 'content'
         options: ReadonlyArray<Option<string>>
         selectedValues: Array<string>
+        selectedOptions: ReadonlyArray<Option<string>>
         selectedOption: Option<string> | null
         searchValue: string
         portalContainer: HTMLDivElement | undefined
@@ -21,6 +22,7 @@ export interface VirtualOptionsFixtureLogicResult {
     handler: {
         handleSingleChange: (value: string) => void
         handleMultipleChange: (value: Array<string>) => void
+        handleMultipleComboboxChange: (value: Option<string>[]) => void
         handleComboboxChange: (value: Option<string> | null) => void
         handleSearchChange: (value: string) => void
         handleSubmit: (event: FormEvent<HTMLFormElement>) => void

@@ -304,6 +304,7 @@ export interface CustomSelectLogicResult<TValue> {
     refs: {
         root: RefObject<HTMLDivElement | null>
         content: RefObject<HTMLDivElement | null>
+        overlayContent: RefCallback<HTMLDivElement>
         trigger: RefCallback<HTMLButtonElement>
         searchInput: RefObject<HTMLInputElement | null>
         validationInput: RefObject<HTMLInputElement | null>

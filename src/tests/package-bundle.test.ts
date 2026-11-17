@@ -132,5 +132,9 @@ test('combobox root import stays independent of Radix and lazy virtualizer code'
             /react-select|react-tooltip|virtual-core/.test(source),
         ),
     ).toBe(false)
-    expect(bundle.initialGzipBytes).toBeLessThan(6500)
+    expect(bundle.initialSources.some(isTooltip)).toBe(false)
+    expect(bundle.initialSources.some(isVirtualizer)).toBe(false)
+    // Shared portal geometry and multiple selection raise the measured baseline
+    // from 6497 bytes; tooltip and virtual rows must remain deferred.
+    expect(bundle.initialGzipBytes).toBeLessThan(10000)
 })

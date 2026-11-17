@@ -14,6 +14,7 @@ export default function VirtualComboboxOptions<T>(
             ref={refs.viewport}
             id={props.state.listId}
             role="listbox"
+            aria-multiselectable={props.state.multiple || undefined}
             aria-label={props.ariaLabel}
             aria-labelledby={props.state.labelledBy}
             aria-busy={props.loading || undefined}

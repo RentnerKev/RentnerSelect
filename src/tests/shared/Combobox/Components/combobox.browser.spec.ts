@@ -125,3 +125,26 @@ test('uses shared theme variables for the input and portaled select surface', as
         'rgb(255, 251, 235)',
     )
 })
+
+
+test('multiple virtual combobox toggles keyboard choices, removes tags and submits repeated values', async ({ page }) => {
+    await page.goto('/?virtual-list=combobox&count=1000&multiple&shadow')
+    const input = page.getByRole('combobox')
+    await input.click()
+    await expect(page.getByRole('listbox')).toHaveAttribute('aria-multiselectable', 'true')
+    await input.press('ArrowDown')
+    await input.press('Enter')
+    await input.press('ArrowDown')
+    await input.press('Enter')
+    await expect(input).toBeFocused()
+    await expect(input).toHaveAttribute('aria-expanded', 'true')
+    expect(await page.getByRole('form').evaluate((form) => new FormData(form as HTMLFormElement).getAll('choice'))).toEqual(['0', '1'])
+    await input.press('Backspace')
+    await expect(page.getByRole('button', { name: 'Remove Option 00001' })).toHaveCount(0)
+    await input.press('Escape')
+    await page.getByRole('button', { name: 'Remove Option 00000' }).focus()
+    await page.keyboard.press('Enter')
+    await expect(input).toBeFocused()
+    expect(await page.getByRole('form').evaluate((form) => new FormData(form as HTMLFormElement).getAll('choice'))).toEqual([])
+    expect((await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze()).violations).toEqual([])
+})

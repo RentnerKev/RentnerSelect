@@ -1,3 +1,4 @@
+import type { Option } from '../../../src/shared/Select/Types/select.types.ts'
 import { CustomSelect } from '../../../src/shared/Select/Components/CustomSelect.tsx'
 import { SelectProvider } from '../../../src/shared/Select/Components/SelectProvider.tsx'
 import { Combobox } from '../../../src/shared/Combobox/Components/Combobox.tsx'
@@ -21,7 +22,7 @@ export function VirtualOptionsFixture() {
                     onSubmit={handler.handleSubmit}
                 >
                     {state.kind === 'combobox' ? (
-                        <Combobox
+                        <Combobox<Option<string>>
                             name="choice"
                             label="Virtual choices"
                             options={state.options}
@@ -31,8 +32,14 @@ export function VirtualOptionsFixture() {
                             isOptionDisabled={(option) =>
                                 Boolean(option.disabled)
                             }
-                            value={state.selectedOption}
-                            onValueChange={handler.handleComboboxChange}
+                            {...(state.multiple ? {
+                                multiple: true,
+                                value: state.selectedOptions,
+                                onValueChange: handler.handleMultipleComboboxChange,
+                            } : {
+                                value: state.selectedOption,
+                                onValueChange: handler.handleComboboxChange,
+                            })}
                             searchValue={state.searchValue}
                             onSearchValueChange={handler.handleSearchChange}
                             portalContainer={state.portalContainer}

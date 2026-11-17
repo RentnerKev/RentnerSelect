@@ -313,41 +313,6 @@ export default function useCustomSelectLogic<TValue>(
         searchInputRef.current?.focus({ preventScroll: true })
     }, [searchable])
 
-    useLayoutEffect(() => {
-        const moved = previousPortalTarget.current !== portalTarget
-        previousPortalTarget.current = portalTarget
-        if (!open) {
-            initialFocusDone.current = false
-            return
-        }
-        if (initialFocusDone.current && !moved) return
-        initialFocusDone.current = true
-        if (searchable) focusSearchInput()
-        else if (virtualized) contentRef.current?.focus({ preventScroll: true })
-        else {
-            const rows = Array.from(
-                contentRef.current?.querySelectorAll<HTMLElement>(
-                    '[role="option"]:not([data-disabled])',
-                ) ?? [],
-            )
-            const selected = rows.find(
-                (row) => row.dataset.optionKey === selectedRadixValue,
-            )
-            const row =
-                selected ??
-                (initialFocus.current === 'last' ? rows.at(-1) : rows[0])
-            const target = row ?? contentRef.current
-            target?.focus({ preventScroll: true })
-            if (row) scrollOptionIntoView(row, scrollRef.current)
-        }
-    }, [
-        open,
-        searchable,
-        virtualized,
-        selectedRadixValue,
-        focusSearchInput,
-        portalTarget,
-    ])
 
     if (previousInteractionDisabled !== interactionDisabled) {
         setPreviousInteractionDisabled(interactionDisabled)
@@ -513,8 +478,10 @@ export default function useCustomSelectLogic<TValue>(
     }, [])
 
     const {
-        state: { popupStyle },
+        state: { popupStyle, positioned },
+        refs: { content: overlayContent },
     } = useSelectOverlay({
+        layoutVersion: virtualOptionsModule,
         open: open && !interactionDisabled,
         contentWidth,
         portalTarget,
@@ -523,6 +490,43 @@ export default function useCustomSelectLogic<TValue>(
         triggerRef: internalTriggerRef,
         onDismiss: closeWithoutFocus,
     })
+
+    useLayoutEffect(() => {
+        const moved = previousPortalTarget.current !== portalTarget
+        if (!open) {
+            initialFocusDone.current = false
+            return
+        }
+        if (!positioned || (initialFocusDone.current && !moved)) return
+        previousPortalTarget.current = portalTarget
+        initialFocusDone.current = true
+        if (searchable) focusSearchInput()
+        else if (virtualized) contentRef.current?.focus({ preventScroll: true })
+        else {
+            const rows = Array.from(
+                contentRef.current?.querySelectorAll<HTMLElement>(
+                    '[role="option"]:not([data-disabled])',
+                ) ?? [],
+            )
+            const selected = rows.find(
+                (row) => row.dataset.optionKey === selectedRadixValue,
+            )
+            const row =
+                selected ??
+                (initialFocus.current === 'last' ? rows.at(-1) : rows[0])
+            const target = row ?? contentRef.current
+            target?.focus({ preventScroll: true })
+            if (row) scrollOptionIntoView(row, scrollRef.current)
+        }
+    }, [
+        open,
+        positioned,
+        searchable,
+        virtualized,
+        selectedRadixValue,
+        focusSearchInput,
+        portalTarget,
+    ])
 
     useLayoutEffect(() => {
         const popup = contentRef.current
@@ -1000,6 +1004,7 @@ export default function useCustomSelectLogic<TValue>(
         refs: {
             root: rootRef,
             content: contentRef,
+            overlayContent,
             trigger: composedTriggerRef,
             searchInput: searchInputRef,
             validationInput: validationInputRef,

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
     ancestorShadowRoots,
@@ -13,14 +13,35 @@ import type {
 
 export default function useSelectOverlay({
     open,
+    layoutVersion,
     contentWidth,
+    maxHeight,
     portalTarget,
     rootRef,
     contentRef,
     triggerRef,
     onDismiss,
 }: SelectOverlayOptions): SelectOverlayResult {
-    const [popupStyle, setPopupStyle] = useState<CSSProperties>({})
+    const [popup, setPopup] = useState<HTMLDivElement | null>(null)
+    const [measurement, setMeasurement] = useState<{ popup: HTMLDivElement; style: CSSProperties; ready: boolean } | null>(null)
+    const content = useCallback((node: HTMLDivElement | null) => {
+        contentRef.current = node
+        setPopup(node)
+        if (!node) setMeasurement(null)
+    }, [contentRef])
+    // Apply fixed constraints while hidden, then measure again before revealing.
+    // The first intrinsic measurement can change once max-height adds a scrollbar.
+    const positioned = open && popup !== null && measurement?.popup === popup && measurement.ready
+    const popupStyle: CSSProperties = positioned
+        ? measurement.style
+        : { ...(measurement?.popup === popup ? measurement?.style : { position: 'fixed', left: 0, top: 0 }), visibility: 'hidden' }
+
+
+    const measure = useRef<(() => void) | null>(null)
+
+    useLayoutEffect(() => {
+        if (measurement && !measurement.ready) measure.current?.()
+    }, [measurement])
 
     useEffect(() => {
         if (!open || !portalTarget) return
@@ -60,7 +81,6 @@ export default function useSelectOverlay({
     useLayoutEffect(() => {
         if (!open || !portalTarget) return
         const trigger = triggerRef.current
-        const popup = contentRef.current
         const view = trigger?.ownerDocument.defaultView
         if (!trigger || !popup || !view) return
         const scheduled: {
@@ -117,7 +137,7 @@ export default function useSelectOverlay({
                 rect.top - viewportTop - gutter * 2,
             )
             const above =
-                availableBelow < Math.min(popup.scrollHeight || 320, 320) &&
+                availableBelow < Math.min(popup.scrollHeight || 320, maxHeight ?? 320) &&
                 availableAbove > availableBelow
             const availableHeight = above ? availableAbove : availableBelow
             const left = Math.max(
@@ -165,16 +185,17 @@ export default function useSelectOverlay({
                     contentWidth === 'trigger' ? width / scaleX : 'max-content',
                 minWidth: triggerWidth / scaleX,
                 maxWidth: Math.max(0, viewportWidth - gutter * 2) / scaleX,
-                maxHeight: availableHeight / scaleY,
+                maxHeight: Math.min(availableHeight, maxHeight ?? availableHeight) / scaleY,
             }
-            setPopupStyle((previous) =>
-                Object.keys(next).length === Object.keys(previous).length &&
+            setMeasurement((previous) =>
+                previous?.ready && previous.popup === popup &&
+                Object.keys(next).length === Object.keys(previous.style).length &&
                 Object.entries(next).every(
                     ([key, value]) =>
-                        previous[key as keyof CSSProperties] === value,
+                        previous.style[key as keyof CSSProperties] === value,
                 )
                     ? previous
-                    : next,
+                    : { popup, style: next, ready: previous?.popup === popup },
             )
             if (
                 view.IntersectionObserver &&
@@ -216,6 +237,7 @@ export default function useSelectOverlay({
                 }
             }
         }
+        measure.current = updatePosition
         updatePosition()
         view.addEventListener('resize', schedulePosition)
         view.addEventListener('scroll', handleScroll, true)
@@ -234,6 +256,7 @@ export default function useSelectOverlay({
         observer?.observe(trigger)
         observer?.observe(popup)
         return () => {
+            measure.current = null
             scheduled.disposed = true
             view.cancelAnimationFrame(scheduled.frame)
             view.removeEventListener('resize', schedulePosition)
@@ -245,7 +268,13 @@ export default function useSelectOverlay({
             observer?.disconnect()
             scheduled.moveObserver?.disconnect()
         }
-    }, [open, contentWidth, contentRef, triggerRef, portalTarget])
+    }, [open, contentWidth, maxHeight, triggerRef, portalTarget, popup])
 
-    return { state: { popupStyle } }
+    // Lazy rows replace the loading placeholder during a commit. ResizeObserver
+    // runs later, so refresh their intrinsic size before that commit can paint.
+    useLayoutEffect(() => {
+        if (layoutVersion !== undefined) measure.current?.()
+    }, [layoutVersion])
+
+    return { state: { popupStyle, positioned }, refs: { content } }
 }
