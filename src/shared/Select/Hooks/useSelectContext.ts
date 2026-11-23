@@ -1,10 +1,46 @@
-import { createContext, useContext, useMemo } from 'react'
+import { createContext, useContext, useMemo, useState } from 'react'
 import type {
     SelectDefaults,
     SelectProviderProps,
     SelectProviderLogicResult,
 } from '../Types/select.types.ts'
-export const SelectContext = createContext<SelectDefaults | null>(null)
+
+const EMPTY_DEFAULTS: SelectDefaults = {}
+
+export const SelectContext =
+    /* @__PURE__ */ createContext<SelectDefaults | null>(null)
+
+function shallowEqualRecord(a: object, b: object): boolean {
+    const keysA = Object.keys(a)
+    if (keysA.length !== Object.keys(b).length) return false
+    const recA = a as Record<string, unknown>
+    const recB = b as Record<string, unknown>
+    for (let i = 0; i < keysA.length; i += 1) {
+        const key = keysA[i]!
+        if (!Object.is(recA[key], recB[key])) return false
+    }
+    return true
+}
+
+function useStableOptionalRecord<T extends object>(
+    value: T | undefined,
+): T | undefined {
+    const [stable, setStable] = useState(value)
+    if (stable === value) return stable
+    if (stable && value && shallowEqualRecord(stable, value)) return stable
+    setStable(value)
+    return value
+}
+
+function mergeOptional<T extends object>(
+    parent: T | undefined,
+    local: T | undefined,
+): T | undefined {
+    if (!parent && !local) return undefined
+    if (!local) return parent
+    if (!parent) return { ...local }
+    return { ...parent, ...local }
+}
 
 export function useSelectProviderLogic({
     controlSize,
@@ -20,39 +56,59 @@ export function useSelectProviderLogic({
     searchable,
     nonce,
 }: Omit<SelectProviderProps, 'children'>): SelectProviderLogicResult {
-    const parentDefaults = useContext(SelectContext)
+    const parent = useContext(SelectContext)
+    const stableMessages = useStableOptionalRecord(messages)
+    const stableClassNames = useStableOptionalRecord(classNames)
+    const mergedMessages = useMemo(
+        () => mergeOptional(parent?.messages, stableMessages),
+        [parent?.messages, stableMessages],
+    )
+    const mergedClassNames = useMemo(
+        () => mergeOptional(parent?.classNames, stableClassNames),
+        [parent?.classNames, stableClassNames],
+    )
+    const nextControlSize = controlSize ?? parent?.controlSize
+    const nextVirtualized = virtualized ?? parent?.virtualized
+    const nextTextOverflow = textOverflow ?? parent?.textOverflow
+    const nextContentWidth = contentWidth ?? parent?.contentWidth
+    const nextPortalContainer =
+        portalContainer === undefined
+            ? parent?.portalContainer
+            : portalContainer
+    const nextPortalClassName = portalClassName ?? parent?.portalClassName
+    const nextPortalZIndex = portalZIndex ?? parent?.portalZIndex
+    const nextLocale = locale ?? parent?.locale
+    const nextSearchable = searchable ?? parent?.searchable
+    const nextNonce = nonce ?? parent?.nonce
+
     const mergedDefaults = useMemo<SelectDefaults>(
         () => ({
-            controlSize: controlSize ?? parentDefaults?.controlSize,
-            virtualized: virtualized ?? parentDefaults?.virtualized,
-            textOverflow: textOverflow ?? parentDefaults?.textOverflow,
-            contentWidth: contentWidth ?? parentDefaults?.contentWidth,
-            portalContainer:
-                portalContainer === undefined
-                    ? parentDefaults?.portalContainer
-                    : portalContainer,
-            portalClassName: portalClassName ?? parentDefaults?.portalClassName,
-            portalZIndex: portalZIndex ?? parentDefaults?.portalZIndex,
-            locale: locale ?? parentDefaults?.locale,
-            searchable: searchable ?? parentDefaults?.searchable,
-            nonce: nonce ?? parentDefaults?.nonce,
-            messages: { ...parentDefaults?.messages, ...messages },
-            classNames: { ...parentDefaults?.classNames, ...classNames },
+            controlSize: nextControlSize,
+            virtualized: nextVirtualized,
+            textOverflow: nextTextOverflow,
+            contentWidth: nextContentWidth,
+            portalContainer: nextPortalContainer,
+            portalClassName: nextPortalClassName,
+            portalZIndex: nextPortalZIndex,
+            locale: nextLocale,
+            searchable: nextSearchable,
+            nonce: nextNonce,
+            messages: mergedMessages,
+            classNames: mergedClassNames,
         }),
         [
-            parentDefaults,
-            locale,
-            searchable,
-            nonce,
-            messages,
-            classNames,
-            controlSize,
-            virtualized,
-            textOverflow,
-            contentWidth,
-            portalContainer,
-            portalClassName,
-            portalZIndex,
+            nextControlSize,
+            nextVirtualized,
+            nextTextOverflow,
+            nextContentWidth,
+            nextPortalContainer,
+            nextPortalClassName,
+            nextPortalZIndex,
+            nextLocale,
+            nextSearchable,
+            nextNonce,
+            mergedMessages,
+            mergedClassNames,
         ],
     )
 
@@ -60,5 +116,5 @@ export function useSelectProviderLogic({
 }
 
 export function useSelectDefaults(): SelectDefaults {
-    return useContext(SelectContext) ?? {}
+    return useContext(SelectContext) ?? EMPTY_DEFAULTS
 }

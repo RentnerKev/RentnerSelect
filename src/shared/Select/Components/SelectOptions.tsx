@@ -131,4 +131,6 @@ function SelectOptionsTemplate<TValue>({
     )
 }
 
-export default memo(SelectOptionsTemplate) as typeof SelectOptionsTemplate
+export default /* @__PURE__ */ memo(
+    SelectOptionsTemplate,
+) as typeof SelectOptionsTemplate

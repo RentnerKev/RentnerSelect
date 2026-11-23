@@ -6,6 +6,8 @@ import type {
     VirtualOptionsResult,
 } from '../Types/virtualList.types.ts'
 
+const DEFAULT_INITIAL_RECT = { width: 0, height: 256 }
+
 export default function useVirtualOptions({
     count,
     activeIndex,
@@ -24,29 +26,35 @@ export default function useVirtualOptions({
     const overscan = Number.isFinite(requestedOverscan)
         ? Math.max(0, Math.floor(requestedOverscan))
         : 5
+    const getScrollElement = useCallback(() => scrollRef.current, [scrollRef])
+    const estimateSizeFn = useCallback(() => estimateSize, [estimateSize])
     const rangeExtractor = useCallback(
         (range: Range) => {
             const indexes = defaultRangeExtractor(range)
-            if (
-                activeIndex >= 0 &&
-                activeIndex < count &&
-                !indexes.includes(activeIndex)
-            )
-                indexes.push(activeIndex)
-            return indexes.toSorted((left, right) => left - right)
+            if (activeIndex >= 0 && activeIndex < count) {
+                const len = indexes.length
+                if (len === 0) {
+                    indexes.push(activeIndex)
+                } else if (activeIndex < indexes[0]!) {
+                    indexes.unshift(activeIndex)
+                } else if (activeIndex > indexes[len - 1]!) {
+                    indexes.push(activeIndex)
+                }
+            }
+            return indexes
         },
         [activeIndex, count],
     )
     // oxlint-disable-next-line react/incompatible-library -- TanStack Virtual exposes a mutable instance; this hook intentionally opts out of compiler memoization.
     const virtualizer = useVirtualizer<HTMLElement, HTMLElement>({
         count,
-        getScrollElement: () => scrollRef.current,
+        getScrollElement,
         getItemKey,
-        estimateSize: () => estimateSize,
+        estimateSize: estimateSizeFn,
         gap: 2,
         overscan,
         rangeExtractor,
-        initialRect: { width: 0, height: 256 },
+        initialRect: DEFAULT_INITIAL_RECT,
         useFlushSync: false,
         useAnimationFrameWithResizeObserver: true,
     })

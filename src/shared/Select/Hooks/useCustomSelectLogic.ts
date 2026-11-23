@@ -48,6 +48,14 @@ function loadVirtualOptions() {
         import('../Components/VirtualSelectOptions.tsx'))
 }
 
+const EMPTY_CLASS_NAMES: NonNullable<CustomSelectProps<unknown>['classNames']> =
+    {}
+const EMPTY_OPTION_ENTRIES: ReadonlyArray<never> = []
+
+function returnFalse() {
+    return false
+}
+
 function handleSearchPointerDown(event: PointerEvent<HTMLInputElement>) {
     event.stopPropagation()
 }
@@ -149,21 +157,30 @@ export default function useCustomSelectLogic<TValue>(
     const locale = providedLocale ?? defaults.locale ?? 'de'
     const searchable = providedSearchable ?? defaults.searchable ?? true
     const nonce = providedNonce ?? defaults.nonce
-    const classNames = useMemo(
-        () => ({ ...defaults.classNames, ...providedClassNames }),
-        [defaults.classNames, providedClassNames],
-    )
-    const mergedMessages = useMemo(
-        () => ({ ...defaults.messages, ...providedMessages }),
-        [defaults.messages, providedMessages],
-    )
+    const classNames = useMemo(() => {
+        if (!defaults.classNames && !providedClassNames)
+            return EMPTY_CLASS_NAMES
+        if (!providedClassNames) return defaults.classNames!
+        if (!defaults.classNames) return providedClassNames
+        return { ...defaults.classNames, ...providedClassNames }
+    }, [defaults.classNames, providedClassNames])
+    const messages = useMemo(() => {
+        if (!defaults.messages && !providedMessages) {
+            return resolveSelectMessages(locale)
+        }
+        return resolveSelectMessages(
+            locale,
+            defaults.messages && providedMessages
+                ? { ...defaults.messages, ...providedMessages }
+                : (providedMessages ?? defaults.messages),
+        )
+    }, [defaults.messages, locale, providedMessages])
     const isOptionEqualToValue = isOptionEqualToValueProp ?? Object.is
     const {
         state: { selectedValues, formEntries },
         handler: { handleSelectValue, handleClearValues },
     } = useSelectValues(props)
 
-    const messages = resolveSelectMessages(locale, mergedMessages)
     const [open, setOpen] = useState(false)
     const [defaultPortalTarget, setDefaultPortalTarget] =
         useState<HTMLElement | null>(null)
@@ -205,46 +222,70 @@ export default function useCustomSelectLogic<TValue>(
     const descriptionId = `${triggerId}-description`
     const errorId = `${triggerId}-error`
     const isValueSelected = useMemo(() => {
+        const count = selectedValues.length
+        if (count === 0) return returnFalse
+        if (count === 1) {
+            const single = selectedValues[0]!
+            return (optionValue: TValue) =>
+                isOptionEqualToValue(optionValue, single)
+        }
         if (isOptionEqualToValue !== Object.is) {
             return (optionValue: TValue) =>
                 selectedValues.some((selectedValue) =>
                     isOptionEqualToValue(optionValue, selectedValue),
                 )
         }
-        const selectedKeys = new Set(selectedValues.map(getOptionKey))
+        const selectedKeys = new Set<unknown>()
+        for (let i = 0; i < count; i += 1) {
+            selectedKeys.add(getOptionKey(selectedValues[i]!))
+        }
         return (optionValue: TValue) =>
             selectedKeys.has(getOptionKey(optionValue))
     }, [isOptionEqualToValue, selectedValues])
+
+    const isPopupOpen = open && !interactionDisabled
+    const groupedOptionEntries = useMemo(
+        () =>
+            !isPopupOpen
+                ? EMPTY_OPTION_ENTRIES
+                : optionEntries.some(({ option }) => option.group)
+                  ? groupSelectEntries(
+                        optionEntries,
+                        ({ option }) => option.group,
+                    ).flatMap((group) => group.entries)
+                  : optionEntries,
+        [isPopupOpen, optionEntries],
+    )
+
     const filteredOptions = useMemo(() => {
-        const normalizedSearch = (searchable ? searchValue : '')
-            .trim()
-            .toLowerCase()
+        if (!isPopupOpen) return EMPTY_OPTION_ENTRIES
+        const q = (searchable ? searchValue : '').trim().toLowerCase()
+        if (!q) return groupedOptionEntries
+        return groupedOptionEntries.filter(
+            ({ option }) =>
+                option.label.toLowerCase().includes(q) ||
+                String(option.value).toLowerCase().includes(q) ||
+                Boolean(option.subOption?.toLowerCase().includes(q)) ||
+                Boolean(option.group?.toLowerCase().includes(q)),
+        )
+    }, [groupedOptionEntries, isPopupOpen, searchValue, searchable])
 
-        const entries = optionEntries.some(({ option }) => option.group)
-            ? groupSelectEntries(
-                  optionEntries,
-                  ({ option }) => option.group,
-              ).flatMap((group) => group.entries)
-            : optionEntries
-        if (!normalizedSearch) return entries
+    const optionByRadixValue = useMemo(
+        () =>
+            isPopupOpen
+                ? new Map(optionEntries.map((e) => [e.radixValue, e]))
+                : null,
+        [isPopupOpen, optionEntries],
+    )
 
-        return entries.filter(({ option }) => {
-            const optionLabel = option.label.toLowerCase()
-            const optionValue = String(option.value).toLowerCase()
-            const subOption = option.subOption?.toLowerCase() || ''
-
-            return (
-                optionLabel.includes(normalizedSearch) ||
-                optionValue.includes(normalizedSearch) ||
-                subOption.includes(normalizedSearch) ||
-                Boolean(option.group?.toLowerCase().includes(normalizedSearch))
-            )
-        })
-    }, [optionEntries, searchValue, searchable])
     const selectedEntries = useMemo(
         () =>
-            optionEntries.filter(({ option }) => isValueSelected(option.value)),
-        [isValueSelected, optionEntries],
+            selectedValues.length === 0
+                ? EMPTY_OPTION_ENTRIES
+                : optionEntries.filter(({ option }) =>
+                      isValueSelected(option.value),
+                  ),
+        [isValueSelected, optionEntries, selectedValues.length],
     )
     const showRemovableSelectedItems = Boolean(
         removableSelectedItems &&
@@ -428,9 +469,11 @@ export default function useCustomSelectLogic<TValue>(
     const handleValueChange = useCallback(
         (nextRadixValue: string) => {
             if (disabled || readOnly) return
-            const entry = optionEntries.find(
-                ({ radixValue }) => radixValue === nextRadixValue,
-            )
+            const entry =
+                optionByRadixValue?.get(nextRadixValue) ??
+                optionEntries.find(
+                    ({ radixValue }) => radixValue === nextRadixValue,
+                )
             if (!entry || isOptionDisabled(entry.option)) return
             if (!multiple) setSearchValue('')
             handleSelectValue(entry.option.value)
@@ -439,6 +482,7 @@ export default function useCustomSelectLogic<TValue>(
         [
             disabled,
             readOnly,
+            optionByRadixValue,
             optionEntries,
             isOptionDisabled,
             multiple,
@@ -565,9 +609,9 @@ export default function useCustomSelectLogic<TValue>(
             virtualNavigationRef.current?.handleContentFocus()
     }
 
-    function handleVirtualClose() {
+    const handleVirtualClose = useCallback(() => {
         handleOpenChange(false)
-    }
+    }, [handleOpenChange])
 
     function handleContentKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
         if (event.nativeEvent.isComposing) return

@@ -1,3 +1,6 @@
+const CONTAIN_REGEX = /paint|layout|strict|content/
+const WILL_CHANGE_REGEX = /transform|translate|scale|rotate|perspective|filter/
+
 export function getActiveElement(root: Document | ShadowRoot): Element | null {
     let element = root.activeElement
     while (element?.shadowRoot?.activeElement)
@@ -6,6 +9,8 @@ export function getActiveElement(root: Document | ShadowRoot): Element | null {
 }
 
 export function containsTarget(element: Element | null, target: Node | null) {
+    if (!element || !target) return false
+    if (element.contains(target)) return true
     let current: Node | null = target
     while (current) {
         if (current === element) return true
@@ -43,10 +48,8 @@ export function fixedContainingBlock(element: HTMLElement) {
                     (style.perspective && style.perspective !== 'none') ||
                     (style.filter && style.filter !== 'none') ||
                     (style.backdropFilter && style.backdropFilter !== 'none') ||
-                    /paint|layout|strict|content/.test(style.contain) ||
-                    /transform|translate|scale|rotate|perspective|filter/.test(
-                        style.willChange,
-                    ) ||
+                    CONTAIN_REGEX.test(style.contain) ||
+                    WILL_CHANGE_REGEX.test(style.willChange) ||
                     style.contentVisibility === 'auto')
             )
                 return ancestor
@@ -82,30 +85,24 @@ export function focusAdjacentControl(
     backwards: boolean,
 ) {
     const controls: HTMLElement[] = []
+    const view = trigger.ownerDocument.defaultView
     function visit(root: ParentNode) {
         for (const child of root.children) {
             const element = child as HTMLElement
+            if (element === popup || element.matches('[hidden], [inert]'))
+                continue
+            const style = view?.getComputedStyle(element)
+            if (style?.display === 'none' || style?.visibility === 'hidden')
+                continue
             if (
                 element.tabIndex >= 0 &&
-                !element.matches(':disabled, [hidden], [inert]') &&
-                !element.closest('[hidden], [inert]') &&
-                !containsTarget(popup, element)
+                !element.matches(':disabled') &&
+                (!popup || !containsTarget(popup, element))
             ) {
-                const style =
-                    trigger.ownerDocument.defaultView?.getComputedStyle(element)
-                if (style?.display !== 'none' && style?.visibility !== 'hidden')
-                    controls.push(element)
+                controls.push(element)
             }
-            const style =
-                trigger.ownerDocument.defaultView?.getComputedStyle(element)
-            if (
-                element.matches('[hidden], [inert]') ||
-                style?.display === 'none' ||
-                style?.visibility === 'hidden'
-            )
-                continue
             if (element.shadowRoot) visit(element.shadowRoot)
-            else visit(element)
+            else if (element.children.length > 0) visit(element)
         }
     }
     visit(trigger.ownerDocument)

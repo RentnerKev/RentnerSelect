@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent, PointerEvent, MouseEvent } from 'react'
 import { findTypeaheadEntry } from '../../../lib/Select/selectNavigation.ts'
 import useVirtualOptions from '../../VirtualList/Hooks/useVirtualOptions.ts'
@@ -23,37 +23,61 @@ export default function useVirtualSelectOptionsLogic<TValue>({
     onClose,
     handler: optionHandler,
 }: VirtualSelectOptionsProps<TValue>): VirtualSelectOptionsLogicResult {
+    const entryIndexByRadixValue = useMemo(() => {
+        const index = new Map<string, number>()
+        for (let i = 0; i < entries.length; i += 1) {
+            index.set(entries[i]!.radixValue, i)
+        }
+        return index
+    }, [entries])
+
     const [storedActiveRadixValue, setActiveRadixValue] = useState<
         string | null
     >(() => {
-        const entry =
-            entries.find(
-                ({ option }) =>
-                    isSelected(option.value) && !isOptionDisabled(option),
-            ) ?? entries.find(({ option }) => !isOptionDisabled(option))
-        return entry?.radixValue ?? null
+        let firstEnabled: string | null = null
+        for (let i = 0; i < entries.length; i += 1) {
+            const entry = entries[i]!
+            if (isOptionDisabled(entry.option)) continue
+            if (isSelected(entry.option.value)) return entry.radixValue
+            if (firstEnabled === null) firstEnabled = entry.radixValue
+        }
+        return firstEnabled
     })
-    const validActiveEntry = entries.find(
-        ({ radixValue, option }) =>
-            radixValue === storedActiveRadixValue && !isOptionDisabled(option),
-    )
+
+    const storedIndex =
+        storedActiveRadixValue !== null
+            ? (entryIndexByRadixValue.get(storedActiveRadixValue) ?? -1)
+            : -1
+    const validActiveEntry =
+        storedIndex >= 0 && !isOptionDisabled(entries[storedIndex]!.option)
+            ? entries[storedIndex]
+            : undefined
+
+    let fallbackActiveRadixValue: string | null = null
+    if (!validActiveEntry && !searchable) {
+        for (let i = 0; i < entries.length; i += 1) {
+            const entry = entries[i]!
+            if (!isOptionDisabled(entry.option)) {
+                fallbackActiveRadixValue = entry.radixValue
+                break
+            }
+        }
+    }
     const activeRadixValue =
-        validActiveEntry?.radixValue ??
-        (searchable
-            ? null
-            : (entries.find(({ option }) => !isOptionDisabled(option))
-                  ?.radixValue ?? null))
+        validActiveEntry?.radixValue ?? fallbackActiveRadixValue
+
     if (storedActiveRadixValue !== activeRadixValue)
         setActiveRadixValue(activeRadixValue)
-    const [, requestReplay] = useState(0)
+    const [replayTick, requestReplay] = useState(0)
     const previousActiveRadixValue = useRef(activeRadixValue)
     const rowRefs = useRef(new Map<string, HTMLDivElement>())
     const focusRequested = useRef(false)
     const typeahead = useRef({ search: '', time: 0 })
     const pointerType = useRef('mouse')
-    const activeIndex = entries.findIndex(
-        ({ radixValue }) => radixValue === activeRadixValue,
-    )
+    const activeIndex =
+        activeRadixValue !== null
+            ? (entryIndexByRadixValue.get(activeRadixValue) ?? -1)
+            : -1
     const getItemKey = useCallback(
         (index: number) => entries[index]!.radixValue,
         [entries],
@@ -66,179 +90,259 @@ export default function useVirtualSelectOptionsLogic<TValue>({
         virtualization,
     })
 
-    function getActiveElement() {
+    const findFirstEnabled = useCallback(() => {
+        for (let i = 0; i < entries.length; i += 1) {
+            if (!isOptionDisabled(entries[i]!.option)) return entries[i]
+        }
+        return undefined
+    }, [entries, isOptionDisabled])
+
+    const findLastEnabled = useCallback(() => {
+        for (let i = entries.length - 1; i >= 0; i -= 1) {
+            if (!isOptionDisabled(entries[i]!.option)) return entries[i]
+        }
+        return undefined
+    }, [entries, isOptionDisabled])
+
+    const getActiveElement = useCallback(() => {
         const root = contentRef.current?.getRootNode()
         return root && 'activeElement' in root ? root.activeElement : null
-    }
+    }, [contentRef])
 
-    function focusRow(radixValue: string) {
-        const index = entries.findIndex(
-            (entry) => entry.radixValue === radixValue,
-        )
-        if (index >= 0) virtualizer.scrollToIndex(index, { align: 'auto' })
-        focusRequested.current = true
-        setActiveRadixValue(radixValue)
-        const row = rowRefs.current.get(radixValue)
-        if (row) {
-            row.focus({ preventScroll: true })
-            focusRequested.current = false
-        }
-    }
+    const focusRow = useCallback(
+        (radixValue: string) => {
+            const index = entryIndexByRadixValue.get(radixValue) ?? -1
+            if (index >= 0) virtualizer.scrollToIndex(index, { align: 'auto' })
+            focusRequested.current = true
+            setActiveRadixValue(radixValue)
+            const row = rowRefs.current.get(radixValue)
+            if (row) {
+                row.focus({ preventScroll: true })
+                focusRequested.current = false
+            }
+        },
+        [entryIndexByRadixValue, virtualizer],
+    )
 
-    function handleContentFocus() {
+    const handleContentFocus = useCallback(() => {
         if (searchable) {
             searchInputRef.current?.focus({ preventScroll: true })
             return
         }
-        const entry =
-            entries.find(
-                ({ radixValue, option }) =>
-                    radixValue === activeRadixValue &&
-                    !isOptionDisabled(option),
-            ) ??
-            entries.find(
-                ({ option }) =>
-                    isSelected(option.value) && !isOptionDisabled(option),
-            ) ??
-            entries.find(({ option }) => !isOptionDisabled(option))
-        if (entry) focusRow(entry.radixValue)
-        else if (entries.length === 0) onClose()
-    }
-
-    function handleSelect(radixValue: string) {
-        const entry = entries.find(
-            (candidate) => candidate.radixValue === radixValue,
-        )
-        if (!entry || isOptionDisabled(entry.option)) return
-        onValueChange(radixValue)
-        if (!multiple) onClose()
-    }
-
-    function handleKeyDown(event: KeyboardEvent<HTMLDivElement>): boolean {
+        let target: (typeof entries)[number] | undefined
         if (
-            event.defaultPrevented ||
-            event.nativeEvent.isComposing ||
-            event.ctrlKey ||
-            event.altKey ||
-            event.metaKey
-        )
-            return false
-        const fromSearch = event.target === searchInputRef.current
-        const enabled = entries.filter(
-            ({ option }) => !isOptionDisabled(option),
-        )
-        let next: (typeof entries)[number] | undefined
-        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-            const direction = event.key === 'ArrowDown' ? 1 : -1
-            if (fromSearch) next = direction > 0 ? enabled[0] : enabled.at(-1)
-            else {
-                const current = enabled.findIndex(
-                    ({ radixValue }) => radixValue === activeRadixValue,
-                )
-                const index =
-                    current < 0
-                        ? direction > 0
-                            ? 0
-                            : enabled.length - 1
-                        : Math.max(
-                              0,
-                              Math.min(enabled.length - 1, current + direction),
-                          )
-                next = enabled[index]
+            activeIndex >= 0 &&
+            !isOptionDisabled(entries[activeIndex]!.option)
+        ) {
+            target = entries[activeIndex]
+        } else {
+            let firstEnabled: (typeof entries)[number] | undefined
+            for (let i = 0; i < entries.length; i += 1) {
+                const entry = entries[i]!
+                if (isOptionDisabled(entry.option)) continue
+                if (isSelected(entry.option.value)) {
+                    target = entry
+                    break
+                }
+                if (!firstEnabled) firstEnabled = entry
             }
-        } else if (
-            !fromSearch &&
-            (event.key === 'Home' || event.key === 'End')
-        ) {
-            next = event.key === 'Home' ? enabled[0] : enabled.at(-1)
-        } else if (
-            !fromSearch &&
-            (event.key === 'Enter' ||
-                (event.key === ' ' &&
-                    !(
-                        !searchable &&
-                        typeahead.current.search &&
-                        Date.now() - typeahead.current.time < 1000
-                    )))
-        ) {
-            if (activeRadixValue) handleSelect(activeRadixValue)
-        } else if (!fromSearch && !searchable && event.key.length === 1) {
-            const now = Date.now()
-            const search =
-                (now - typeahead.current.time < 1000
-                    ? typeahead.current.search
-                    : '') + event.key
-            typeahead.current = { search, time: now }
-            next = findTypeaheadEntry(
-                entries,
-                activeRadixValue ?? undefined,
-                search,
-                isOptionDisabled,
+            target ??= firstEnabled
+        }
+        if (target) focusRow(target.radixValue)
+        else if (entries.length === 0) onClose()
+    }, [
+        activeIndex,
+        entries,
+        focusRow,
+        isOptionDisabled,
+        isSelected,
+        onClose,
+        searchable,
+        searchInputRef,
+    ])
+
+    const handleSelect = useCallback(
+        (radixValue: string) => {
+            const index = entryIndexByRadixValue.get(radixValue)
+            if (index === undefined) return
+            const entry = entries[index]!
+            if (isOptionDisabled(entry.option)) return
+            onValueChange(radixValue)
+            if (!multiple) onClose()
+        },
+        [
+            entries,
+            entryIndexByRadixValue,
+            isOptionDisabled,
+            multiple,
+            onClose,
+            onValueChange,
+        ],
+    )
+
+    const handleKeyDown = useCallback(
+        (event: KeyboardEvent<HTMLDivElement>): boolean => {
+            if (
+                event.defaultPrevented ||
+                event.nativeEvent.isComposing ||
+                event.ctrlKey ||
+                event.altKey ||
+                event.metaKey
             )
-        } else return false
-        event.preventDefault()
-        event.stopPropagation()
-        if (next) focusRow(next.radixValue)
-        return true
-    }
+                return false
+            const fromSearch = event.target === searchInputRef.current
+            let next: (typeof entries)[number] | undefined
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                const direction = event.key === 'ArrowDown' ? 1 : -1
+                if (fromSearch) {
+                    next =
+                        direction > 0 ? findFirstEnabled() : findLastEnabled()
+                } else if (activeIndex < 0) {
+                    next =
+                        direction > 0 ? findFirstEnabled() : findLastEnabled()
+                } else {
+                    for (
+                        let i = activeIndex + direction;
+                        i >= 0 && i < entries.length;
+                        i += direction
+                    ) {
+                        if (!isOptionDisabled(entries[i]!.option)) {
+                            next = entries[i]
+                            break
+                        }
+                    }
+                    if (
+                        !next &&
+                        !isOptionDisabled(entries[activeIndex]!.option)
+                    ) {
+                        next = entries[activeIndex]
+                    }
+                }
+            } else if (
+                !fromSearch &&
+                (event.key === 'Home' || event.key === 'End')
+            ) {
+                next =
+                    event.key === 'Home'
+                        ? findFirstEnabled()
+                        : findLastEnabled()
+            } else if (
+                !fromSearch &&
+                (event.key === 'Enter' ||
+                    (event.key === ' ' &&
+                        !(
+                            !searchable &&
+                            typeahead.current.search &&
+                            Date.now() - typeahead.current.time < 1000
+                        )))
+            ) {
+                if (activeRadixValue) handleSelect(activeRadixValue)
+            } else if (!fromSearch && !searchable && event.key.length === 1) {
+                const now = Date.now()
+                const search =
+                    (now - typeahead.current.time < 1000
+                        ? typeahead.current.search
+                        : '') + event.key
+                typeahead.current = { search, time: now }
+                next = findTypeaheadEntry(
+                    entries,
+                    activeRadixValue ?? undefined,
+                    search,
+                    isOptionDisabled,
+                )
+            } else return false
+            event.preventDefault()
+            event.stopPropagation()
+            if (next) focusRow(next.radixValue)
+            return true
+        },
+        [
+            activeIndex,
+            activeRadixValue,
+            entries,
+            findFirstEnabled,
+            findLastEnabled,
+            focusRow,
+            handleSelect,
+            isOptionDisabled,
+            searchable,
+            searchInputRef,
+        ],
+    )
 
-    function handleRowFocus(radixValue: string) {
-        const entry = entries.find(
-            (candidate) => candidate.radixValue === radixValue,
-        )
-        if (!entry || isOptionDisabled(entry.option)) return
-        setActiveRadixValue(radixValue)
-        optionHandler.handleOptionFocus(entry.option.value)
-    }
+    const handleRowFocus = useCallback(
+        (radixValue: string) => {
+            const index = entryIndexByRadixValue.get(radixValue)
+            if (index === undefined) return
+            const entry = entries[index]!
+            if (isOptionDisabled(entry.option)) return
+            setActiveRadixValue(radixValue)
+            optionHandler.handleOptionFocus(entry.option.value)
+        },
+        [entries, entryIndexByRadixValue, isOptionDisabled, optionHandler],
+    )
 
-    function handleRowPointerDown(event: PointerEvent<HTMLDivElement>) {
-        pointerType.current = event.pointerType
-    }
+    const handleRowPointerDown = useCallback(
+        (event: PointerEvent<HTMLDivElement>) => {
+            pointerType.current = event.pointerType
+        },
+        [],
+    )
 
-    function handleRowPointerUp(
-        event: PointerEvent<HTMLDivElement>,
-        radixValue: string,
-    ) {
-        pointerType.current = event.pointerType
-        if (
-            event.pointerType !== 'mouse' ||
-            event.defaultPrevented ||
-            event.button !== 0
-        )
-            return
-        handleSelect(radixValue)
-    }
+    const handleRowPointerUp = useCallback(
+        (event: PointerEvent<HTMLDivElement>, radixValue: string) => {
+            pointerType.current = event.pointerType
+            if (
+                event.pointerType !== 'mouse' ||
+                event.defaultPrevented ||
+                event.button !== 0
+            )
+                return
+            handleSelect(radixValue)
+        },
+        [handleSelect],
+    )
 
-    function handleRowPointerMove(
-        event: PointerEvent<HTMLDivElement>,
-        radixValue: string,
-    ) {
-        if (event.pointerType !== 'mouse' || event.defaultPrevented) return
-        const entry = entries.find(
-            (candidate) => candidate.radixValue === radixValue,
-        )
-        if (entry && !isOptionDisabled(entry.option))
-            event.currentTarget.focus({ preventScroll: true })
-    }
+    const handleRowPointerMove = useCallback(
+        (event: PointerEvent<HTMLDivElement>, radixValue: string) => {
+            if (event.pointerType !== 'mouse' || event.defaultPrevented) return
+            const index = entryIndexByRadixValue.get(radixValue)
+            if (
+                index !== undefined &&
+                !isOptionDisabled(entries[index]!.option)
+            )
+                event.currentTarget.focus({ preventScroll: true })
+        },
+        [entries, entryIndexByRadixValue, isOptionDisabled],
+    )
 
-    function handleRowClick(
-        event: MouseEvent<HTMLDivElement>,
-        radixValue: string,
-    ) {
-        if (
-            event.defaultPrevented ||
-            (pointerType.current === 'mouse' && event.detail !== 0)
-        )
-            return
-        handleSelect(radixValue)
-    }
+    const handleRowClick = useCallback(
+        (event: MouseEvent<HTMLDivElement>, radixValue: string) => {
+            if (
+                event.defaultPrevented ||
+                (pointerType.current === 'mouse' && event.detail !== 0)
+            )
+                return
+            handleSelect(radixValue)
+        },
+        [handleSelect],
+    )
+
+    const firstVirtualIndex = virtualState.items[0]?.index ?? -1
+    const lastVirtualIndex =
+        virtualState.items[virtualState.items.length - 1]?.index ?? -1
 
     useLayoutEffect(() => {
         navigationRef.current = { handleKeyDown, handleContentFocus }
         const focused = getActiveElement()
         if (contentRef.current && focused === contentRef.current)
             handleContentFocus()
-        if (focusRequested.current && activeRadixValue) {
+        if (
+            firstVirtualIndex >= 0 &&
+            lastVirtualIndex >= 0 &&
+            focusRequested.current &&
+            activeRadixValue
+        ) {
             const row = rowRefs.current.get(activeRadixValue)
             if (row) {
                 row.focus({ preventScroll: true })
@@ -248,10 +352,19 @@ export default function useVirtualSelectOptionsLogic<TValue>({
         return () => {
             navigationRef.current = null
         }
-    })
+    }, [
+        activeRadixValue,
+        contentRef,
+        firstVirtualIndex,
+        getActiveElement,
+        handleContentFocus,
+        handleKeyDown,
+        lastVirtualIndex,
+        navigationRef,
+    ])
 
     useLayoutEffect(() => {
-        if (pendingNavigationRef.current.length === 0) return
+        if (replayTick < 0 || pendingNavigationRef.current.length === 0) return
         const lifecycle = { cancelled: false }
         queueMicrotask(() => {
             if (lifecycle.cancelled) return
@@ -271,17 +384,16 @@ export default function useVirtualSelectOptionsLogic<TValue>({
         return () => {
             lifecycle.cancelled = true
         }
-    })
+    }, [getActiveElement, navigationRef, pendingNavigationRef, replayTick])
 
     useLayoutEffect(() => {
         const previous = previousActiveRadixValue.current
         previousActiveRadixValue.current = activeRadixValue
+        if (previous === null) return
+        const prevIndex = entryIndexByRadixValue.get(previous)
         if (
-            previous === null ||
-            entries.some(
-                ({ radixValue, option }) =>
-                    radixValue === previous && !isOptionDisabled(option),
-            )
+            prevIndex !== undefined &&
+            !isOptionDisabled(entries[prevIndex]!.option)
         )
             return
         if (searchable) searchInputRef.current?.focus({ preventScroll: true })
@@ -291,7 +403,16 @@ export default function useVirtualSelectOptionsLogic<TValue>({
             row?.focus({ preventScroll: true })
         } else if (entries.length === 0) onClose()
         else contentRef.current?.focus({ preventScroll: true })
-    })
+    }, [
+        activeRadixValue,
+        contentRef,
+        entries,
+        entryIndexByRadixValue,
+        isOptionDisabled,
+        onClose,
+        searchable,
+        searchInputRef,
+    ])
 
     return {
         state: {

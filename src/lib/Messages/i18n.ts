@@ -29,8 +29,10 @@ export function resolveSelectMessages(
     locale: SelectLocale = 'de',
     messages?: Partial<SelectMessages>,
 ): SelectMessages {
+    const base = selectMessageCatalog[locale]
+    if (!messages) return base
     return {
-        ...selectMessageCatalog[locale],
+        ...base,
         ...messages,
     }
 }

@@ -1,11 +1,12 @@
 /* oxlint-disable react/refs -- TanStack Virtual measureElement is a commit-phase ref callback, not a render-time ref read. */
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- APG listbox contains custom options while focus remains on the combobox input. */
+import { memo } from 'react'
 import useVirtualComboboxOptionsLogic from '../Hooks/useVirtualComboboxOptionsLogic.ts'
 import type { VirtualComboboxOptionsProps } from '../Types/combobox.types.ts'
 import ComboboxOption from './ComboboxOption.tsx'
 import ComboboxCreateOption from './ComboboxCreateOption.tsx'
 
-export default function VirtualComboboxOptions<T>(
+function VirtualComboboxOptionsTemplate<T>(
     props: VirtualComboboxOptionsProps<T>,
 ) {
     const { state, refs, virtualizer } = useVirtualComboboxOptionsLogic(props)
@@ -80,3 +81,7 @@ export default function VirtualComboboxOptions<T>(
         </div>
     )
 }
+
+export default /* @__PURE__ */ memo(
+    VirtualComboboxOptionsTemplate,
+) as typeof VirtualComboboxOptionsTemplate
