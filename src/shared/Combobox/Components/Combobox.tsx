@@ -1,6 +1,6 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role, jsx-a11y/click-events-have-key-events -- APG editable combobox uses a custom listbox; keyboard navigation remains on the input through aria-activedescendant. */
 import { createPortal } from 'react-dom'
-import type { ReactElement } from 'react'
+import { useMemo, type ReactElement } from 'react'
 import { SelectedItemRemove } from '../../Select/Components/SelectedItemRemove.tsx'
 import ComboboxOption from './ComboboxOption.tsx'
 import ComboboxCreateOption from './ComboboxCreateOption.tsx'
@@ -19,15 +19,33 @@ export function Combobox<T>(props: MultipleComboboxProps<T>): ReactElement
 export function Combobox<T>(props: ComboboxProps<T>): ReactElement
 export function Combobox<T>(props: ComboboxProps<T>) {
     const { state, handler, refs } = useComboboxLogic(props)
+    const { classNames, messages, entries, canCreate, open, multiple } = state
     const VirtualComboboxOptions = state.virtualOptionsModule?.default
     const { root, popupContent, input, validation } = refs
+    const groupedEntries = useMemo(
+        () =>
+            open && !state.virtualization && !props.loading
+                ? groupSelectEntries(entries, (entry) => entry.group)
+                : [],
+        [open, state.virtualization, props.loading, entries],
+    )
+    const setSize = entries.length + (canCreate ? 1 : 0)
+    const listboxLabel = props['aria-label'] ?? messages.searchOptions
+    const listboxProps = {
+        id: state.listId,
+        role: 'listbox' as const,
+        'aria-multiselectable': multiple || undefined,
+        'aria-label': listboxLabel,
+        'aria-labelledby': state.labelledBy,
+        'aria-busy': props.loading || undefined,
+    }
     return (
         <div
             ref={root}
             onBlurCapture={handler.handleFieldBlur}
             className={
                 'relative ' +
-                (state.classNames.root ?? '') +
+                (classNames.root ?? '') +
                 ' ' +
                 (props.className ?? '')
             }
@@ -37,29 +55,25 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                     id={state.labelId}
                     htmlFor={state.inputId}
                     className={
-                        state.classNames.label ??
+                        classNames.label ??
                         'mb-1 block text-sm font-medium text-select-foreground'
                     }
                 >
                     {props.label}
                 </label>
             )}
-            <div className={'relative ' + (state.classNames.control ?? '')}>
-                {state.multiple && state.selectedItems.length > 0 && (
+            <div className={'relative ' + (classNames.control ?? '')}>
+                {multiple && state.selectedItems.length > 0 && (
                     <ul
                         className={
-                            state.classNames.selectedItems ??
+                            classNames.selectedItems ??
                             'mb-1 flex flex-wrap gap-2'
                         }
                     >
                         {state.selectedItems.map((item) => (
                             <li key={item.key}>
                                 {item.disabled ? (
-                                    <span
-                                        className={
-                                            state.classNames.selectedItem
-                                        }
-                                    >
+                                    <span className={classNames.selectedItem}>
                                         {item.label}
                                     </span>
                                 ) : (
@@ -68,12 +82,10 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                                         label={item.label}
                                         removeLabel={item.removeLabel}
                                         tooltipText={
-                                            state.messages.clickToRemove ??
+                                            messages.clickToRemove ??
                                             item.removeLabel
                                         }
-                                        className={
-                                            state.classNames.selectedItem
-                                        }
+                                        className={classNames.selectedItem}
                                         onRemove={
                                             handler.handleRemoveSelectedItem
                                         }
@@ -90,8 +102,8 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                     autoComplete="off"
                     aria-autocomplete="list"
                     aria-haspopup="listbox"
-                    aria-expanded={state.open}
-                    aria-controls={state.open ? state.listId : undefined}
+                    aria-expanded={open}
+                    aria-controls={open ? state.listId : undefined}
                     aria-activedescendant={state.activeId}
                     aria-label={props['aria-label']}
                     aria-labelledby={state.labelledBy}
@@ -119,12 +131,12 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                     onClick={handler.handleFocus}
                     onKeyDown={handler.handleKeyDown}
                     placeholder={
-                        props.placeholder ?? state.messages.searchPlaceholder
+                        props.placeholder ?? messages.searchPlaceholder
                     }
                     className={
                         'box-border w-full min-w-0 outline-none disabled:cursor-not-allowed disabled:opacity-50 ' +
-                        (state.classNames.search ??
-                            state.classNames.trigger ??
+                        (classNames.search ??
+                            classNames.trigger ??
                             'rounded-rentner-control border border-select-border bg-select-control pl-3 pr-10 text-sm text-select-foreground placeholder:text-select-muted focus-visible:border-select-accent focus-visible:ring-2 focus-visible:ring-select-accent/20 aria-invalid:border-rentner-danger aria-invalid:focus-visible:ring-rentner-danger') +
                         ' ' +
                         (state.controlSize === 'sm'
@@ -141,7 +153,7 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                     tabIndex={-1}
                     aria-hidden="true"
                     name={
-                        state.multiple && state.emptySelection
+                        multiple && state.emptySelection
                             ? undefined
                             : props.name
                     }
@@ -171,12 +183,12 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                 {state.showClear && (
                     <button
                         type="button"
-                        aria-label={state.messages.clearSelection}
+                        aria-label={messages.clearSelection}
                         onMouseDown={handler.handleKeepFocus}
                         onClick={handler.handleClear}
                         className={
                             'group/delete absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer ' +
-                            (state.classNames.clear ??
+                            (classNames.clear ??
                                 'flex h-8 w-8 items-center justify-center rounded-md bg-rentner-danger/50 text-select-foreground transition-colors hover:bg-rentner-danger/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-select-accent motion-reduce:transition-none')
                         }
                     >
@@ -193,7 +205,7 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                 <div
                     id={state.descriptionId}
                     className={
-                        state.classNames.description ??
+                        classNames.description ??
                         'mt-1 text-xs text-select-muted'
                     }
                 >
@@ -205,19 +217,18 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                     id={state.errorId}
                     aria-live="polite"
                     className={
-                        state.classNames.error ??
-                        'mt-1 text-xs text-rentner-danger'
+                        classNames.error ?? 'mt-1 text-xs text-rentner-danger'
                     }
                 >
                     {state.error}
                 </div>
             )}
-            {state.open &&
+            {open &&
                 typeof document !== 'undefined' &&
                 createPortal(
                     <div
                         role="region"
-                        aria-label={state.messages.searchOptions}
+                        aria-label={messages.searchOptions}
                         className={state.portalClassName}
                     >
                         <div
@@ -227,7 +238,7 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                                 (state.virtualization
                                     ? 'flex flex-col overflow-hidden '
                                     : 'overflow-y-auto ') +
-                                (state.classNames.content ??
+                                (classNames.content ??
                                     'rounded-rentner-control border border-select-border bg-select-surface p-1.5 text-select-foreground shadow-xl')
                             }
                         >
@@ -238,25 +249,10 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                                         handler={handler}
                                         renderOption={props.renderOption}
                                         loading={props.loading}
-                                        ariaLabel={
-                                            props['aria-label'] ??
-                                            state.messages.searchOptions
-                                        }
+                                        ariaLabel={listboxLabel}
                                     />
                                 ) : (
-                                    <div
-                                        id={state.listId}
-                                        role="listbox"
-                                        aria-multiselectable={
-                                            state.multiple || undefined
-                                        }
-                                        aria-label={
-                                            props['aria-label'] ??
-                                            state.messages.searchOptions
-                                        }
-                                        aria-labelledby={state.labelledBy}
-                                        aria-busy={props.loading || undefined}
-                                    >
+                                    <div {...listboxProps}>
                                         {state.activeEntry && (
                                             <ComboboxOption
                                                 entry={state.activeEntry}
@@ -266,13 +262,10 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                                                     props.renderOption
                                                 }
                                                 index={state.activeIndex}
-                                                setSize={
-                                                    state.entries.length +
-                                                    (state.canCreate ? 1 : 0)
-                                                }
+                                                setSize={setSize}
                                             />
                                         )}
-                                        {state.canCreate && (
+                                        {canCreate && (
                                             <ComboboxCreateOption
                                                 state={state}
                                                 handler={handler}
@@ -282,27 +275,14 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                                 )
                             ) : (
                                 <div
-                                    id={state.listId}
-                                    role="listbox"
-                                    aria-multiselectable={
-                                        state.multiple || undefined
-                                    }
-                                    aria-label={
-                                        props['aria-label'] ??
-                                        state.messages.searchOptions
-                                    }
-                                    aria-labelledby={state.labelledBy}
-                                    aria-busy={props.loading || undefined}
+                                    {...listboxProps}
                                     className={
                                         'space-y-0.5 ' +
-                                        (state.classNames.viewport ?? '')
+                                        (classNames.viewport ?? '')
                                     }
                                 >
                                     {!props.loading &&
-                                        groupSelectEntries(
-                                            state.entries,
-                                            (entry) => entry.group,
-                                        ).map((group) => (
+                                        groupedEntries.map((group) => (
                                             <div
                                                 key={group.label ?? ''}
                                                 role={
@@ -313,7 +293,7 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                                                 aria-label={group.label}
                                                 className={
                                                     group.label
-                                                        ? state.classNames.group
+                                                        ? classNames.group
                                                         : undefined
                                                 }
                                             >
@@ -321,8 +301,7 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                                                     <div
                                                         aria-hidden="true"
                                                         className={
-                                                            state.classNames
-                                                                .groupLabel ??
+                                                            classNames.groupLabel ??
                                                             'px-3 py-2 text-xs font-semibold text-select-muted'
                                                         }
                                                     >
@@ -344,12 +323,7 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                                                                     1
                                                                 }
                                                                 setSize={
-                                                                    state
-                                                                        .entries
-                                                                        .length +
-                                                                    (state.canCreate
-                                                                        ? 1
-                                                                        : 0)
+                                                                    setSize
                                                                 }
                                                                 renderOption={
                                                                     props.renderOption
@@ -360,7 +334,7 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                                                 </div>
                                             </div>
                                         ))}
-                                    {state.canCreate && (
+                                    {canCreate && (
                                         <ComboboxCreateOption
                                             state={state}
                                             handler={handler}
@@ -369,11 +343,10 @@ export function Combobox<T>(props: ComboboxProps<T>) {
                                 </div>
                             )}
                             {(props.loading ||
-                                (state.entries.length === 0 &&
-                                    !state.canCreate)) && (
+                                (entries.length === 0 && !canCreate)) && (
                                 <output
                                     className={
-                                        state.classNames.empty ??
+                                        classNames.empty ??
                                         'px-3 py-2 text-sm text-select-muted'
                                     }
                                 >

@@ -124,6 +124,6 @@ function VirtualSelectOptionsTemplate<TValue>(
     )
 }
 
-export default memo(
+export default /* @__PURE__ */ memo(
     VirtualSelectOptionsTemplate,
 ) as typeof VirtualSelectOptionsTemplate

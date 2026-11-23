@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from 'react'
 import type {
-    Option,
     SelectValueOptions,
     SelectValuesResult,
 } from '../Types/select.types.ts'
@@ -12,6 +11,8 @@ import {
     isSingleValueEmpty,
     toggleSelectedValue,
 } from '../../../lib/Select/selectValue.ts'
+
+const EMPTY_ARRAY: ReadonlyArray<never> = []
 
 function defaultGetFormValue(value: unknown) {
     return String(value)
@@ -29,21 +30,51 @@ export default function useSelectValues<TValue>({
     ...rest
 }: SelectValueOptions<TValue>): SelectValuesResult<TValue> {
     const maxSelection = 'maxSelection' in rest ? rest.maxSelection : undefined
-    const optionIndex = useMemo(() => indexOptions(options), [options])
-    const selectedValues = useMemo<ReadonlyArray<TValue>>(() => {
-        const isAvailableValue = (selectedValue: TValue) =>
-            isOptionEqualToValue === Object.is
-                ? optionIndex.has(getOptionKey(selectedValue))
-                : options.some((option: Option<TValue>) =>
-                      isOptionEqualToValue(option.value, selectedValue),
+    const needsIndex = multiple && isOptionEqualToValue === Object.is
+    const optionIndex = useMemo(
+        () => (needsIndex ? indexOptions(options) : null),
+        [needsIndex, options],
+    )
+
+    const { selectedValues, matchedPositions } = useMemo(() => {
+        const findPosition = (target: TValue) =>
+            optionIndex
+                ? (optionIndex.get(getOptionKey(target)) ?? -1)
+                : options.findIndex((o) =>
+                      isOptionEqualToValue(o.value, target),
                   )
-        if (multiple)
-            return Array.isArray(value) ? value.filter(isAvailableValue) : []
-        return isSingleValueEmpty(value) ||
-            (emptyValue !== undefined && Object.is(value, emptyValue)) ||
-            !isAvailableValue(value)
-            ? []
-            : [value]
+        if (multiple) {
+            if (!Array.isArray(value) || value.length === 0)
+                return {
+                    selectedValues: EMPTY_ARRAY,
+                    matchedPositions: EMPTY_ARRAY,
+                }
+            const nextValues: TValue[] = []
+            const positions: number[] = []
+            for (const item of value) {
+                const pos = findPosition(item)
+                if (pos >= 0) {
+                    nextValues.push(item)
+                    positions.push(pos)
+                }
+            }
+            return nextValues.length
+                ? { selectedValues: nextValues, matchedPositions: positions }
+                : { selectedValues: EMPTY_ARRAY, matchedPositions: EMPTY_ARRAY }
+        }
+        if (
+            isSingleValueEmpty(value) ||
+            (emptyValue !== undefined && Object.is(value, emptyValue))
+        ) {
+            return {
+                selectedValues: EMPTY_ARRAY,
+                matchedPositions: EMPTY_ARRAY,
+            }
+        }
+        const pos = findPosition(value)
+        return pos < 0
+            ? { selectedValues: EMPTY_ARRAY, matchedPositions: EMPTY_ARRAY }
+            : { selectedValues: [value], matchedPositions: [pos] }
     }, [
         emptyValue,
         isOptionEqualToValue,
@@ -52,32 +83,25 @@ export default function useSelectValues<TValue>({
         value,
         options,
     ])
+
     const formEntries = useMemo(
         () =>
-            selectedValues.map((selectedValue) => {
-                const position =
-                    isOptionEqualToValue === Object.is
-                        ? (optionIndex.get(getOptionKey(selectedValue)) ?? -1)
-                        : options.findIndex((option: Option<TValue>) =>
-                              isOptionEqualToValue(option.value, selectedValue),
-                          )
-                const formValue = getFormValue(selectedValue)
-                return {
-                    key:
-                        position >= 0
-                            ? `option-${position}`
-                            : `${typeof selectedValue}-${formValue}`,
-                    value: formValue,
-                }
-            }),
-        [
-            getFormValue,
-            isOptionEqualToValue,
-            optionIndex,
-            selectedValues,
-            options,
-        ],
+            selectedValues.length === 0
+                ? EMPTY_ARRAY
+                : selectedValues.map((selectedValue, i) => {
+                      const position = matchedPositions[i] ?? -1
+                      const formValue = getFormValue(selectedValue)
+                      return {
+                          key:
+                              position >= 0
+                                  ? `option-${position}`
+                                  : `${typeof selectedValue}-${formValue}`,
+                          value: formValue,
+                      }
+                  }),
+        [getFormValue, matchedPositions, selectedValues],
     )
+
     const handleSelectValue = useCallback(
         (nextValue: TValue) => {
             if (multiple) {
@@ -87,13 +111,9 @@ export default function useSelectValues<TValue>({
                     isOptionEqualToValue,
                     maxSelection,
                 )
-
-                if (nextValues) {
-                    onValueChange(nextValues)
-                }
+                if (nextValues) onValueChange(nextValues)
                 return
             }
-
             onValueChange(nextValue)
         },
         [
@@ -106,20 +126,12 @@ export default function useSelectValues<TValue>({
     )
 
     const handleClearValues = useCallback(() => {
-        const legacyOnClear = onClear
-        if (legacyOnClear) {
-            legacyOnClear()
+        if (onClear) {
+            onClear()
             return
         }
-
-        if (multiple) {
-            onValueChange([])
-        } else {
-            const clearSingleValue = onValueChange as (
-                value: TValue | null,
-            ) => void
-            clearSingleValue(emptyValue ?? null)
-        }
+        if (multiple) onValueChange([])
+        else (onValueChange as (v: TValue | null) => void)(emptyValue ?? null)
     }, [onClear, multiple, onValueChange, emptyValue])
 
     return {

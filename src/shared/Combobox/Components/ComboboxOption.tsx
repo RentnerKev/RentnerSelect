@@ -1,7 +1,8 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role, jsx-a11y/click-events-have-key-events -- APG option uses the combobox input for keyboard navigation. */
+import { memo } from 'react'
 import type { ComboboxOptionProps } from '../Types/combobox.types.ts'
 
-export default function ComboboxOption<T>({
+function ComboboxOptionTemplate<T>({
     entry,
     state,
     handler,
@@ -11,6 +12,11 @@ export default function ComboboxOption<T>({
     measureElement,
     style,
 }: ComboboxOptionProps<T>) {
+    const active = entry.id === state.activeId
+    const overflow =
+        state.textOverflow === 'wrap'
+            ? 'whitespace-normal break-words '
+            : 'truncate '
     return (
         <div
             ref={measureElement}
@@ -23,7 +29,7 @@ export default function ComboboxOption<T>({
             aria-setsize={setSize}
             aria-selected={entry.selected}
             aria-disabled={entry.disabled || undefined}
-            data-active={entry.id === state.activeId || undefined}
+            data-active={active || undefined}
             data-disabled={entry.disabled || undefined}
             onMouseDown={handler.handleKeepFocus}
             onMouseMove={() => {
@@ -42,16 +48,14 @@ export default function ComboboxOption<T>({
             {renderOption ? (
                 renderOption(entry.option, {
                     selected: entry.selected,
-                    active: entry.id === state.activeId,
+                    active,
                     disabled: entry.disabled,
                 })
             ) : (
                 <div className="min-w-0">
                     <div
                         className={
-                            (state.textOverflow === 'wrap'
-                                ? 'whitespace-normal break-words '
-                                : 'truncate ') +
+                            overflow +
                             (state.classNames.optionLabel ?? 'leading-5')
                         }
                     >
@@ -60,9 +64,7 @@ export default function ComboboxOption<T>({
                     {entry.description != null && (
                         <div
                             className={
-                                (state.textOverflow === 'wrap'
-                                    ? 'whitespace-normal break-words '
-                                    : 'truncate ') +
+                                overflow +
                                 (state.classNames.optionDescription ??
                                     'text-xs text-select-muted')
                             }
@@ -75,3 +77,19 @@ export default function ComboboxOption<T>({
         </div>
     )
 }
+
+export default /* @__PURE__ */ memo(
+    ComboboxOptionTemplate,
+    (a, b) =>
+        a.entry === b.entry &&
+        (a.entry.id === a.state.activeId) ===
+            (b.entry.id === b.state.activeId) &&
+        a.state.classNames === b.state.classNames &&
+        a.state.textOverflow === b.state.textOverflow &&
+        a.handler.handleOptionSelect === b.handler.handleOptionSelect &&
+        a.renderOption === b.renderOption &&
+        a.index === b.index &&
+        a.setSize === b.setSize &&
+        a.measureElement === b.measureElement &&
+        a.style === b.style,
+) as typeof ComboboxOptionTemplate

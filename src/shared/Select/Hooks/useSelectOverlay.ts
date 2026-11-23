@@ -17,6 +17,13 @@ import type {
     SelectOverlayResult,
 } from '../Types/selectOverlay.types.ts'
 
+const HIDDEN_STYLE: CSSProperties = {
+    position: 'fixed',
+    left: 0,
+    top: 0,
+    visibility: 'hidden',
+}
+
 export default function useSelectOverlay({
     open,
     layoutVersion,
@@ -51,12 +58,9 @@ export default function useSelectOverlay({
         measurement.ready
     const popupStyle: CSSProperties = positioned
         ? measurement.style
-        : {
-              ...(measurement?.popup === popup
-                  ? measurement?.style
-                  : { position: 'fixed', left: 0, top: 0 }),
-              visibility: 'hidden',
-          }
+        : measurement?.popup === popup
+          ? { ...measurement.style, visibility: 'hidden' }
+          : HIDDEN_STYLE
 
     const measure = useRef<(() => void) | null>(null)
 
@@ -137,17 +141,21 @@ export default function useSelectOverlay({
             const viewportWidth = viewport?.width ?? view.innerWidth
             const viewportHeight = viewport?.height ?? view.innerHeight
             const gutter = 4
+            const maxViewportWidth = Math.max(0, viewportWidth - gutter * 2)
             const triggerWidth = Math.min(
                 Math.max(rect.width, 180),
-                Math.max(0, viewportWidth - gutter * 2),
+                maxViewportWidth,
             )
-            const measured = popup.getBoundingClientRect()
+            let measured: DOMRect | null = null
             const width =
                 contentWidth === 'trigger'
                     ? triggerWidth
                     : Math.max(
                           triggerWidth,
-                          Math.min(measured.width, viewportWidth - gutter * 2),
+                          Math.min(
+                              (measured = popup.getBoundingClientRect()).width,
+                              maxViewportWidth,
+                          ),
                       )
             const availableBelow = Math.max(
                 0,
@@ -158,9 +166,9 @@ export default function useSelectOverlay({
                 rect.top - viewportTop - gutter * 2,
             )
             const above =
-                availableBelow <
-                    Math.min(popup.scrollHeight || 320, maxHeight ?? 320) &&
-                availableAbove > availableBelow
+                availableAbove > availableBelow &&
+                availableBelow < (maxHeight ?? 320) &&
+                availableBelow < (popup.scrollHeight || 320)
             const availableHeight = above ? availableAbove : availableBelow
             const left = Math.max(
                 viewportLeft + gutter,
@@ -174,7 +182,11 @@ export default function useSelectOverlay({
                       viewportTop + gutter,
                       rect.top -
                           gutter -
-                          Math.min(measured.height, availableHeight),
+                          Math.min(
+                              (measured ?? popup.getBoundingClientRect())
+                                  .height,
+                              availableHeight,
+                          ),
                   )
                 : rect.bottom + gutter
             const block = fixedContainingBlock(popup)
@@ -206,23 +218,24 @@ export default function useSelectOverlay({
                 width:
                     contentWidth === 'trigger' ? width / scaleX : 'max-content',
                 minWidth: triggerWidth / scaleX,
-                maxWidth: Math.max(0, viewportWidth - gutter * 2) / scaleX,
+                maxWidth: maxViewportWidth / scaleX,
                 maxHeight:
                     Math.min(availableHeight, maxHeight ?? availableHeight) /
                     scaleY,
             }
-            setMeasurement((previous) =>
-                previous?.ready &&
-                previous.popup === popup &&
-                Object.keys(next).length ===
-                    Object.keys(previous.style).length &&
-                Object.entries(next).every(
-                    ([key, value]) =>
-                        previous.style[key as keyof CSSProperties] === value,
-                )
+            setMeasurement((previous) => {
+                const s = previous?.style
+                return previous?.ready &&
+                    previous.popup === popup &&
+                    s!.left === next.left &&
+                    s!.top === next.top &&
+                    s!.width === next.width &&
+                    s!.minWidth === next.minWidth &&
+                    s!.maxWidth === next.maxWidth &&
+                    s!.maxHeight === next.maxHeight
                     ? previous
-                    : { popup, style: next, ready: previous?.popup === popup },
-            )
+                    : { popup, style: next, ready: previous?.popup === popup }
+            })
             if (
                 view.IntersectionObserver &&
                 (!scheduled.observedAnchor ||
@@ -248,14 +261,7 @@ export default function useSelectOverlay({
                                 schedulePosition()
                         },
                         {
-                            rootMargin: [
-                                -Math.floor(rect.top),
-                                -Math.floor(root.clientWidth - rect.right),
-                                -Math.floor(root.clientHeight - rect.bottom),
-                                -Math.floor(rect.left),
-                            ]
-                                .map((value) => `${value}px`)
-                                .join(' '),
+                            rootMargin: `${-Math.floor(rect.top)}px ${-Math.floor(root.clientWidth - rect.right)}px ${-Math.floor(root.clientHeight - rect.bottom)}px ${-Math.floor(rect.left)}px`,
                             threshold: 1,
                         },
                     )

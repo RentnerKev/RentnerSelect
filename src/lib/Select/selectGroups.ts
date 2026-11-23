@@ -4,15 +4,18 @@ export function groupSelectEntries<TEntry>(
     entries: ReadonlyArray<TEntry>,
     getGroup: (entry: TEntry) => string | undefined,
 ): Array<SelectOptionGroup<TEntry>> {
-    const groups = new Map<string | undefined, SelectOptionGroup<TEntry>>()
+    let first: SelectOptionGroup<TEntry> | undefined
+    let map: Map<string | undefined, SelectOptionGroup<TEntry>> | undefined
     for (const entry of entries) {
         const label = getGroup(entry) || undefined
-        let group = groups.get(label)
-        if (!group) {
-            group = { label, entries: [] }
-            groups.set(label, group)
+        if (!map && (!first || first.label === label)) {
+            ;(first ??= { label, entries: [] }).entries.push(entry)
+            continue
         }
+        map ??= new Map([[first!.label, first!]])
+        let group = map.get(label)
+        if (!group) map.set(label, (group = { label, entries: [] }))
         group.entries.push(entry)
     }
-    return Array.from(groups.values())
+    return map ? [...map.values()] : first ? [first] : []
 }

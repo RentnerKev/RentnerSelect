@@ -13,15 +13,25 @@ export function toggleSelectedValue<TValue>(
     isEqual: SelectValueComparator<TValue>,
     maxSelection?: number,
 ): Array<TValue> | null {
-    const selectedIndex = selectedValues.findIndex((value) =>
-        isEqual(nextValue, value),
-    )
-
-    if (selectedIndex >= 0) {
-        return selectedValues.filter((value) => !isEqual(nextValue, value))
+    const len = selectedValues.length
+    let selectedIndex = -1
+    for (let i = 0; i < len; i += 1) {
+        if (isEqual(nextValue, selectedValues[i]!)) {
+            selectedIndex = i
+            break
+        }
     }
 
-    if (maxSelection !== undefined && selectedValues.length >= maxSelection) {
+    if (selectedIndex >= 0) {
+        const result = selectedValues.slice(0, selectedIndex)
+        for (let i = selectedIndex + 1; i < len; i += 1) {
+            const candidate = selectedValues[i]!
+            if (!isEqual(nextValue, candidate)) result.push(candidate)
+        }
+        return result
+    }
+
+    if (maxSelection !== undefined && len >= maxSelection) {
         return null
     }
 

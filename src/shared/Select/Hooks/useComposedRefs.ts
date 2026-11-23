@@ -5,13 +5,8 @@ function assignRef<Element>(
     ref: Ref<Element> | undefined,
     value: Element | null,
 ) {
-    if (typeof ref === 'function') {
-        return ref(value)
-    }
-
-    if (ref) {
-        ref.current = value
-    }
+    if (typeof ref === 'function') return ref(value)
+    if (ref) ref.current = value
 }
 
 export function composeRefs<Element>(
@@ -64,7 +59,10 @@ export default function useComposedRefs<Element>(
     secondRef: Ref<Element> | undefined,
 ) {
     return useMemo(
-        () => composeRefs([firstRef, secondRef]),
+        () =>
+            secondRef == null
+                ? (node: Element | null) => assignRef(firstRef, node)
+                : composeRefs([firstRef, secondRef]),
         [firstRef, secondRef],
     )
 }
